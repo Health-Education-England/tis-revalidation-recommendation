@@ -29,7 +29,7 @@
         <hamcrest.version>1.3</hamcrest.version>
         <javafaker.version>1.0.2</javafaker.version>
         <jackson-datatype.version>2.10.2</jackson-datatype.version>
-        <springfox-swagger.version>2.9.1</springfox-swagger.version>
+        <springfox-swagger.version>2.9.2</springfox-swagger.version>
         <wiremock.version>2.26.0</wiremock.version>
     </properties>
 
