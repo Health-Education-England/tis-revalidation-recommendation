@@ -40,14 +40,14 @@ jobs:
 
       - name: Slack Notification success
         if: success()
-        uses: rtCamp/action-slack-notify@v2.0.0
+        uses: rtCamp/action-slack-notify@v2.1.3
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_TITLE: 'tis-revalidation-recommendation has been deployed through the pipeline'
 
       - name: Slack Notification failure
         if: failure()
-        uses: rtCamp/action-slack-notify@v2.0.0
+        uses: rtCamp/action-slack-notify@v2.1.3
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_TITLE: "tis-revalidation-recommendation build has failed in the pipeline"
