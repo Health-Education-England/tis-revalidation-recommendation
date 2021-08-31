@@ -25,11 +25,11 @@
         <spring-boot.version>2.5.3</spring-boot.version>
         <lombok.version>1.18.20</lombok.version>
         <javafaker.version>1.0.2</javafaker.version>
-        <jackson-datatype.version>2.12.3</jackson-datatype.version>
+        <jackson-datatype.version>2.12.5</jackson-datatype.version>
         <springfox-swagger.version>3.0.0</springfox-swagger.version>
         <gmc-api.version>1.0.0</gmc-api.version>
         <jaxb-runtime.version>2.3.3</jaxb-runtime.version>
-        <sentry.version>5.0.1</sentry.version>
+        <sentry.version>5.1.1</sentry.version>
         <!-- Sonar cloud -->
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.login>${env.SONAR_TOKEN}</sonar.login>
@@ -195,7 +195,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.45.1</version>
+                        <version>9.0</version>
                     </dependency>
                 </dependencies>
                 <executions>
