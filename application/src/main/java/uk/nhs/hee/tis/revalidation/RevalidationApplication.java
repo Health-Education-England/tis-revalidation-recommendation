@@ -37,7 +37,7 @@ import uk.nhs.hee.tis.revalidation.validator.TraineeRecommendationRecordDTOValid
 @EnableMongock
 @SpringBootApplication
 public class RevalidationApplication {
-
+  //Test
   public static void main(String[] args) {
     SpringApplication.run(RevalidationApplication.class, args);
   }
