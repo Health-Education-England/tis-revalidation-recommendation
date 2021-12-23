@@ -110,7 +110,7 @@ class DoctorsForDBServiceTest {
 
     when(page.get()).thenReturn(Stream.of(doc1, doc2, doc3, doc4, doc5));
     when(page.getTotalPages()).thenReturn(1);
-    when(repository.countByUnderNoticeIn(YES, ON_HOLD)).thenReturn(2l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
@@ -188,7 +188,7 @@ class DoctorsForDBServiceTest {
     when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
     when(page.get()).thenReturn(Stream.of(doc1));
     when(page.getTotalPages()).thenReturn(1);
-    when(repository.countByUnderNoticeIn(YES, ON_HOLD)).thenReturn(2l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
@@ -223,12 +223,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findByUnderNotice(pageableAndSortable, "", dbcs, YES, ON_HOLD))
+    when(repository.findByUnderNotice(pageableAndSortable, "", dbcs, YES))
         .thenReturn(page);
 
     when(page.get()).thenReturn(Stream.of(doc1, doc2));
     when(page.getTotalPages()).thenReturn(1);
-    when(repository.countByUnderNoticeIn(YES, ON_HOLD)).thenReturn(2l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
@@ -274,7 +274,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
     when(page.get()).thenReturn(Stream.of());
-    when(repository.countByUnderNoticeIn(YES, ON_HOLD)).thenReturn(0l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(0l);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
@@ -301,7 +301,7 @@ class DoctorsForDBServiceTest {
     when(page.get()).thenReturn(Stream.of(doc1, doc4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
-    when(repository.countByUnderNoticeIn(YES, ON_HOLD)).thenReturn(2l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
@@ -351,7 +351,7 @@ class DoctorsForDBServiceTest {
     when(page.get()).thenReturn(Stream.of(doc1, doc4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
-    when(repository.countByUnderNoticeIn(YES, ON_HOLD)).thenReturn(2l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")

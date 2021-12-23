@@ -201,7 +201,7 @@ public class DoctorsForDBService {
 
   //TODO: explore to implement cache
   private long getCountUnderNotice() {
-    return doctorsRepository.countByUnderNoticeIn(YES, ON_HOLD);
+    return doctorsRepository.countByUnderNoticeIn(YES);
   }
 
   private String getConnectionStatus(final String designatedBody) {
