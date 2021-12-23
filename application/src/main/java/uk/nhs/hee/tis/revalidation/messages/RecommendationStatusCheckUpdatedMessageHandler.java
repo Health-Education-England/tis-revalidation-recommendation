@@ -72,8 +72,7 @@ public class RecommendationStatusCheckUpdatedMessageHandler {
         .findById(gmcReferenceNumber);
 
     //update the tis status in doctorsfordb to "complete"
-    if (optionalDoctorsForDB.isPresent() && (APPROVED.equals(outcome) || REJECTED
-        .equals(outcome))) {
+    if (optionalDoctorsForDB.isPresent()) {
       final var doctorsForDB = optionalDoctorsForDB.get();
       doctorsForDB.setDoctorStatus(
           recommendationService.getRecommendationStatusForTrainee(gmcReferenceNumber));
@@ -87,24 +86,29 @@ public class RecommendationStatusCheckUpdatedMessageHandler {
       final RecommendationGmcOutcome recommendationGmcOutcome, final String gmcRecommendationId) {
 
     final var optionalRecommendation = recommendationRepository.findById(recommendationId);
+    final var completed = APPROVED.equals(recommendationGmcOutcome) || REJECTED.equals(recommendationGmcOutcome);
 
     if (optionalRecommendation.isEmpty()) {
       log.warn("Ignoring an update to an unknown Recommendation: {}", recommendationId);
       return;
     }
-    if (APPROVED.equals(recommendationGmcOutcome) || REJECTED.equals(recommendationGmcOutcome)) {
-      Recommendation recommendation = optionalRecommendation.get();
-      recommendation.setOutcome(recommendationGmcOutcome);
+    Recommendation recommendation = optionalRecommendation.get();
+    recommendation.setOutcome(recommendationGmcOutcome);
+    if (completed) {
       recommendation.setRecommendationStatus(COMPLETED);
-      recommendationRepository.save(recommendation);
-
-      // Find the snapshot from snapshot repository and check the gmcRecommendationId.
-      // If it exists then don't save snapshot else save it
-      if (!doesSnapshotRecommendationExist(recommendation.getGmcNumber(), gmcRecommendationId)) {
-        recommendation.setGmcRevalidationId(gmcRecommendationId);
-        snapshotService.saveRecommendationToSnapshot(recommendation);
-      }
     }
+    recommendationRepository.save(recommendation);
+
+    // Find the snapshot from snapshot repository and check the gmcRecommendationId.
+    // If it exists then don't save snapshot else save it
+    if (
+        completed
+        && !doesSnapshotRecommendationExist(recommendation.getGmcNumber(), gmcRecommendationId)
+    ) {
+      recommendation.setGmcRevalidationId(gmcRecommendationId);
+      snapshotService.saveRecommendationToSnapshot(recommendation);
+    }
+
   }
 
   private boolean doesSnapshotRecommendationExist(String gmcReferenceNumber,
