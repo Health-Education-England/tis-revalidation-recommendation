@@ -86,6 +86,7 @@ public class RecommendationStatusCheckUpdatedMessageHandler {
       final RecommendationGmcOutcome recommendationGmcOutcome, final String gmcRecommendationId) {
 
     final var optionalRecommendation = recommendationRepository.findById(recommendationId);
+    final var completed = APPROVED.equals(recommendationGmcOutcome) || REJECTED.equals(recommendationGmcOutcome);
 
     if (optionalRecommendation.isEmpty()) {
       log.warn("Ignoring an update to an unknown Recommendation: {}", recommendationId);
@@ -93,17 +94,21 @@ public class RecommendationStatusCheckUpdatedMessageHandler {
     }
     Recommendation recommendation = optionalRecommendation.get();
     recommendation.setOutcome(recommendationGmcOutcome);
-    if (APPROVED.equals(recommendationGmcOutcome) || REJECTED.equals(recommendationGmcOutcome)) {
+    if (completed) {
       recommendation.setRecommendationStatus(COMPLETED);
     }
     recommendationRepository.save(recommendation);
 
     // Find the snapshot from snapshot repository and check the gmcRecommendationId.
     // If it exists then don't save snapshot else save it
-    if (!doesSnapshotRecommendationExist(recommendation.getGmcNumber(), gmcRecommendationId)) {
+    if (
+        completed
+        && !doesSnapshotRecommendationExist(recommendation.getGmcNumber(), gmcRecommendationId)
+    ) {
       recommendation.setGmcRevalidationId(gmcRecommendationId);
       snapshotService.saveRecommendationToSnapshot(recommendation);
     }
+
   }
 
   private boolean doesSnapshotRecommendationExist(String gmcReferenceNumber,
