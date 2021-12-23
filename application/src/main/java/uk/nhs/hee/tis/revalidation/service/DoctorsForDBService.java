@@ -186,7 +186,7 @@ public class DoctorsForDBService {
     if (requestDTO.isUnderNotice()) {
       return doctorsRepository
           .findByUnderNotice(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
-              YES, ON_HOLD);
+              YES);
     }
 
     return doctorsRepository
