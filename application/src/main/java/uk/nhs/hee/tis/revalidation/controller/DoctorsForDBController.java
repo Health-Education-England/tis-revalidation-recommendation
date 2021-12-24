@@ -81,7 +81,7 @@ public class DoctorsForDBController {
   @GetMapping
   public ResponseEntity<TraineeSummaryDto> getTraineeDoctorsInformation(
       @RequestParam(name = SORT_COLUMN, defaultValue = SUBMISSION_DATE, required = false) final String sortColumn,
-      @RequestParam(name = SORT_ORDER, defaultValue = DESC, required = false) final String sortOrder,
+      @RequestParam(name = SORT_ORDER, defaultValue = ASC, required = false) final String sortOrder,
       @RequestParam(name = UNDER_NOTICE, defaultValue = UNDER_NOTICE_VALUE, required = false) final boolean underNotice,
       @RequestParam(name = PAGE_NUMBER, defaultValue = PAGE_NUMBER_VALUE, required = false) final int pageNumber,
       @RequestParam(name = DESIGNATED_BODY_CODES, required = false) final List<String> dbcs,
