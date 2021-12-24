@@ -186,7 +186,7 @@ public class DoctorsForDBService {
     if (requestDTO.isUnderNotice()) {
       return doctorsRepository
           .findByUnderNotice(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
-              YES, ON_HOLD);
+              YES);
     }
 
     return doctorsRepository
@@ -201,7 +201,7 @@ public class DoctorsForDBService {
 
   //TODO: explore to implement cache
   private long getCountUnderNotice() {
-    return doctorsRepository.countByUnderNoticeIn(YES, ON_HOLD);
+    return doctorsRepository.countByUnderNoticeIn(YES);
   }
 
   private String getConnectionStatus(final String designatedBody) {
