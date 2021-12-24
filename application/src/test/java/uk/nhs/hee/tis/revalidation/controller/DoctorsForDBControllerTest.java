@@ -171,7 +171,7 @@ class DoctorsForDBControllerTest {
   @Test
   void shouldReturnDataWhenSortOrderAndSortColumnAreEmpty() throws Exception {
     final var gmcDoctorDTO = prepareGmcDoctor();
-    final var requestDTO = TraineeRequestDto.builder().sortOrder(DESC)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder(ASC)
         .sortColumn(SUBMISSION_DATE)
         .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2)).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
