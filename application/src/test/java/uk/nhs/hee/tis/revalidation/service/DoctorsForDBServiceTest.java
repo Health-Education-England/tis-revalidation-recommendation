@@ -29,12 +29,14 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.*;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -49,6 +51,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
@@ -102,8 +106,13 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnListOfAllDoctors() {
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
+    orders.add(customOrder);
+    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(lastNameOrder);
 
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
@@ -182,8 +191,13 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnListOfDoctorsAttachedToASpecificDbc() {
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
+    orders.add(customOrder);
+    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(lastNameOrder);
 
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List.of(designatedBody1);
     when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
     when(page.get()).thenReturn(Stream.of(doc1));
@@ -220,7 +234,12 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldReturnListOfUnderNoticeDoctors() {
 
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
+    orders.add(customOrder);
+    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(lastNameOrder);
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     when(repository.findByUnderNotice(pageableAndSortable, "", dbcs, YES))
@@ -269,7 +288,13 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnEmptyListOfDoctorsWhenNoRecordFound() {
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
+    orders.add(customOrder);
+    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(lastNameOrder);
+
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
@@ -292,8 +317,13 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnListOfAllDoctorsWhoMatchSearchQuery() {
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
+    orders.add(customOrder);
+    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(lastNameOrder);
 
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     when(repository.findAll(pageableAndSortable, "query", dbcs, List.of())).thenReturn(page);
@@ -342,8 +372,13 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldNotFailIfGmcIdNull() {
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
+    orders.add(customOrder);
+    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(lastNameOrder);
 
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(DESC, "submissionDate"));
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     when(repository.findAll(pageableAndSortable, "query", dbcs, List.of())).thenReturn(page);
@@ -356,6 +391,59 @@ class DoctorsForDBServiceTest {
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
+        .pageNumber(1)
+        .searchQuery("query")
+        .dbcs(dbcs)
+        .build();
+    final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
+    final var doctorsForDB = allDoctors.getTraineeInfo();
+    assertThat(allDoctors.getCountTotal(), is(5L));
+    assertThat(allDoctors.getCountUnderNotice(), is(2L));
+    assertThat(allDoctors.getTotalPages(), is(1L));
+    assertThat(allDoctors.getTotalResults(), is(2L));
+    assertThat(doctorsForDB, hasSize(2));
+
+    assertThat(doctorsForDB.get(0).getGmcReferenceNumber(), is(gmcRef1));
+    assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
+    assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
+    assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
+    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
+    assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
+    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
+    assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
+    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
+
+    assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef4));
+    assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname4));
+    assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname4));
+    assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate4));
+    assertThat(doctorsForDB.get(1).getDateAdded(), is(addedDate4));
+    assertThat(doctorsForDB.get(1).getUnderNotice(), is(un4.name()));
+    assertThat(doctorsForDB.get(1).getSanction(), is(sanction4));
+    assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status4.name()));
+    assertThat(doctorsForDB.get(1).getConnectionStatus(), is(connectionStatus4));
+
+  }
+
+  @Test
+  void shouldNotApplySecondarySortIfSortByLastName() {
+    List<Order> orders = new ArrayList<Order>();
+    Order customOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+    orders.add(customOrder);
+
+    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
+    List<String> dbcs = List
+        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    when(repository.findAll(pageableAndSortable, "query", dbcs, List.of())).thenReturn(page);
+
+    when(page.get()).thenReturn(Stream.of(doc1, doc4));
+    when(page.getTotalPages()).thenReturn(1);
+    when(page.getTotalElements()).thenReturn(2l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
+    when(repository.count()).thenReturn(5l);
+    final var requestDTO = TraineeRequestDto.builder()
+        .sortOrder("asc")
+        .sortColumn("doctorLastName")
         .pageNumber(1)
         .searchQuery("query")
         .dbcs(dbcs)
