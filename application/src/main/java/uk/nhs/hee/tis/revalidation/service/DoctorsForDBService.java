@@ -37,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IterableUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
@@ -180,9 +182,18 @@ public class DoctorsForDBService {
   private Page<DoctorsForDB> getSortedAndFilteredDoctorsByPageNumber(
       final TraineeRequestDto requestDTO, final List<String> hiddenGmcIds) {
     final var hiddenGmcIdsNotNull = (hiddenGmcIds == null) ? new ArrayList<String>() : hiddenGmcIds;
-    final var direction = "asc".equalsIgnoreCase(requestDTO.getSortOrder()) ? ASC : DESC;
-    final var pageableAndSortable = of(requestDTO.getPageNumber(), pageSize,
-        by(direction, requestDTO.getSortColumn()));
+
+    List<Order> orders = new ArrayList<>();
+    final var customSortColumn = requestDTO.getSortColumn();
+    Order customOrder = new Order("asc".equalsIgnoreCase(requestDTO.getSortOrder()) ? ASC : DESC,
+        customSortColumn);
+    orders.add(customOrder);
+    if (!customSortColumn.equalsIgnoreCase("doctorLastName")) {
+      Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
+      orders.add(lastNameOrder);
+    }
+    final var pageableAndSortable = of(requestDTO.getPageNumber(), pageSize, by(orders));
+
     if (requestDTO.isUnderNotice()) {
       return doctorsRepository
           .findByUnderNotice(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
