@@ -328,13 +328,6 @@ public class RecommendationServiceImpl implements RecommendationService {
   private List<TraineeRecommendationRecordDto> getCurrentAndLegacyRecommendation(
       final DoctorsForDB doctorsForDB) {
     final var gmcNumber = doctorsForDB.getGmcReferenceNumber();
-    checkRecommendationStatus(gmcNumber, doctorsForDB.getDesignatedBodyCode());
-
-    final var newRecommendationStatus = getRecommendationStatusForTrainee(gmcNumber);
-    if (!newRecommendationStatus.equals(doctorsForDB.getDoctorStatus())) {
-      doctorsForDB.setDoctorStatus(newRecommendationStatus);
-      doctorsForDBRepository.save(doctorsForDB);
-    }
 
     log.info("Fetching snapshot record for GmcId: {}", gmcNumber);
     final var recommendations = recommendationRepository.findByGmcNumber(gmcNumber);
@@ -345,32 +338,6 @@ public class RecommendationServiceImpl implements RecommendationService {
     final var snapshotRecommendations = snapshotService.getSnapshotRecommendations(doctorsForDB);
     currentRecommendations.addAll(snapshotRecommendations);
     return currentRecommendations;
-  }
-
-  /**
-   * Check all of the incomplete recommendations for a Doctor and if GMC update status with Approved
-   * or Rejected, recommendation will be moved to snapshot
-   *
-   * @param gmcNumber      The GMC ID/Number of the doctor to check recommendations for
-   * @param designatedBody The Body responsible for the recommendations/revalidation
-   */
-  private void checkRecommendationStatus(final String gmcNumber, final String designatedBody) {
-    log.info("Check status of Gmc outcome for under review recommendations of GmcNumber: {}",
-        gmcNumber);
-    final var recommendations = recommendationRepository.findByGmcNumber(gmcNumber);
-    recommendations.stream().forEach(rec -> {
-      log.debug("Checking recommendation status for recommendationId: {}", rec.getId());
-      final var recommendationGmcOutcome = gmcClientService
-          .checkRecommendationStatus(rec.getGmcNumber(),
-              rec.getGmcRevalidationId(), rec.getId(), designatedBody);
-      if (APPROVED.equals(recommendationGmcOutcome) || REJECTED.equals(recommendationGmcOutcome)) {
-        log.debug("Update status to: {}, for GmcId: {}", recommendationGmcOutcome,
-            rec.getGmcNumber());
-        rec.setOutcome(recommendationGmcOutcome);
-        recommendationRepository.save(rec);
-        snapshotService.saveRecommendationToSnapshot(rec);
-      }
-    });
   }
 
   private String getOutcome(RecommendationGmcOutcome outcome) {
