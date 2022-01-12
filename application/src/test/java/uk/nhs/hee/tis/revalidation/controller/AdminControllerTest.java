@@ -18,7 +18,7 @@ import uk.nhs.hee.tis.revalidation.service.GmcDoctorNightlySyncService;
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest(AdminController.class)
-public class AdminControllerTest {
+class AdminControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
