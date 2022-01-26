@@ -32,6 +32,7 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.REJECT
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.UNDER_REVIEW;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.READY_TO_REVIEW;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.SUBMITTED_TO_GMC;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.nhs.hee.tis.gmc.client.generated.DoctorForDb;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
@@ -257,10 +259,28 @@ public class RecommendationServiceImpl implements RecommendationService {
     log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
     Optional<Recommendation> optionalRecommendation = recommendationRepository
         .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
+    final DoctorsForDB doctorForDB;
+    final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
+
+    if (optionalDoctorsForDB.isPresent()) {
+      doctorForDB = optionalDoctorsForDB.get();
+    } else {
+      throw new RecommendationException(format("Doctor %s does not exist!", gmcId));
+    }
 
     if (optionalRecommendation.isPresent()) {
-      final var recommendation = optionalRecommendation.get();
-
+      final Recommendation recommendation = optionalRecommendation.get();
+      final RecommendationGmcOutcome outcome = recommendation.getOutcome();
+      final boolean completed = outcome != null
+          && (APPROVED.getOutcome().equals(outcome.getOutcome())
+          || REJECTED.getOutcome().equals(outcome.getOutcome()));
+      //if doctor is under notice but has past completed revalidation -> start new recommendation
+      if (doctorForDB.getUnderNotice().equals(YES)
+          && completed
+          && recommendation.getGmcSubmissionDate() != null
+          && LocalDate.now().isAfter(recommendation.getGmcSubmissionDate())){
+        return new TraineeRecommendationRecordDto();
+      }
       return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
           recommendation.getGmcSubmissionDate(), recommendation);
     }

@@ -43,6 +43,7 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.SUBMITTED_
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.NON_ENGAGEMENT;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.REVALIDATE;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDate;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDateTime;
 
@@ -148,7 +149,9 @@ class RecommendationServiceTest {
   private String roUserName;
 
   private Recommendation recommendation1, recommendation2, recommendation3;
-  private Recommendation recommendation4, recommendation5;
+  private Recommendation recommendation4, recommendation5, recommendation6;
+
+  private DoctorsForDB doctorsForDB1;
 
   @BeforeEach
   public void setup() {
@@ -218,6 +221,14 @@ class RecommendationServiceTest {
     recommendation4.setRecommendationType(REVALIDATE);
 
     recommendation5 = new Recommendation();
+
+    recommendation6 = new Recommendation();
+    recommendation6.setRecommendationType(REVALIDATE);
+    recommendation6.setOutcome(APPROVED);
+    recommendation6.setGmcSubmissionDate(LocalDate.now().minusMonths(1));
+
+
+    doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
   }
 
   @Test
@@ -653,6 +664,7 @@ class RecommendationServiceTest {
     final var gmcId = faker.number().digits(7);
     final var recommendation = buildRecommendation(gmcId, recommendationId, status,
         UNDER_REVIEW);
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId))
         .thenReturn(
             Optional.of(recommendation));
@@ -671,6 +683,8 @@ class RecommendationServiceTest {
     final var gmcNumberX = faker.number().digits(7);
     final var recommendation = buildRecommendation(gmcNumber1, recommendationId, status,
         UNDER_REVIEW);
+
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumberX))
@@ -695,6 +709,8 @@ class RecommendationServiceTest {
 
   @Test
   void shouldMatchTisStatusCompletedToApproved() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
+
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation1));
     RecommendationStatus result = recommendationService
@@ -704,6 +720,8 @@ class RecommendationServiceTest {
 
   @Test
   void shouldMatchTisStatusCompletedToRejected() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
+
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation2));
     RecommendationStatus result = recommendationService
@@ -713,6 +731,8 @@ class RecommendationServiceTest {
 
   @Test
   void shouldMatchTisStatusUnderReviewToSubmittedToGmc() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
+
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation3));
     RecommendationStatus result = recommendationService
@@ -722,6 +742,7 @@ class RecommendationServiceTest {
 
   @Test
   void shouldMatchTisStatusDraftToNonNullTypeAndNullOutcome() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation4));
     RecommendationStatus result = recommendationService
@@ -731,6 +752,7 @@ class RecommendationServiceTest {
 
   @Test
   void shouldMatchTisStatusToNotStartedIfTypeAndOutcomeNull() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation5));
     RecommendationStatus result = recommendationService
@@ -768,6 +790,19 @@ class RecommendationServiceTest {
     when(doctorsForDBRepository.findById(recommendation.getGmcNumber())).thenReturn(Optional.empty());
     List<RecommendationStatusCheckDto> result = recommendationService.getRecommendationStatusCheckDtos();
     assertThat(result.size(), is(0));
+  }
+
+  @Test
+  void shouldReturnNewRecommendationIfDoctorUnderNoticeButHasPastRecommendation() {
+    final var doctor = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
+    doctor.setUnderNotice(YES);
+
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctor));
+    when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
+        .thenReturn(Optional.of(recommendation6));
+
+    TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
+    assertThat(result.getGmcOutcome(), is(nullValue()));
   }
 
   private DoctorsForDB buildDoctorForDB(final String gmcId,
