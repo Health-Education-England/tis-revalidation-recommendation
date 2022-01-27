@@ -448,10 +448,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         && (APPROVED.getOutcome().equals(outcome.getOutcome())
         || REJECTED.getOutcome().equals(outcome.getOutcome()));
     //if doctor is under notice but has past completed revalidation -> start new recommendation
-    return doctor.getUnderNotice().equals(YES)
-        && completed
-        && recommendation.getActualSubmissionDate() != null
-        && LocalDate.now().isAfter(recommendation.getActualSubmissionDate());
+    return doctor.getUnderNotice().equals(YES) && completed;
   }
 
   /**
