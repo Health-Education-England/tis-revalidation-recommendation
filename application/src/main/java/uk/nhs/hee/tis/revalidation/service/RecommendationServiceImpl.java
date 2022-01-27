@@ -257,32 +257,26 @@ public class RecommendationServiceImpl implements RecommendationService {
    * @return The last submitted Recommendation or empty
    */
   public TraineeRecommendationRecordDto getLatestRecommendation(String gmcId) {
-    final DoctorsForDB doctorForDB;
+    log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
     final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
-
-    if (optionalDoctorsForDB.isPresent()) {
-      doctorForDB = optionalDoctorsForDB.get();
-    } else {
+    final var optionalRecommendation = recommendationRepository
+        .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
+    if (!optionalDoctorsForDB.isPresent()) {
       throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcId));
     }
-
-    log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
-    Optional<Recommendation> optionalRecommendation = recommendationRepository
-        .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
 
     if (optionalRecommendation.isPresent()) {
       final Recommendation recommendation = optionalRecommendation.get();
 
       final boolean isPastCompletedRecommendation = checkIfPastCompletedRecommendation(
           recommendation,
-          doctorForDB
+          optionalDoctorsForDB.get()
       );
 
-      if(isPastCompletedRecommendation){
-        return new TraineeRecommendationRecordDto();
+      if(!isPastCompletedRecommendation){
+        return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
+            recommendation.getGmcSubmissionDate(), recommendation);
       }
-      return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
-          recommendation.getGmcSubmissionDate(), recommendation);
     }
     return new TraineeRecommendationRecordDto();
   }
@@ -445,8 +439,8 @@ public class RecommendationServiceImpl implements RecommendationService {
       DoctorsForDB doctor) {
     final RecommendationGmcOutcome outcome = recommendation.getOutcome();
     final boolean completed = outcome != null
-        && (APPROVED.getOutcome().equals(outcome.getOutcome())
-        || REJECTED.getOutcome().equals(outcome.getOutcome()));
+        && (APPROVED.equals(outcome.getOutcome())
+        || REJECTED.equals(outcome.getOutcome()));
     //if doctor is under notice but has past completed revalidation -> start new recommendation
     return doctor.getUnderNotice().equals(YES) && completed;
   }

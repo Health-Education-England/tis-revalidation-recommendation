@@ -225,8 +225,6 @@ class RecommendationServiceTest {
     recommendation6 = new Recommendation();
     recommendation6.setRecommendationType(REVALIDATE);
     recommendation6.setOutcome(APPROVED);
-    recommendation6.setActualSubmissionDate(LocalDate.now().minusMonths(1));
-
 
     doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
   }
