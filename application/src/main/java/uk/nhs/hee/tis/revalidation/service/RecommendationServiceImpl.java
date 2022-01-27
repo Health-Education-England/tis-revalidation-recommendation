@@ -270,15 +270,13 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     if (optionalRecommendation.isPresent()) {
       final Recommendation recommendation = optionalRecommendation.get();
-      final RecommendationGmcOutcome outcome = recommendation.getOutcome();
-      final boolean completed = outcome != null
-          && (APPROVED.getOutcome().equals(outcome.getOutcome())
-          || REJECTED.getOutcome().equals(outcome.getOutcome()));
-      //if doctor is under notice but has past completed revalidation -> start new recommendation
-      if (doctorForDB.getUnderNotice().equals(YES)
-          && completed
-          && recommendation.getGmcSubmissionDate() != null
-          && LocalDate.now().isAfter(recommendation.getGmcSubmissionDate())){
+
+      final boolean isPastCompletedRecommendation = checkIfPastCompletedRecommendation(
+          recommendation,
+          doctorForDB
+      );
+
+      if(isPastCompletedRecommendation){
         return new TraineeRecommendationRecordDto();
       }
       return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
@@ -439,6 +437,19 @@ public class RecommendationServiceImpl implements RecommendationService {
         .admin(rec.getAdmin())
         .comments(rec.getComments())
         .build();
+  }
+
+  private boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
+      DoctorsForDB doctor) {
+    final RecommendationGmcOutcome outcome = recommendation.getOutcome();
+    final boolean completed = outcome != null
+        && (APPROVED.getOutcome().equals(outcome.getOutcome())
+        || REJECTED.getOutcome().equals(outcome.getOutcome()));
+    //if doctor is under notice but has past completed revalidation -> start new recommendation
+    return doctor.getUnderNotice().equals(YES)
+        && completed
+        && recommendation.getActualSubmissionDate() != null
+        && LocalDate.now().isAfter(recommendation.getActualSubmissionDate());
   }
 
   /**
