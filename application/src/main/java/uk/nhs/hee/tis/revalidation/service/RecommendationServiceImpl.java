@@ -256,9 +256,6 @@ public class RecommendationServiceImpl implements RecommendationService {
    * @return The last submitted Recommendation or empty
    */
   public TraineeRecommendationRecordDto getLatestRecommendation(String gmcId) {
-    log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
-    Optional<Recommendation> optionalRecommendation = recommendationRepository
-        .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
     final DoctorsForDB doctorForDB;
     final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
 
@@ -267,6 +264,10 @@ public class RecommendationServiceImpl implements RecommendationService {
     } else {
       throw new RecommendationException(format("Doctor %s does not exist!", gmcId));
     }
+
+    log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
+    Optional<Recommendation> optionalRecommendation = recommendationRepository
+        .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
 
     if (optionalRecommendation.isPresent()) {
       final Recommendation recommendation = optionalRecommendation.get();

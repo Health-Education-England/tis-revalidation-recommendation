@@ -805,6 +805,15 @@ class RecommendationServiceTest {
     assertThat(result.getGmcOutcome(), is(nullValue()));
   }
 
+  @Test
+  void shouldThrowExceptionIfDoctorNotFoundWhenGettingLatestRecommendation()
+  {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.empty());
+
+    assertThrows(RecommendationException.class, () -> {recommendationService.getLatestRecommendation(gmcNumber1);});
+  }
+
+
   private DoctorsForDB buildDoctorForDB(final String gmcId,
       RecommendationStatus doctorRecommendationStatus) {
     return DoctorsForDB.builder()
