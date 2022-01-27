@@ -67,6 +67,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
   private static final int MIN_DAYS_FROM_SUBMISSION_DATE = 60;
   private static final int MAX_DAYS_FROM_SUBMISSION_DATE = 365;
+  private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
 
   @Autowired
   private DoctorsForDBRepository doctorsForDBRepository;
@@ -124,7 +125,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     final var doctorsForDB = doctorsForDBRepository.findById(recordDTO.getGmcNumber());
     if (doctorsForDB.isEmpty()) {
       throw new RecommendationException(
-          format("Doctor %s does not exist!", recordDTO.getGmcNumber()));
+          format(DOCTOR_NOT_FOUND_MESSAGE, recordDTO.getGmcNumber()));
     }
     final var doctor = doctorsForDB.get();
     final var submissionDate = doctor.getSubmissionDate();
@@ -214,7 +215,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         .findByIdAndGmcNumber(recommendationId, gmcNumber);
 
     if (doctorsForDB.isEmpty()) {
-      throw new RecommendationException(format("Doctor %s does not exist!", gmcNumber));
+      throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcNumber));
     }
     final var doctor = doctorsForDB.get();
 
@@ -262,7 +263,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     if (optionalDoctorsForDB.isPresent()) {
       doctorForDB = optionalDoctorsForDB.get();
     } else {
-      throw new RecommendationException(format("Doctor %s does not exist!", gmcId));
+      throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcId));
     }
 
     log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
