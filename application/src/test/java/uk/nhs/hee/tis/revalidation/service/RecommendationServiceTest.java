@@ -152,6 +152,7 @@ class RecommendationServiceTest {
   private Recommendation recommendation4, recommendation5, recommendation6;
 
   private DoctorsForDB doctorsForDB1;
+  private DoctorsForDB doctorsForDB2;
 
   @BeforeEach
   public void setup() {
@@ -227,6 +228,9 @@ class RecommendationServiceTest {
     recommendation6.setOutcome(APPROVED);
 
     doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
+    doctorsForDB2 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
+    doctorsForDB2.setUnderNotice(YES);
+
   }
 
   @Test
@@ -792,10 +796,7 @@ class RecommendationServiceTest {
 
   @Test
   void shouldReturnNewRecommendationIfDoctorUnderNoticeButHasPastRecommendation() {
-    final var doctor = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
-    doctor.setUnderNotice(YES);
-
-    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctor));
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB2));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation6));
 

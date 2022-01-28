@@ -438,10 +438,7 @@ public class RecommendationServiceImpl implements RecommendationService {
   private boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
       DoctorsForDB doctor) {
     final RecommendationGmcOutcome outcome = recommendation.getOutcome();
-    final boolean completed = outcome != null
-        && (APPROVED.equals(outcome.getOutcome())
-        || REJECTED.equals(outcome.getOutcome()));
-    //if doctor is under notice but has past completed revalidation -> start new recommendation
+    final boolean completed = outcome != null && APPROVED.equals(outcome);
     return doctor.getUnderNotice().equals(YES) && completed;
   }
 
