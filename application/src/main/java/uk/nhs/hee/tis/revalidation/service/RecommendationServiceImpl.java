@@ -32,6 +32,7 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.REJECT
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.UNDER_REVIEW;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.READY_TO_REVIEW;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.SUBMITTED_TO_GMC;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.nhs.hee.tis.gmc.client.generated.DoctorForDb;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
@@ -65,6 +67,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
   private static final int MIN_DAYS_FROM_SUBMISSION_DATE = 60;
   private static final int MAX_DAYS_FROM_SUBMISSION_DATE = 365;
+  private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
 
   @Autowired
   private DoctorsForDBRepository doctorsForDBRepository;
@@ -122,7 +125,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     final var doctorsForDB = doctorsForDBRepository.findById(recordDTO.getGmcNumber());
     if (doctorsForDB.isEmpty()) {
       throw new RecommendationException(
-          format("Doctor %s does not exist!", recordDTO.getGmcNumber()));
+          format(DOCTOR_NOT_FOUND_MESSAGE, recordDTO.getGmcNumber()));
     }
     final var doctor = doctorsForDB.get();
     final var submissionDate = doctor.getSubmissionDate();
@@ -212,7 +215,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         .findByIdAndGmcNumber(recommendationId, gmcNumber);
 
     if (doctorsForDB.isEmpty()) {
-      throw new RecommendationException(format("Doctor %s does not exist!", gmcNumber));
+      throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcNumber));
     }
     final var doctor = doctorsForDB.get();
 
@@ -255,14 +258,25 @@ public class RecommendationServiceImpl implements RecommendationService {
    */
   public TraineeRecommendationRecordDto getLatestRecommendation(String gmcId) {
     log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
-    Optional<Recommendation> optionalRecommendation = recommendationRepository
+    final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
+    final var optionalRecommendation = recommendationRepository
         .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
+    if (!optionalDoctorsForDB.isPresent()) {
+      throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcId));
+    }
 
     if (optionalRecommendation.isPresent()) {
-      final var recommendation = optionalRecommendation.get();
+      final Recommendation recommendation = optionalRecommendation.get();
 
-      return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
-          recommendation.getGmcSubmissionDate(), recommendation);
+      final boolean isPastCompletedRecommendation = checkIfPastCompletedRecommendation(
+          recommendation,
+          optionalDoctorsForDB.get()
+      );
+
+      if(!isPastCompletedRecommendation){
+        return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
+            recommendation.getGmcSubmissionDate(), recommendation);
+      }
     }
     return new TraineeRecommendationRecordDto();
   }
@@ -419,6 +433,18 @@ public class RecommendationServiceImpl implements RecommendationService {
         .admin(rec.getAdmin())
         .comments(rec.getComments())
         .build();
+  }
+
+  private boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
+      DoctorsForDB doctor) {
+    final boolean approved = APPROVED.equals(recommendation.getOutcome());
+    final boolean underNotice = doctor.getUnderNotice().equals(YES);
+    //TODO find more empirical timeframe
+    final boolean notRecent = recommendation.getActualSubmissionDate() != null
+    && recommendation.getActualSubmissionDate()
+        .isBefore(LocalDate.now().minusMonths(1));
+
+    return approved && underNotice && notRecent;
   }
 
   /**
