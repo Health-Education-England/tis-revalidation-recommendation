@@ -44,6 +44,7 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.NON_ENGAGEMENT;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.REVALIDATE;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDate;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDateTime;
 
@@ -152,8 +153,7 @@ class RecommendationServiceTest {
   private Recommendation recommendation4, recommendation5, recommendation6;
   private Recommendation recommendation7;
 
-  private DoctorsForDB doctorsForDB1;
-  private DoctorsForDB doctorsForDB2;
+  private DoctorsForDB doctorsForDB1, doctorsForDB2, doctorsForDB3;
 
   @BeforeEach
   public void setup() {
@@ -237,6 +237,8 @@ class RecommendationServiceTest {
     doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB2 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB2.setUnderNotice(YES);
+    doctorsForDB3 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
+    doctorsForDB3.setUnderNotice(NO);
 
   }
 
@@ -816,6 +818,16 @@ class RecommendationServiceTest {
     when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB2));
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation7));
+
+    TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
+    assertThat(result.getGmcOutcome(), is(APPROVED.getOutcome()));
+  }
+
+  @Test
+  void shouldReturnCurrentRecommendationIfDoctorNotUnderNoticeButApproved() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB3));
+    when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
+        .thenReturn(Optional.of(recommendation6));
 
     TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
     assertThat(result.getGmcOutcome(), is(APPROVED.getOutcome()));
