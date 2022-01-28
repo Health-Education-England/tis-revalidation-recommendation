@@ -438,14 +438,14 @@ public class RecommendationServiceImpl implements RecommendationService {
   private boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
       DoctorsForDB doctor) {
     final RecommendationGmcOutcome outcome = recommendation.getOutcome();
-    final boolean completed = outcome != null && APPROVED.equals(outcome);
+    final boolean approved = outcome != null && APPROVED.equals(outcome);
     final boolean underNotice = doctor.getUnderNotice().equals(YES);
     //TODO find more empirical timeframe
-    final boolean recent = recommendation.getActualSubmissionDate() != null
+    final boolean notRecent = recommendation.getActualSubmissionDate() != null
     && recommendation.getActualSubmissionDate()
         .isBefore(LocalDate.now().minusMonths(1));
 
-    return completed && underNotice && recent;
+    return approved && underNotice && notRecent;
   }
 
   /**
