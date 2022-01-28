@@ -150,6 +150,7 @@ class RecommendationServiceTest {
 
   private Recommendation recommendation1, recommendation2, recommendation3;
   private Recommendation recommendation4, recommendation5, recommendation6;
+  private Recommendation recommendation7;
 
   private DoctorsForDB doctorsForDB1;
   private DoctorsForDB doctorsForDB2;
@@ -226,6 +227,12 @@ class RecommendationServiceTest {
     recommendation6 = new Recommendation();
     recommendation6.setRecommendationType(REVALIDATE);
     recommendation6.setOutcome(APPROVED);
+    recommendation6.setActualSubmissionDate(LocalDate.now().minusYears(1));
+
+    recommendation7 = new Recommendation();
+    recommendation7.setRecommendationType(REVALIDATE);
+    recommendation7.setOutcome(APPROVED);
+    recommendation7.setActualSubmissionDate(LocalDate.now());
 
     doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB2 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
@@ -802,6 +809,16 @@ class RecommendationServiceTest {
 
     TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
     assertThat(result.getGmcOutcome(), is(nullValue()));
+  }
+
+  @Test
+  void shouldReturnCurrentRecommendationIfDoctorUnderNoticeButApprovedRecently() {
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB2));
+    when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
+        .thenReturn(Optional.of(recommendation7));
+
+    TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
+    assertThat(result.getGmcOutcome(), is(APPROVED.getOutcome()));
   }
 
   @Test

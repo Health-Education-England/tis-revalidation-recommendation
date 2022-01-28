@@ -439,7 +439,13 @@ public class RecommendationServiceImpl implements RecommendationService {
       DoctorsForDB doctor) {
     final RecommendationGmcOutcome outcome = recommendation.getOutcome();
     final boolean completed = outcome != null && APPROVED.equals(outcome);
-    return doctor.getUnderNotice().equals(YES) && completed;
+    final boolean underNotice = doctor.getUnderNotice().equals(YES);
+    //TODO find more empirical timeframe
+    final boolean recent = recommendation.getActualSubmissionDate() != null
+    && recommendation.getActualSubmissionDate()
+        .isBefore(LocalDate.now().minusMonths(1));
+
+    return completed && underNotice && recent;
   }
 
   /**
