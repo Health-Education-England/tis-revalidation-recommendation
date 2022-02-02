@@ -51,7 +51,7 @@ public class BaseIT {
   protected String sanction1, sanction2, sanction3, sanction4, sanction5;
   protected String desBody1, desBody2, desBody3, desBody4, desBody5;
   protected RecommendationStatus status1, status2, status3, status4, status5;
-  protected LocalDate cctDate1, cctDate2, cctDate3, cctDate4, cctDate5;
+  protected LocalDate curriculumEndDate1, curriculumEndDate2, curriculumEndDate3, curriculumEndDate4, curriculumEndDate5;
   protected String progName1, progName2, progName3, progName4, progName5;
   protected String memType1, memType2, memType3, memType4, memType5;
   protected String grade1, grade2, grade3, grade4, grade5;
@@ -119,11 +119,11 @@ public class BaseIT {
     status4 = faker.options().option(RecommendationStatus.class);
     status5 = faker.options().option(RecommendationStatus.class);
 
-    cctDate1 = now();
-    cctDate2 = now();
-    cctDate3 = now();
-    cctDate4 = now();
-    cctDate5 = now();
+    curriculumEndDate1 = now();
+    curriculumEndDate2 = now();
+    curriculumEndDate3 = now();
+    curriculumEndDate4 = now();
+    curriculumEndDate5 = now();
 
     progName1 = faker.lorem().sentence(3);
     progName2 = faker.lorem().sentence(3);
@@ -168,11 +168,11 @@ public class BaseIT {
     doc5 = new DoctorsForDB(gmcRef5, fName5, lName5, subDate5, addedDate5, un5, sanction5, status5,
         now(), desBody5, admin, null);
 
-    coreDTO1 = new TraineeCoreDto(gmcRef1, cctDate1, memType1, progName1, grade1);
-    coreDTO2 = new TraineeCoreDto(gmcRef2, cctDate2, memType2, progName2, grade2);
-    coreDTO3 = new TraineeCoreDto(gmcRef3, cctDate3, memType3, progName3, grade3);
-    coreDTO4 = new TraineeCoreDto(gmcRef4, cctDate4, memType4, progName4, grade4);
-    coreDTO5 = new TraineeCoreDto(gmcRef5, cctDate5, memType5, progName5, grade5);
+    coreDTO1 = new TraineeCoreDto(gmcRef1, curriculumEndDate1, memType1, progName1, grade1);
+    coreDTO2 = new TraineeCoreDto(gmcRef2, curriculumEndDate2, memType2, progName2, grade2);
+    coreDTO3 = new TraineeCoreDto(gmcRef3, curriculumEndDate3, memType3, progName3, grade3);
+    coreDTO4 = new TraineeCoreDto(gmcRef4, curriculumEndDate4, memType4, progName4, grade4);
+    coreDTO5 = new TraineeCoreDto(gmcRef5, curriculumEndDate5, memType5, progName5, grade5);
     userProfileDto = RoUserProfileDto.builder()
         .firstName(roFirstName)
         .lastName(roLastName)

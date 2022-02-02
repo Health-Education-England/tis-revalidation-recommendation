@@ -36,7 +36,7 @@ import lombok.NoArgsConstructor;
 public class TraineeCoreDto {
 
   private String gmcId;
-  private LocalDate cctDate;
+  private LocalDate curriculumEndDate;
   private String programmeMembershipType;
   private String programmeName;
   private String currentGrade;
