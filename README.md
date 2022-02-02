@@ -44,4 +44,4 @@ This job checks the current status of each doctor in GMC connect as we are not d
 This job consists of the following steps:
 1. For each Recommendation stored on out system, send a message to the Gmc Client Service (separate repository, not to be confused with service class in this project)
 2. The Gmc Client Service will call the checkRecommendationStatus Api Endpoint at GMC Connect and return the result in a message
-3. The returned message is used to update the TIS (doctorStatus) and GMC status of a trainee.
+3. The returned message is used to update the TIS (doctorStatus) and GMC status of a trainee
