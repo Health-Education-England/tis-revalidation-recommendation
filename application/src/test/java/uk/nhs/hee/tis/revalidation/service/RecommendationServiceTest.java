@@ -388,7 +388,7 @@ class RecommendationServiceTest {
     final var recommendation = recommendationService.getTraineeInfo(gmcId);
     assertThat(recommendation.getGmcNumber(), is(gmcId));
     assertThat(recommendation.getFullName(), is(getFullName(firstName, lastName)));
-    assertThat(recommendation.getCctDate(), is(nullValue()));
+    assertThat(recommendation.getCurriculumEndDate(), is(nullValue()));
     assertThat(recommendation.getProgrammeMembershipType(), is(nullValue()));
     assertThat(recommendation.getCurrentGrade(), is(nullValue()));
     assertThat(recommendation.getRevalidations(), hasSize(0));

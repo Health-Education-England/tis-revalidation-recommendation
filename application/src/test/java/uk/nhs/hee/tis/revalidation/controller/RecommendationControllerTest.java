@@ -82,7 +82,7 @@ class RecommendationControllerTest {
   private UnderNotice underNotice = faker.options().option(UnderNotice.class);
   private String sanction = faker.lorem().characters(2);
   private RecommendationStatus status = faker.options().option(RecommendationStatus.class);
-  private LocalDate cctDate = LocalDate.now();
+  private LocalDate curriculumEndDate = LocalDate.now();
   private String programmeName = faker.lorem().sentence(3);
   private String programmeMembershipType = faker.lorem().characters(10);
   private String currentGrade = faker.lorem().characters(4);
@@ -337,7 +337,7 @@ class RecommendationControllerTest {
         .gmcNumber(gmcId)
         .currentGrade(currentGrade)
         .programmeMembershipType(programmeMembershipType)
-        .cctDate(cctDate)
+        .curriculumEndDate(curriculumEndDate)
         .revalidations(List.of(prepareRevalidationDTO()))
         .build();
   }

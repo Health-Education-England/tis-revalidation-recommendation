@@ -42,7 +42,7 @@ public class TraineeRecommendationDto {
   private String gmcNumber;
   private String programmeMembershipType;
   private String currentGrade;
-  private LocalDate cctDate;
+  private LocalDate curriculumEndDate;
   private String underNotice;
   private String designatedBody;
   private LocalDate gmcSubmissionDate;
