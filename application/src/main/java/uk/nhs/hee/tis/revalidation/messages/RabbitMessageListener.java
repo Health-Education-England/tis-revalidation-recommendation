@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.messages;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -42,14 +43,23 @@ public class RabbitMessageListener {
 
   @RabbitListener(queues = "${app.rabbit.queue}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
-    log.info("Message received from rabbit: {}", gmcDoctor);
-    doctorsForDBService.updateTrainee(gmcDoctor);
+    try {
+      log.info("Message received from rabbit: {}", gmcDoctor);
+      doctorsForDBService.updateTrainee(gmcDoctor);
+    } catch (Exception exception) {
+      throw new AmqpRejectAndDontRequeueException(exception);
+    }
   }
 
   @RabbitListener(queues = "${app.rabbit.connection.queue}")
   public void receiveRemoveDoctorDesignatedBodyCodeMessage(final ConnectionMessageDto message) {
-    log.info("Message received to update designated body code from rabbit, Message: {}", message);
-    doctorsForDBService.removeDesignatedBodyCode(message);
+    try {
+      log.info("Message received to update designated body code from rabbit, Message: {}", message);
+      doctorsForDBService.removeDesignatedBodyCode(message);
+    } catch (Exception exception) {
+      throw new AmqpRejectAndDontRequeueException(exception);
+    }
+
   }
 
   @RabbitListener(queues = "${app.rabbit.reval.queue.recommendationStatusCheck.updated}")
