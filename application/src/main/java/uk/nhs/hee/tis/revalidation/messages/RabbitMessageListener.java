@@ -65,7 +65,11 @@ public class RabbitMessageListener {
   @RabbitListener(queues = "${app.rabbit.reval.queue.recommendationStatusCheck.updated}")
   public void receiveMessageForRecommendationStatusUpdate(
       final RecommendationStatusCheckDto recommendationStatusCheckDto) {
-    recommendationStatusCheckUpdatedMessageHandler
-        .updateRecommendationAndTisStatus(recommendationStatusCheckDto);
+    try {
+      recommendationStatusCheckUpdatedMessageHandler
+          .updateRecommendationAndTisStatus(recommendationStatusCheckDto);
+    } catch (Exception exception) {
+      throw new AmqpRejectAndDontRequeueException(exception);
+    }
   }
 }
