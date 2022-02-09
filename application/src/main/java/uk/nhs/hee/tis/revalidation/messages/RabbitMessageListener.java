@@ -44,9 +44,10 @@ public class RabbitMessageListener {
   @RabbitListener(queues = "${app.rabbit.queue}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
     try {
-      log.info("Message received from rabbit: {}", gmcDoctor);
+      log.debug("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);
       doctorsForDBService.updateTrainee(gmcDoctor);
     } catch (Exception exception) {
+      log.warn("Rejecting message for failed doctor update", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
     }
   }
@@ -57,6 +58,7 @@ public class RabbitMessageListener {
       log.info("Message received to update designated body code from rabbit, Message: {}", message);
       doctorsForDBService.removeDesignatedBodyCode(message);
     } catch (Exception exception) {
+      log.warn("Rejecting message for failed connection removal", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
     }
 
@@ -66,9 +68,13 @@ public class RabbitMessageListener {
   public void receiveMessageForRecommendationStatusUpdate(
       final RecommendationStatusCheckDto recommendationStatusCheckDto) {
     try {
+      log.info(
+          "Message received to update recommendation status, Message: {}",
+          recommendationStatusCheckDto);
       recommendationStatusCheckUpdatedMessageHandler
           .updateRecommendationAndTisStatus(recommendationStatusCheckDto);
     } catch (Exception exception) {
+      log.warn("Rejecting message for failed recommendation status update", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
     }
   }
