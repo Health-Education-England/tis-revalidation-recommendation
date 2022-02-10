@@ -52,7 +52,12 @@ public class DeferralReasonService {
     return deferralReasons.stream().map(dr -> convertToDTO(dr)).collect(toList());
   }
 
-  //get deferral reason by code
+  /**
+   * Get deferral subreason by code and sub reason code
+   *
+   * @param reasonCode code associated with the deferral reason
+   * @return deferralReason deferral reason by code - can be null
+   */
   public DeferralReason getDeferralReasonByCode(final String reasonCode) {
     final var deferralReason = deferralReasonRepository.findById(reasonCode);
     if (deferralReason.isEmpty()) {
@@ -61,7 +66,13 @@ public class DeferralReasonService {
     return deferralReason.get();
   }
 
-  //get deferral subreason by code and sub reason code
+  /**
+   * Get deferral subreason by code and sub reason code
+   *
+   * @param reasonCode code associated with the deferral reason
+   * @param reasonSubCode code associated with the deferral subreason
+   * @return deferralSubReason deferral sub reason by code - can be null
+   */
   public DeferralReason getDeferralSubReasonByReasonCodeAndReasonSubCode(final String reasonCode,
       final String reasonSubCode) {
     final var deferralReason = getDeferralReasonByCode(reasonCode);

@@ -111,14 +111,20 @@ public class SnapshotService {
   }
 
   private String getDeferralReasonByCode(final String reasonCode) {
-    return StringUtils.hasLength(reasonCode) ?
-        deferralReasonService.getDeferralReasonByCode(reasonCode).getReason() : null;
+    if(!StringUtils.hasLength(reasonCode)) {
+      return null;
+    }
+    final var reason = deferralReasonService.getDeferralReasonByCode(reasonCode);
+    return reason != null ? reason.getReason() : null;
   }
 
   private String getDeferralSubReasonByCode(final String reasonCode, final String subCode) {
-    return !(StringUtils.hasLength(reasonCode) || StringUtils.hasLength(subCode)) ? null :
-        deferralReasonService.getDeferralSubReasonByReasonCodeAndReasonSubCode(reasonCode, subCode)
-            .getReason();
+    if(!(StringUtils.hasLength(reasonCode) || StringUtils.hasLength(subCode))){
+      return null;
+    }
+    final var subReason = deferralReasonService
+        .getDeferralSubReasonByReasonCodeAndReasonSubCode(reasonCode, subCode);
+    return subReason != null ? subReason.getReason() : null;
   }
 
   private String toUpperCase(final String code) {

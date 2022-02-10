@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.Mockito.verify;
@@ -34,6 +35,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -81,6 +84,9 @@ class SnapshotServiceTest {
 
   @Mock
   private SnapshotRevalidation snapshotRevalidation1;
+
+  @Captor
+  ArgumentCaptor<Snapshot> snapshotCaptor;
 
   private String id;
   private String gmcNumber;
@@ -131,10 +137,6 @@ class SnapshotServiceTest {
     when(recommendation.getComments()).thenReturn(comments);
     when(recommendation.getAdmin()).thenReturn(admin);
 
-    when(deferralReasonService.getDeferralReasonByCode(deferralReason)).thenReturn(reason);
-    when(deferralReasonService
-        .getDeferralSubReasonByReasonCodeAndReasonSubCode(deferralReason, deferralSubReason))
-        .thenReturn(subReason);
     snapshotService.saveRecommendationToSnapshot(recommendation);
 
     verify(snapshotRepository).save(anyObject());
@@ -176,6 +178,122 @@ class SnapshotServiceTest {
     assertThat(traineeRecommendationRecordDto.getGmcSubmissionDate(), is(gmcSubmissionDate));
     assertThat(traineeRecommendationRecordDto.getGmcOutcome(), is(outcome.getOutcome()));
     assertThat(traineeRecommendationRecordDto.getAdmin(), is(admin));
+  }
+
+  @Test
+  void shouldHaveNullDeferralReasonIfCodeIsNull() {
+    Recommendation testRecommendation = buildTestRecommendation();
+    testRecommendation.setDeferralReason(null);
+
+    snapshotService.saveRecommendationToSnapshot(testRecommendation);
+
+    verify(snapshotRepository).save(snapshotCaptor.capture());
+
+    final var result = snapshotCaptor.getValue();
+
+    assertThat(result.getRevalidation().getDeferralReason(), is(nullValue()));
+  }
+
+  @Test
+  void shouldHaveNullDeferralReasonIfDeferralReasonNotInDb() {
+    Recommendation testRecommendation = buildTestRecommendation();
+    when(deferralReasonService.getDeferralReasonByCode(deferralReason))
+        .thenReturn(null);
+
+    snapshotService.saveRecommendationToSnapshot(testRecommendation);
+
+    verify(snapshotRepository).save(snapshotCaptor.capture());
+
+    final var result = snapshotCaptor.getValue();
+
+    assertThat(result.getRevalidation().getDeferralReason(), is(nullValue()));
+  }
+
+  @Test
+  void shouldReturnDeferralReasonIfInDb() {
+    Recommendation testRecommendation = buildTestRecommendation();
+    when(deferralReasonService.getDeferralReasonByCode(deferralReason))
+        .thenReturn(buildTestDeferralReason());
+
+    snapshotService.saveRecommendationToSnapshot(testRecommendation);
+
+    verify(snapshotRepository).save(snapshotCaptor.capture());
+
+    final var result = snapshotCaptor.getValue();
+
+    assertThat(result.getRevalidation().getDeferralReason(), is(deferralReason));
+  }
+
+  @Test
+  void shouldHaveNullDeferralSubReasonIfCodeIsNull() {
+    Recommendation testRecommendation = buildTestRecommendation();
+    testRecommendation.setDeferralReason(null);
+    testRecommendation.setDeferralSubReason(null);
+
+    snapshotService.saveRecommendationToSnapshot(testRecommendation);
+
+    verify(snapshotRepository).save(snapshotCaptor.capture());
+
+    final var result = snapshotCaptor.getValue();
+
+    assertThat(result.getRevalidation().getDeferralSubReason(), is(nullValue()));
+  }
+
+  @Test
+  void shouldHaveNullDeferralSubReasonIfDeferralReasonNotInDb() {
+    Recommendation testRecommendation = buildTestRecommendation();
+    when(deferralReasonService.getDeferralSubReasonByReasonCodeAndReasonSubCode(deferralReason, deferralSubReason))
+        .thenReturn(null);
+    snapshotService.saveRecommendationToSnapshot(testRecommendation);
+
+    verify(snapshotRepository).save(snapshotCaptor.capture());
+
+    final var result = snapshotCaptor.getValue();
+
+    assertThat(result.getRevalidation().getDeferralSubReason(), is(nullValue()));
+  }
+
+  @Test
+  void shouldReturnDeferralSubReasonIfInDb() {
+    Recommendation testRecommendation = buildTestRecommendation();
+    when(deferralReasonService.getDeferralSubReasonByReasonCodeAndReasonSubCode(deferralReason, deferralSubReason))
+        .thenReturn(buildTestDeferralReason());
+    snapshotService.saveRecommendationToSnapshot(testRecommendation);
+
+    verify(snapshotRepository).save(snapshotCaptor.capture());
+
+    final var result = snapshotCaptor.getValue();
+
+    assertThat(result.getRevalidation().getDeferralSubReason(), is(deferralSubReason));
+  }
+
+  private Recommendation buildTestRecommendation() {
+    return Recommendation.builder()
+        .id(id)
+        .gmcNumber(gmcNumber)
+        .outcome(outcome)
+        .recommendationType(recommendationType)
+        .recommendationStatus(recommendationStatus)
+        .gmcSubmissionDate(gmcSubmissionDate)
+        .actualSubmissionDate(actualSubmissionDate)
+        .deferralDate(deferralDate)
+        .gmcRevalidationId(gmcRevalidationId)
+        .deferralReason(deferralReason)
+        .deferralSubReason(deferralSubReason)
+        .comments(comments)
+        .admin(admin)
+        .build();
+  }
+
+  private DeferralReason buildTestDeferralReason() {
+    final var reason = DeferralReason.builder()
+        .code("1")
+        .reason("1")
+        .abbr("1")
+        .build();
+
+    reason.setDeferralSubReasons(List.of(reason));
+    return reason;
   }
 
 }
