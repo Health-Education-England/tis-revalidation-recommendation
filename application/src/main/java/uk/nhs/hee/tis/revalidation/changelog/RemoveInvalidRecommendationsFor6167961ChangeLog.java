@@ -8,7 +8,7 @@ import uk.nhs.hee.tis.revalidation.entity.Snapshot;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 import uk.nhs.hee.tis.revalidation.repository.SnapshotRepository;
 
-@ChangeLog(order = "002")
+@ChangeLog(order = "003")
 public class RemoveInvalidRecommendationsFor6167961ChangeLog {
 
   private static final String RECOMMENDATION_ID = "618d12661f777d65dc5ee439";
