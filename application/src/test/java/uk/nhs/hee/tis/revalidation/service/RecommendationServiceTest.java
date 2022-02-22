@@ -25,8 +25,10 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -846,7 +848,7 @@ class RecommendationServiceTest {
   }
 
   @Test
-  void shouldSortTraineeRecommendationsInDescendingActualSubmissioonDateOrder() {
+  void shouldSortTraineeRecommendationsInDescendingActualSubmissionDateOrder() {
     when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB1));
     when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation6, recommendation7));
     when(snapshotService.getSnapshotRecommendations(doctorsForDB1))
@@ -863,6 +865,27 @@ class RecommendationServiceTest {
     assertThat(result.getRevalidations().get(0).getActualSubmissionDate(), is(actualsSubmissionDate1));
     assertThat(result.getRevalidations().get(1).getActualSubmissionDate(), is(actualsSubmissionDate2));
     assertThat(result.getRevalidations().get(2).getActualSubmissionDate(), is(actualsSubmissionDate3));
+
+  }
+
+  @Test
+  void shouldSortTraineeRecommendationsAndPlaceNullsAtEnd() {
+    when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB1));
+    when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation6, recommendation7));
+    when(snapshotService.getSnapshotRecommendations(doctorsForDB1))
+        .thenReturn(
+            List.of(TraineeRecommendationRecordDto.builder()
+                .gmcNumber(gmcNumber1)
+                .actualSubmissionDate(null)
+                .build()
+            )
+        );
+
+    final var result = recommendationService.getTraineeInfo(gmcNumber1);
+
+    assertThat(result.getRevalidations().get(0).getActualSubmissionDate(), is(actualsSubmissionDate1));
+    assertThat(result.getRevalidations().get(1).getActualSubmissionDate(), is(actualsSubmissionDate3));
+    assertNull(result.getRevalidations().get(2).getActualSubmissionDate());
 
   }
 
