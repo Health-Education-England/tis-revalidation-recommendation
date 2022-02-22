@@ -36,6 +36,7 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -273,7 +274,7 @@ public class RecommendationServiceImpl implements RecommendationService {
           optionalDoctorsForDB.get()
       );
 
-      if(!isPastCompletedRecommendation){
+      if (!isPastCompletedRecommendation) {
         return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
             recommendation.getGmcSubmissionDate(), recommendation);
       }
@@ -351,6 +352,11 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     final var snapshotRecommendations = snapshotService.getSnapshotRecommendations(doctorsForDB);
     currentRecommendations.addAll(snapshotRecommendations);
+    //sort most recent first
+    currentRecommendations.sort(
+        Comparator.comparing(
+            (TraineeRecommendationRecordDto o) -> o.getActualSubmissionDate()).reversed()
+    );
     return currentRecommendations;
   }
 
@@ -441,7 +447,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     final boolean underNotice = doctor.getUnderNotice().equals(YES);
     //TODO find more empirical timeframe
     final boolean notRecent = recommendation.getActualSubmissionDate() != null
-    && recommendation.getActualSubmissionDate()
+        && recommendation.getActualSubmissionDate()
         .isBefore(LocalDate.now().minusMonths(1));
 
     return approved && underNotice && notRecent;

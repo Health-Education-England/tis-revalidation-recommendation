@@ -155,6 +155,10 @@ class RecommendationServiceTest {
 
   private DoctorsForDB doctorsForDB1, doctorsForDB2, doctorsForDB3;
 
+  private LocalDate actualsSubmissionDate1 = LocalDate.now();
+  private LocalDate actualsSubmissionDate2 = LocalDate.now().minusMonths(1);
+  private LocalDate actualsSubmissionDate3 = LocalDate.now().minusYears(1);
+
   @BeforeEach
   public void setup() {
     firstName = faker.name().firstName();
@@ -227,12 +231,12 @@ class RecommendationServiceTest {
     recommendation6 = new Recommendation();
     recommendation6.setRecommendationType(REVALIDATE);
     recommendation6.setOutcome(APPROVED);
-    recommendation6.setActualSubmissionDate(LocalDate.now().minusYears(1));
+    recommendation6.setActualSubmissionDate(actualsSubmissionDate3);
 
     recommendation7 = new Recommendation();
     recommendation7.setRecommendationType(REVALIDATE);
     recommendation7.setOutcome(APPROVED);
-    recommendation7.setActualSubmissionDate(LocalDate.now());
+    recommendation7.setActualSubmissionDate(actualsSubmissionDate1);
 
     doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB2 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
@@ -839,6 +843,27 @@ class RecommendationServiceTest {
     when(doctorsForDBRepository.findById(any())).thenReturn(Optional.empty());
 
     assertThrows(RecommendationException.class, () -> {recommendationService.getLatestRecommendation(gmcNumber1);});
+  }
+
+  @Test
+  void shouldSortTraineeRecommendationsInDescendingActualSubmissioonDateOrder() {
+    when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB1));
+    when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation6, recommendation7));
+    when(snapshotService.getSnapshotRecommendations(doctorsForDB1))
+    .thenReturn(
+        List.of(TraineeRecommendationRecordDto.builder()
+            .gmcNumber(gmcNumber1)
+            .actualSubmissionDate(actualsSubmissionDate2)
+            .build()
+        )
+    );
+
+    final var result = recommendationService.getTraineeInfo(gmcNumber1);
+
+    assertThat(result.getRevalidations().get(0).getActualSubmissionDate(), is(actualsSubmissionDate1));
+    assertThat(result.getRevalidations().get(1).getActualSubmissionDate(), is(actualsSubmissionDate2));
+    assertThat(result.getRevalidations().get(2).getActualSubmissionDate(), is(actualsSubmissionDate3));
+
   }
 
 
