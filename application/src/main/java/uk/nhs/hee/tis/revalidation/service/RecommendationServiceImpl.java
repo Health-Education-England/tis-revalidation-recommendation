@@ -354,8 +354,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     currentRecommendations.addAll(snapshotRecommendations);
     //sort most recent first
     currentRecommendations.sort(
-        Comparator.comparing(
-            (TraineeRecommendationRecordDto o) -> o.getActualSubmissionDate()).reversed()
+        Comparator.comparing(TraineeRecommendationRecordDto::getActualSubmissionDate).reversed()
     );
     return currentRecommendations;
   }
