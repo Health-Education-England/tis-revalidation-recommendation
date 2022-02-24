@@ -357,8 +357,6 @@ public class RecommendationServiceImpl implements RecommendationService {
     currentRecommendations.sort(
         Comparator.comparing(TraineeRecommendationRecordDto::getActualSubmissionDate,
             Comparator.nullsFirst(Comparator.reverseOrder()))
-        .thenComparing(TraineeRecommendationRecordDto::getGmcSubmissionDate,
-            Comparator.naturalOrder())
     );
     return currentRecommendations;
   }

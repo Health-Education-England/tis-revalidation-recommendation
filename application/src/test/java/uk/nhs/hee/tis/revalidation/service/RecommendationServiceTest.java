@@ -906,9 +906,7 @@ class RecommendationServiceTest {
     final var result = recommendationService.getTraineeInfo(gmcNumber1);
 
     assertNull(result.getRevalidations().get(0).getActualSubmissionDate());
-    assertThat(result.getRevalidations().get(0).getGmcSubmissionDate(), is(gmcSubmissionLocalDate2));
     assertNull(result.getRevalidations().get(1).getActualSubmissionDate());
-    assertThat(result.getRevalidations().get(1).getGmcSubmissionDate(), is(gmcSubmissionLocalDate1));
     assertThat(result.getRevalidations().get(2).getActualSubmissionDate(), is(actualsSubmissionDate1));
     assertThat(result.getRevalidations().get(3).getActualSubmissionDate(), is(actualsSubmissionDate3));
 
