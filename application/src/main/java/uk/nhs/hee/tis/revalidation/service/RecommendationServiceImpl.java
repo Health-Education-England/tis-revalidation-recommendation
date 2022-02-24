@@ -352,10 +352,13 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     final var snapshotRecommendations = snapshotService.getSnapshotRecommendations(doctorsForDB);
     currentRecommendations.addAll(snapshotRecommendations);
-    //sort most recent first (note nulls will be last due to reversed())
+
+    //sort most recent first (note nulls are typically drafts and will be first due to reversed())
     currentRecommendations.sort(
         Comparator.comparing(TraineeRecommendationRecordDto::getActualSubmissionDate,
-            Comparator.nullsFirst(Comparator.naturalOrder())).reversed()
+            Comparator.nullsFirst(Comparator.reverseOrder()))
+        .thenComparing(TraineeRecommendationRecordDto::getGmcSubmissionDate,
+            Comparator.naturalOrder())
     );
     return currentRecommendations;
   }

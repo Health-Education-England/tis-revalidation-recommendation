@@ -153,13 +153,16 @@ class RecommendationServiceTest {
 
   private Recommendation recommendation1, recommendation2, recommendation3;
   private Recommendation recommendation4, recommendation5, recommendation6;
-  private Recommendation recommendation7;
+  private Recommendation recommendation7, recommendation8, recommendation9;
 
   private DoctorsForDB doctorsForDB1, doctorsForDB2, doctorsForDB3;
 
   private LocalDate actualsSubmissionDate1 = LocalDate.now();
   private LocalDate actualsSubmissionDate2 = LocalDate.now().minusMonths(1);
   private LocalDate actualsSubmissionDate3 = LocalDate.now().minusYears(1);
+
+  private LocalDate gmcSubmissionLocalDate1 = LocalDate.now();
+  private LocalDate gmcSubmissionLocalDate2 = LocalDate.now().plusDays(1);
 
   @BeforeEach
   public void setup() {
@@ -234,11 +237,25 @@ class RecommendationServiceTest {
     recommendation6.setRecommendationType(REVALIDATE);
     recommendation6.setOutcome(APPROVED);
     recommendation6.setActualSubmissionDate(actualsSubmissionDate3);
+    recommendation6.setGmcSubmissionDate(LocalDate.now());
 
     recommendation7 = new Recommendation();
     recommendation7.setRecommendationType(REVALIDATE);
     recommendation7.setOutcome(APPROVED);
     recommendation7.setActualSubmissionDate(actualsSubmissionDate1);
+    recommendation7.setGmcSubmissionDate(LocalDate.now());
+
+    recommendation8 = new Recommendation();
+    recommendation8.setRecommendationType(REVALIDATE);
+    recommendation8.setOutcome(APPROVED);
+    recommendation8.setActualSubmissionDate(null);
+    recommendation8.setGmcSubmissionDate(gmcSubmissionLocalDate1);
+
+    recommendation9 = new Recommendation();
+    recommendation9.setRecommendationType(REVALIDATE);
+    recommendation9.setOutcome(APPROVED);
+    recommendation9.setActualSubmissionDate(null);
+    recommendation9.setGmcSubmissionDate(gmcSubmissionLocalDate2);
 
     doctorsForDB1 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB2 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
@@ -856,6 +873,7 @@ class RecommendationServiceTest {
         List.of(TraineeRecommendationRecordDto.builder()
             .gmcNumber(gmcNumber1)
             .actualSubmissionDate(actualsSubmissionDate2)
+            .gmcSubmissionDate(LocalDate.now().minusMonths(1))
             .build()
         )
     );
@@ -869,23 +887,30 @@ class RecommendationServiceTest {
   }
 
   @Test
-  void shouldSortTraineeRecommendationsAndPlaceNullsAtEnd() {
+  void shouldSortTraineeRecommendationsAndPlaceNullsAtStart() {
     when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB1));
-    when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation6, recommendation7));
-    when(snapshotService.getSnapshotRecommendations(doctorsForDB1))
-        .thenReturn(
-            List.of(TraineeRecommendationRecordDto.builder()
-                .gmcNumber(gmcNumber1)
-                .actualSubmissionDate(null)
-                .build()
-            )
-        );
+    when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation8, recommendation9));
+    when(snapshotService.getSnapshotRecommendations(doctorsForDB1)).thenReturn(
+    List.of(TraineeRecommendationRecordDto.builder()
+            .gmcNumber(gmcNumber1)
+            .actualSubmissionDate(actualsSubmissionDate1)
+            .gmcSubmissionDate(LocalDate.now().minusMonths(1))
+            .build(),
+        TraineeRecommendationRecordDto.builder()
+            .gmcNumber(gmcNumber1)
+            .actualSubmissionDate(actualsSubmissionDate3)
+            .gmcSubmissionDate(LocalDate.now())
+            .build()
+    ));
 
     final var result = recommendationService.getTraineeInfo(gmcNumber1);
 
-    assertThat(result.getRevalidations().get(0).getActualSubmissionDate(), is(actualsSubmissionDate1));
-    assertThat(result.getRevalidations().get(1).getActualSubmissionDate(), is(actualsSubmissionDate3));
-    assertNull(result.getRevalidations().get(2).getActualSubmissionDate());
+    assertNull(result.getRevalidations().get(0).getActualSubmissionDate());
+    assertThat(result.getRevalidations().get(0).getGmcSubmissionDate(), is(gmcSubmissionLocalDate2));
+    assertNull(result.getRevalidations().get(1).getActualSubmissionDate());
+    assertThat(result.getRevalidations().get(1).getGmcSubmissionDate(), is(gmcSubmissionLocalDate1));
+    assertThat(result.getRevalidations().get(2).getActualSubmissionDate(), is(actualsSubmissionDate1));
+    assertThat(result.getRevalidations().get(3).getActualSubmissionDate(), is(actualsSubmissionDate3));
 
   }
 
