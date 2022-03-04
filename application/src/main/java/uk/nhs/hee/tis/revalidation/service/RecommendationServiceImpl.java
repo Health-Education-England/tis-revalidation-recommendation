@@ -321,7 +321,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     recommendationRepository
         .findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC).forEach(rec -> {
       final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
-      if (doctorsForDB.isPresent()) {
+      if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
         final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
             .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
             .gmcReferenceNumber(rec.getGmcNumber())
