@@ -33,7 +33,7 @@ import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ApiModel(description = "Revalidation Summary For Listing Pages")
+@ApiModel(description = "Revalidation summary message payload for ES rebuild job")
 public class RevalidationSummaryDto {
 
   private DoctorsForDB doctor;
