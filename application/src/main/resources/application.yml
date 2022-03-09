@@ -13,6 +13,9 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     ssl.enabled: ${RABBITMQ_USE_SSL:false}
+  elasticsearch:
+    rest:
+      uris: ${ES_URLS:http://localhost:9200}
   data:
     mongodb:
       uri: mongodb://${MONGODB_USERNAME:root}:${MONGODB_PASSWORD:password}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:revalidation}?authSource=admin&authMechanism=SCRAM-SHA-1
@@ -70,6 +73,7 @@ app:
     reval.routingKey.recommendationstatuscheck.requested: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_REQUESTED_ROUTING_KEY:reval.recommendationstatuscheck.requested}
     reval.queue.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_QUEUE:reval.queue.gmcsync.requested.gmcclient}
     reval.routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
+    reval.queue.indexrebuildgetmastercommand.requested: ${REVAL_RABBIT_INDEX_REBUILD_GETMASTER_QUEUE:reval.queue.indexrebuildgetmastercommand.requested.recommendation}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}

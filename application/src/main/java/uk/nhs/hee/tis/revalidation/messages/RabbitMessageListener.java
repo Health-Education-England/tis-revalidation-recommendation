@@ -21,6 +21,7 @@
 
 package uk.nhs.hee.tis.revalidation.messages;
 
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Component;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
+import uk.nhs.hee.tis.revalidation.messages.receiver.EsRebuildMessageReceiver;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 
 @Slf4j
@@ -40,6 +42,9 @@ public class RabbitMessageListener {
 
   @Autowired
   private RecommendationStatusCheckUpdatedMessageHandler recommendationStatusCheckUpdatedMessageHandler;
+
+  @Autowired
+  private EsRebuildMessageReceiver esRebuildMessageReceiver;
 
   @RabbitListener(queues = "${app.rabbit.queue}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
@@ -77,5 +82,13 @@ public class RabbitMessageListener {
       log.warn("Rejecting message for failed recommendation status update", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
     }
+  }
+
+  /**
+   * get trainee from Master index then update recommendation indexes.
+   */
+  @RabbitListener(queues = "${app.rabbit.reval.queue.indexrebuildgetmastercommand.requested}")
+  public void receiveMessageGetMaster(final String getMaster) throws IOException {
+    esRebuildMessageReceiver.handleMessage(getMaster);
   }
 }
