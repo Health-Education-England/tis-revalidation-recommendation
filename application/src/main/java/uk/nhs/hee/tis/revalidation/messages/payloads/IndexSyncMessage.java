@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @ApiModel(description = "Message wrapper for index sync messages")
 public class IndexSyncMessage<T> {
-  private T message;
+  private T payload;
   private Boolean syncEnd;
 }

@@ -114,8 +114,8 @@ class GmcDoctorConnectionSyncServiceTest {
 
     final var messagePayloads = messageCaptor.getAllValues();
     assertThat(messagePayloads.get(0).getSyncEnd(), is(false));
-    assertThat(messagePayloads.get(0).getMessage().getGmcOutcome(), is(gmcOutcome1));
-    assertThat(messagePayloads.get(0).getMessage().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
+    assertThat(messagePayloads.get(0).getPayload().getGmcOutcome(), is(gmcOutcome1));
+    assertThat(messagePayloads.get(0).getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
 
 
   }

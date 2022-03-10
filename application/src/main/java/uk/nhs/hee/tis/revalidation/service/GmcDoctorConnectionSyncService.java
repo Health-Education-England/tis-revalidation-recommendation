@@ -76,7 +76,7 @@ public class GmcDoctorConnectionSyncService {
                   .gmcOutcome(getGmcOutcomeForDoctor(doctor.getGmcReferenceNumber()))
                   .build();
               final var message = IndexSyncMessage.builder()
-                  .message(summary)
+                  .payload(summary)
                   .syncEnd(false)
                   .build();
               queueMessagingTemplate.convertAndSend(sqsEndPoint, message);
