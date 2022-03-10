@@ -33,12 +33,10 @@ import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ApiModel(description = "Revalidation summary message payload for ES rebuild job")
+@ApiModel(description = "Revalidation summary message payload for index rebuild job")
 public class RevalidationSummaryDto {
 
   private DoctorsForDB doctor;
   private String gmcOutcome;
-  @Nullable
-  Boolean syncEnd;
 
 }

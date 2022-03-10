@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @Slf4j
@@ -73,15 +74,20 @@ public class GmcDoctorConnectionSyncService {
               final var summary = RevalidationSummaryDto.builder()
                   .doctor(doctor)
                   .gmcOutcome(getGmcOutcomeForDoctor(doctor.getGmcReferenceNumber()))
+                  .build();
+              final var message = IndexSyncMessage.builder()
+                  .message(summary)
                   .syncEnd(false)
                   .build();
-              queueMessagingTemplate.convertAndSend(sqsEndPoint, summary);
+              queueMessagingTemplate.convertAndSend(sqsEndPoint, message);
             }
         );
 
     log.info("GMC doctors have been published to the SQS queue ");
 
-    RevalidationSummaryDto syncEnd = RevalidationSummaryDto.builder().syncEnd(true).build();
+    final var syncEnd = IndexSyncMessage.builder()
+        .syncEnd(true)
+        .build();
     queueMessagingTemplate.convertAndSend(sqsEndPoint, syncEnd);
   }
 
