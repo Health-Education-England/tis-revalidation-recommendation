@@ -27,9 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.github.javafaker.Faker;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
+import uk.nhs.hee.tis.revalidation.messages.receiver.EsRebuildMessageReceiver;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,6 +57,8 @@ class RabbitMessageListenerTest {
   @Mock
   DoctorsForDBService doctorsForDBService;
 
+  private final String getMaster = faker.number().digits(7);
+
   @Captor
   ArgumentCaptor<RecommendationStatusCheckDto> recommendationStatusCheckDtoCaptor;
 
@@ -64,6 +67,8 @@ class RabbitMessageListenerTest {
   private final String recommendationId = faker.number().digits(3);
   private final String designatedBody = faker.lorem().characters(5);
   private final RecommendationGmcOutcome outcome = RecommendationGmcOutcome.APPROVED;
+  @Mock
+  EsRebuildMessageReceiver esRebuildMessageReceiver;
 
   private final RecommendationStatusCheckDto recommendationStatusCheckDto =
       RecommendationStatusCheckDto.builder()
@@ -110,8 +115,15 @@ class RabbitMessageListenerTest {
     doThrow(new NullPointerException()).when(recommendationStatusCheckUpdatedMessageHandler)
         .updateRecommendationAndTisStatus(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
       rabbitMessageListener.receiveMessageForRecommendationStatusUpdate(null);
     });
+  }
+
+  @Test
+  void shouldGetdatafromMasterIndex() throws IOException {
+    rabbitMessageListener.receiveMessageGetMaster(getMaster);
+    verify(esRebuildMessageReceiver)
+        .handleMessage(getMaster);
   }
 }
