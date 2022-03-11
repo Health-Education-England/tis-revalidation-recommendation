@@ -29,6 +29,7 @@ import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchScrollHits;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
@@ -42,15 +43,18 @@ public class MasterElasticSearchService {
   private static final int SCROLL_TIMEOUT_MS = 30000;
   private ElasticSearchIndexMapper elasticSearchIndexMapper;
   private ElasticsearchRestTemplate elasticsearchTemplate;
+  private NativeSearchQuery nativeSearchQuery;
 
   /**
    * constructor.
    */
   public MasterElasticSearchService(
       ElasticSearchIndexMapper elasticSearchIndexMapper,
-      ElasticsearchRestTemplate elasticsearchTemplate) {
+      ElasticsearchRestTemplate elasticsearchTemplate,
+      NativeSearchQuery nativeSearchQuery) {
     this.elasticSearchIndexMapper = elasticSearchIndexMapper;
     this.elasticsearchTemplate = elasticsearchTemplate;
+    this.nativeSearchQuery = nativeSearchQuery;
   }
 
   /**
@@ -65,7 +69,7 @@ public class MasterElasticSearchService {
     var index = IndexCoordinates.of("masterdoctorindex");
 
     // initial search
-    var searchQuery = new NativeSearchQueryBuilder().build();
+    var searchQuery = nativeSearchQuery;
     SearchScrollHits<MasterDoctorView> scroll = elasticsearchTemplate
         .searchScrollStart(
             SCROLL_TIMEOUT_MS,
