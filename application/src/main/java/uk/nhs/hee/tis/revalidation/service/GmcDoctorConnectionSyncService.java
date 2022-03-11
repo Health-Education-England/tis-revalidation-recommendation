@@ -27,7 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @Slf4j
@@ -36,15 +38,18 @@ public class GmcDoctorConnectionSyncService {
 
   private final QueueMessagingTemplate queueMessagingTemplate;
   private final DoctorsForDBRepository doctorsForDBRepository;
+  private final RecommendationService recommendationService;
   @Value("${app.rabbit.reval.exchange}")
   private String exchange;
   @Value("${cloud.aws.end-point.uri}")
   private String sqsEndPoint;
 
   public GmcDoctorConnectionSyncService(QueueMessagingTemplate queueMessagingTemplate,
-      DoctorsForDBRepository doctorsForDBRepository) {
+      DoctorsForDBRepository doctorsForDBRepository,
+      RecommendationService recommendationService) {
     this.queueMessagingTemplate = queueMessagingTemplate;
     this.doctorsForDBRepository = doctorsForDBRepository;
+    this.recommendationService = recommendationService;
   }
 
   @RabbitListener(queues = "${app.rabbit.reval.queue.recommendation.syncstart}")
@@ -64,11 +69,30 @@ public class GmcDoctorConnectionSyncService {
 
   private void sendToSqsQueue(final List<DoctorsForDB> gmcDoctors) {
     gmcDoctors.stream()
-        .forEach(doctor -> queueMessagingTemplate.convertAndSend(sqsEndPoint, doctor));
+        .forEach(doctor ->
+            {
+              final var summary = RevalidationSummaryDto.builder()
+                  .doctor(doctor)
+                  .gmcOutcome(getGmcOutcomeForDoctor(doctor.getGmcReferenceNumber()))
+                  .build();
+              final var message = IndexSyncMessage.builder()
+                  .payload(summary)
+                  .syncEnd(false)
+                  .build();
+              queueMessagingTemplate.convertAndSend(sqsEndPoint, message);
+            }
+        );
+
     log.info("GMC doctors have been published to the SQS queue ");
 
-    DoctorsForDB syncEnd = DoctorsForDB.builder().syncEnd(true).build();
+    final var syncEnd = IndexSyncMessage.builder()
+        .syncEnd(true)
+        .build();
     queueMessagingTemplate.convertAndSend(sqsEndPoint, syncEnd);
+  }
+
+  private String getGmcOutcomeForDoctor(String gmcId) {
+    return recommendationService.getLatestRecommendation(gmcId).getGmcOutcome();
   }
 
 }

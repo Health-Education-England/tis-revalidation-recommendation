@@ -628,15 +628,15 @@ class DoctorsForDBServiceTest {
     connectionStatus5 = "Yes";
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now(), designatedBody1, admin1, null);
+        now(), designatedBody1, admin1);
     doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
-        now(), designatedBody2, admin2, null);
+        now(), designatedBody2, admin2);
     doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,
-        now(), designatedBody3, admin3, null);
+        now(), designatedBody3, admin3);
     doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, addedDate4, un4, sanction4, status4,
-        now(), designatedBody4, admin4, null);
+        now(), designatedBody4, admin4);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
-        now(), designatedBody5, admin5, null);
+        now(), designatedBody5, admin5);
 
     docDto1 = new DoctorsForDbDto();
     docDto1.setGmcReferenceNumber(gmcRef1);

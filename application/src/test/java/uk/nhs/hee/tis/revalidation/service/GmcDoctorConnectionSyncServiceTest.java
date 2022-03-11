@@ -23,10 +23,16 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate;
+import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +41,11 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
+import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 
@@ -43,15 +54,30 @@ class GmcDoctorConnectionSyncServiceTest {
 
   @Captor
   ArgumentCaptor<String> syncStartMessage;
+  @Captor
+  ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> messageCaptor;
+
   @InjectMocks
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
   @Mock
   private QueueMessagingTemplate queueMessagingTemplate;
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
+  @Mock
+  private RecommendationService recommendationService;
+
+  private DoctorsForDB doctor1;
+  private List<DoctorsForDB> doctorsForDBList;
+  private TraineeRecommendationRecordDto recommendation1;
+  private String gmcOutcome1 = "APPROVED";
+  private String gmcRef1 = "1111111";
+  private String sqsEndpoint = "/endpoint";
 
   @BeforeEach
-  void setUp() {
+  void setup() {
+    buildDoctorsList();
+    buildRecommendations();
+    ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "sqsEndPoint", sqsEndpoint);
   }
 
   @Test
@@ -73,5 +99,51 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage("anyString");
 
     verify(doctorsForDBRepository, never()).findAll();
+  }
+
+  @Test
+  void shouldSendRetrievedDoctorsToSqs() {
+    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
+    when(recommendationService.getLatestRecommendation(gmcRef1))
+        .thenReturn(recommendation1);
+
+    gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
+
+    verify(queueMessagingTemplate, times(2))
+        .convertAndSend(eq(sqsEndpoint), messageCaptor.capture());
+
+    final var messagePayloads = messageCaptor.getAllValues();
+    assertThat(messagePayloads.get(0).getSyncEnd(), is(false));
+    assertThat(messagePayloads.get(0).getPayload().getGmcOutcome(), is(gmcOutcome1));
+    assertThat(messagePayloads.get(0).getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
+
+
+  }
+
+  @Test
+  void shouldSendSyncEndFlagAtEndOfDoctorsList() {
+    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
+    when(recommendationService.getLatestRecommendation(gmcRef1))
+        .thenReturn(recommendation1);
+
+    gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
+
+    verify(queueMessagingTemplate, times(2))
+        .convertAndSend(eq(sqsEndpoint), messageCaptor.capture());
+
+    final var messagePayloads = messageCaptor.getAllValues();
+    assertThat(messagePayloads.get(1).getSyncEnd(), is(true));
+  }
+
+  private void buildDoctorsList() {
+    doctor1 = DoctorsForDB.builder().gmcReferenceNumber(gmcRef1).build();
+    doctorsForDBList = List.of(doctor1);
+  }
+
+  private void buildRecommendations() {
+    recommendation1 = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(gmcRef1)
+        .gmcOutcome(gmcOutcome1)
+        .build();
   }
 }

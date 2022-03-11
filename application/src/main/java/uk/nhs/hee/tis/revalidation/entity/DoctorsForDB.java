@@ -67,8 +67,6 @@ public class DoctorsForDB {
   private LocalDate lastUpdatedDate;
   private String designatedBodyCode;
   private String admin;
-  @Nullable
-  Boolean syncEnd;
 
   public static final  DoctorsForDB convert(final DoctorsForDbDto doctorsForDBDTO) {
     return DoctorsForDB.builder()
