@@ -29,6 +29,8 @@ import com.github.cloudyrock.spring.v5.EnableMongock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
@@ -74,5 +76,10 @@ public class RevalidationApplication {
     webServiceTemplate.setMarshaller(marshaller());
     webServiceTemplate.setUnmarshaller(marshaller());
     return webServiceTemplate;
+  }
+
+  @Bean
+  public NativeSearchQuery nativeSearchQuery() {
+    return new NativeSearchQueryBuilder().build();
   }
 }
