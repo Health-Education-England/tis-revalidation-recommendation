@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.messages;
 
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +89,7 @@ public class RabbitMessageListener {
    * get trainee from Master index then update recommendation indexes.
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.indexrebuildgetmastercommand.requested}")
+  @SchedulerLock(name = "IndexRebuildGetMasterJob")
   public void receiveMessageGetMaster(final String getMaster) throws IOException {
     log.info("Message received to get trainee record from Master index.");
     esRebuildMessageReceiver.handleMessage(getMaster);
