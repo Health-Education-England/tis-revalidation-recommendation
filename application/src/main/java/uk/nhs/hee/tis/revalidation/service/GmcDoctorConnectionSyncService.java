@@ -28,6 +28,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
@@ -71,9 +72,13 @@ public class GmcDoctorConnectionSyncService {
     gmcDoctors.stream()
         .forEach(doctor ->
             {
+              TraineeRecommendationRecordDto recommendation =
+                  recommendationService.getLatestRecommendation(doctor.getGmcReferenceNumber());
+
+              doctor.setAdmin(recommendation.getAdmin());
               final var summary = RevalidationSummaryDto.builder()
                   .doctor(doctor)
-                  .gmcOutcome(getGmcOutcomeForDoctor(doctor.getGmcReferenceNumber()))
+                  .gmcOutcome(recommendation.getGmcOutcome())
                   .build();
               final var message = IndexSyncMessage.builder()
                   .payload(summary)
@@ -89,10 +94,6 @@ public class GmcDoctorConnectionSyncService {
         .syncEnd(true)
         .build();
     queueMessagingTemplate.convertAndSend(sqsEndPoint, syncEnd);
-  }
-
-  private String getGmcOutcomeForDoctor(String gmcId) {
-    return recommendationService.getLatestRecommendation(gmcId).getGmcOutcome();
   }
 
 }
