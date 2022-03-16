@@ -71,6 +71,7 @@ class GmcDoctorConnectionSyncServiceTest {
   private TraineeRecommendationRecordDto recommendation1;
   private String gmcOutcome1 = "APPROVED";
   private String gmcRef1 = "1111111";
+  private String admin1 = "admin";
   private String sqsEndpoint = "/endpoint";
 
   @BeforeEach
@@ -116,6 +117,7 @@ class GmcDoctorConnectionSyncServiceTest {
     assertThat(messagePayloads.get(0).getSyncEnd(), is(false));
     assertThat(messagePayloads.get(0).getPayload().getGmcOutcome(), is(gmcOutcome1));
     assertThat(messagePayloads.get(0).getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
+    assertThat(messagePayloads.get(0).getPayload().getDoctor().getAdmin(), is(admin1));
 
 
   }
@@ -144,6 +146,7 @@ class GmcDoctorConnectionSyncServiceTest {
     recommendation1 = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcRef1)
         .gmcOutcome(gmcOutcome1)
+        .admin(admin1)
         .build();
   }
 }
