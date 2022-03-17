@@ -24,6 +24,7 @@ package uk.nhs.hee.tis.revalidation.service;
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -53,7 +54,8 @@ public class GmcDoctorConnectionSyncService {
     this.recommendationService = recommendationService;
   }
 
-  @RabbitListener(queues = "${app.rabbit.reval.queue.recommendation.syncstart}")
+  @RabbitListener(queues = "${app.rabbit.reval.queue.recommendation.syncstart}", ackMode = "NONE")
+  @SchedulerLock(name = "IndexRebuildGetGmcJob")
   public void receiveMessage(final String gmcSyncStart) {
     log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
 

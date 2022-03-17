@@ -88,7 +88,8 @@ public class RabbitMessageListener {
   /**
    * get trainee from Master index then update recommendation indexes.
    */
-  @RabbitListener(queues = "${app.rabbit.reval.queue.indexrebuildgetmastercommand.requested}")
+  @RabbitListener(queues = "${app.rabbit.reval.queue.indexrebuildgetmastercommand.requested}",
+      ackMode = "NONE")
   @SchedulerLock(name = "IndexRebuildGetMasterJob")
   public void receiveMessageGetMaster(final String getMaster) throws IOException {
     log.info("Message received to get trainee record from Master index.");
