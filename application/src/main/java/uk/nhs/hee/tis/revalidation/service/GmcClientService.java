@@ -133,7 +133,11 @@ public class GmcClientService {
             responseCode);
       }
     } catch (Exception e) {
-      log.error("Failed to check status with GMC", e);
+      log.error("Failed to check status with GMC, GmcId: {}, recommendationId: {}, gmcRecommendationId: {}, error: {}",
+          gmcNumber,
+          recommendationId,
+          gmcRecommendationId,
+          e.getMessage());
     }
 
     return UNDER_REVIEW;
