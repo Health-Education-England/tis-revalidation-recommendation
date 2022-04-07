@@ -153,9 +153,7 @@ public class DoctorsForDBService {
   public void hideAllDoctors() {
     List<DoctorsForDB> doctors = doctorsRepository.findAll();
     doctors.stream().forEach(doctor -> {
-      doctor.setDesignatedBodyCode(
-          getHiddenDesignatedBodyCode(doctor.getDesignatedBodyCode())
-      );
+      doctor.setExistsInGmc(false);
       doctorsRepository.save(doctor);
     });
   }

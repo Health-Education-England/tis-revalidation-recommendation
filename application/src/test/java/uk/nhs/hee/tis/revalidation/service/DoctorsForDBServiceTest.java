@@ -541,24 +541,12 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
-  void shouldHideAllDoctorsByModifyingDBC() {
+  void shouldHideAllDoctorsBySettingFlagToFalse() {
     when(repository.findAll()).thenReturn(List.of(doc1));
     doctorsForDBService.hideAllDoctors();
     verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is("last-"+designatedBody1));
+    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
   }
-
-  @Test
-  void shouldNotAddHiddenPrefixToDoctorIfAlreadyHidden() {
-    final var dbCode = doc1.getDesignatedBodyCode();
-    doc1.setDesignatedBodyCode("last-" + dbCode);
-
-    when(repository.findAll()).thenReturn(List.of(doc1));
-    doctorsForDBService.hideAllDoctors();
-    verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is("last-"+designatedBody1));
-  }
-
 
   private void setupData() {
     gmcRef1 = faker.number().digits(8);
@@ -628,15 +616,15 @@ class DoctorsForDBServiceTest {
     connectionStatus5 = "Yes";
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now(), designatedBody1, admin1);
+        now(), designatedBody1, admin1, true);
     doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
-        now(), designatedBody2, admin2);
+        now(), designatedBody2, admin2, true);
     doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,
-        now(), designatedBody3, admin3);
+        now(), designatedBody3, admin3, true);
     doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, addedDate4, un4, sanction4, status4,
-        now(), designatedBody4, admin4);
+        now(), designatedBody4, admin4, true);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
-        now(), designatedBody5, admin5);
+        now(), designatedBody5, admin5, true);
 
     docDto1 = new DoctorsForDbDto();
     docDto1.setGmcReferenceNumber(gmcRef1);
