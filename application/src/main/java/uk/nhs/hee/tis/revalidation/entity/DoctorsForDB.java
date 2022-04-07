@@ -67,7 +67,7 @@ public class DoctorsForDB {
   private LocalDate lastUpdatedDate;
   private String designatedBodyCode;
   private String admin;
-  private Boolean existsInGmc;
+  private Boolean existsInGmc = true;
 
   public static final  DoctorsForDB convert(final DoctorsForDbDto doctorsForDBDTO) {
     return DoctorsForDB.builder()
