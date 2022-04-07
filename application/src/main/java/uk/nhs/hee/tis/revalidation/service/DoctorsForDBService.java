@@ -216,14 +216,4 @@ public class DoctorsForDBService {
   private String getConnectionStatus(final String designatedBody) {
     return (designatedBody == null || designatedBody.equals("")) ? "No" : "Yes";
   }
-
-  private String getHiddenDesignatedBodyCode(String dbCode) {
-    if(dbCode != null && !dbCode.startsWith(hiddenPrefix)){
-      return hiddenPrefix + dbCode;
-    } else {
-      return dbCode;
-    }
-  }
-
-
 }
