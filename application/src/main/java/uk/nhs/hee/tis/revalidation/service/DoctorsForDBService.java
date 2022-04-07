@@ -61,8 +61,6 @@ public class DoctorsForDBService {
   @Value("${app.reval.pagination.pageSize}")
   private int pageSize;
 
-  private String hiddenPrefix = "last-";
-
   private DoctorsForDBRepository doctorsRepository;
 
   private RecommendationService recommendationService;
