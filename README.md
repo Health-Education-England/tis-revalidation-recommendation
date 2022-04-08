@@ -34,10 +34,12 @@ Above command will setup docker environment on your local machine before it exec
 This job ensures the list of doctors stored in DoctorsForDB is kept up to date with GMC Connect.
 This is a necessary mitigation until the Connections Service is released.
 This job consists of the following steps:
-1. "Hide" all doctors by modifying the Designated Body Code for each one (thereby filtering them out of GET requests)
+1. "Hide" all doctors by setting the existsInGmc flag to false
 2. Send a "start" message to the Gmc Client Service (separate repository, not to be confused with service class in this project)
 3. The Gmc Client Service returns a series of messages containing individual doctors
-4. Each returned doctor's designated body code is overwritten, effectively "un-hiding" any doctors that are still in GMC Connect
+4. Each returned doctor's existsInGmc flag is set to true
+
+NB: previously hiding doctors was achieved by modifying the designated body code to have a prefix of "last-"
 
 ## Gmc Recommendation Status Check (GmcsendRecommendationStatusRequestToRabbit)
 This job checks the current status of each doctor in GMC connect as we are not directly informed of Approval/Rejections.
