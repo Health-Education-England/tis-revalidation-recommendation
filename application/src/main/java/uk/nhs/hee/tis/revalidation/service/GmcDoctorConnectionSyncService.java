@@ -77,7 +77,6 @@ public class GmcDoctorConnectionSyncService {
               TraineeRecommendationRecordDto recommendation =
                   recommendationService.getLatestRecommendation(doctor.getGmcReferenceNumber());
 
-              doctor.setAdmin(recommendation.getAdmin());
               final var summary = RevalidationSummaryDto.builder()
                   .doctor(doctor)
                   .gmcOutcome(recommendation.getGmcOutcome())
