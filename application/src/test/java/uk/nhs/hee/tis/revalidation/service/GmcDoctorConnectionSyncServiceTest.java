@@ -138,7 +138,10 @@ class GmcDoctorConnectionSyncServiceTest {
   }
 
   private void buildDoctorsList() {
-    doctor1 = DoctorsForDB.builder().gmcReferenceNumber(gmcRef1).build();
+    doctor1 = DoctorsForDB.builder()
+        .gmcReferenceNumber(gmcRef1)
+        .admin(admin1)
+        .build();
     doctorsForDBList = List.of(doctor1);
   }
 
@@ -146,7 +149,6 @@ class GmcDoctorConnectionSyncServiceTest {
     recommendation1 = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcRef1)
         .gmcOutcome(gmcOutcome1)
-        .admin(admin1)
         .build();
   }
 }
