@@ -30,9 +30,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
+import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
+import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.messages.receiver.EsRebuildMessageReceiver;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @Slf4j
 @Component
@@ -46,6 +49,12 @@ public class RabbitMessageListener {
 
   @Autowired
   private EsRebuildMessageReceiver esRebuildMessageReceiver;
+
+  @Autowired
+  private RecommendationViewMapper recommendationViewMapper;
+
+  @Autowired
+  private RecommendationElasticSearchService recommendationElasticSearchService;
 
   @RabbitListener(queues = "${app.rabbit.queue}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
@@ -94,5 +103,16 @@ public class RabbitMessageListener {
   public void receiveMessageGetMaster(final String getMaster) throws IOException {
     log.info("Message received to get trainee record from Master index.");
     esRebuildMessageReceiver.handleMessage(getMaster);
+  }
+
+  /**
+   * get updated doctors from Master index then update recommendation indexes.
+   */
+  @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
+      ackMode = "NONE")
+  //@SchedulerLock(name = "IndexRebuildGetMasterJob")
+  public void receiveUpdateMessageFromMasterDoctorView(final MasterDoctorViewDto masterDoctorViewDto) throws IOException {
+    log.info("Message received to get trainee record from Master index.");
+    recommendationElasticSearchService.addRecommendationViews(recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
   }
 }
