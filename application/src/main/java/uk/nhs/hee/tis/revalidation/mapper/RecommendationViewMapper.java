@@ -22,14 +22,10 @@
 package uk.nhs.hee.tis.revalidation.mapper;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 
 @Mapper(componentModel = "spring")
 public interface RecommendationViewMapper {
-  @Mapping(target = "designatedBody", source = "masterDoctorViewDto.designatedBody")
-  @Mapping(target = "gmcStatus", source = "masterDoctorViewDto.gmcStatus")
-  @Mapping(target = "tisStatus", source = "masterDoctorViewDto.tisStatus")
   RecommendationView mapMasterDoctorViewDtoToRecommendationView(MasterDoctorViewDto masterDoctorViewDto);
 }

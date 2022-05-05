@@ -21,6 +21,8 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
+import java.util.ArrayList;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,5 +51,84 @@ public class RecommendationElasticSearchService {
       LOG.info("Exception in `addRecommendationViews` (GmcId: {}; PersonId: {}): {}",
           dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
     }
+  }
+
+  /**
+   * add new Recommendation trainee to elasticsearch index.
+   *
+   * @param dataToSave Recommendation trainee to go in elasticsearch
+   */
+  public void saveRecommendationViews(RecommendationView dataToSave) {
+    Iterable<RecommendationView> existingRecords = findRecommendationViewsByGmcNumberPersonId(
+        dataToSave);
+
+    // if doctor already exists in ES index, then update the existing record
+    if (Iterables.size(existingRecords) > 0) {
+      updateRecommendationViews(existingRecords, dataToSave);
+    }
+    // otherwise, add a new record
+    else {
+      addRecommendationViews(dataToSave);
+    }
+  }
+
+  /**
+   * update existing Recommendation to elasticsearch index.
+   *
+   * @param existingRecords existing Recommendation to be updated in elasticsearch
+   * @param dataToSave      new Recommendation details to be saved in elasticsearch
+   */
+  private void updateRecommendationViews(Iterable<RecommendationView> existingRecords,
+      RecommendationView dataToSave) {
+    existingRecords.forEach(connectedView -> {
+      dataToSave.setId(connectedView.getId());
+      try {
+        recommendationElasticSearchRepository.save(dataToSave);
+      } catch (Exception ex) {
+        LOG.info("Exception in `updateConnectedViews` (GmcId: {}; PersonId: {}): {}",
+            dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
+      }
+    });
+  }
+
+  /**
+   * find iterable of RecommendationView from elasticsearch index.
+   *
+   * @param dataToSave RecommendationView to go in elasticsearch
+   */
+  private Iterable<RecommendationView> findRecommendationViewsByGmcNumberPersonId(
+      RecommendationView dataToSave) {
+    Iterable<RecommendationView> result = new ArrayList<>();
+
+    if (dataToSave.getGmcReferenceNumber() != null && dataToSave.getTcsPersonId() != null) {
+      try {
+        result = recommendationElasticSearchRepository.findByGmcReferenceNumberAndTcsPersonId(
+            dataToSave.getGmcReferenceNumber(),
+            dataToSave.getTcsPersonId());
+      } catch (Exception ex) {
+        LOG.info("Exception in `findByGmcReferenceNumberAndTcsPersonId`"
+                + "(GmcId: {}; PersonId: {}): {}",
+            dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
+      }
+    } else if (dataToSave.getGmcReferenceNumber() != null
+        && dataToSave.getTcsPersonId() == null) {
+      try {
+        result = recommendationElasticSearchRepository.findByGmcReferenceNumber(
+            dataToSave.getGmcReferenceNumber());
+      } catch (Exception ex) {
+        LOG.info("Exception in `findByGmcReferenceNumber` (GmcId: {}): {}",
+            dataToSave.getGmcReferenceNumber(), ex);
+      }
+    } else if (dataToSave.getGmcReferenceNumber() == null
+        && dataToSave.getTcsPersonId() != null) {
+      try {
+        result = recommendationElasticSearchRepository.findByTcsPersonId(
+            dataToSave.getTcsPersonId());
+      } catch (Exception ex) {
+        LOG.info("Exception in `findByTcsPersonId` (PersonId: {}): {}",
+            dataToSave.getTcsPersonId(), ex);
+      }
+    }
+    return result;
   }
 }

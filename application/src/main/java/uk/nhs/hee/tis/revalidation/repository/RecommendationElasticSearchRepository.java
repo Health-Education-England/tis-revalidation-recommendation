@@ -21,6 +21,7 @@
 
 package uk.nhs.hee.tis.revalidation.repository;
 
+import java.util.List;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
@@ -29,4 +30,10 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 public interface RecommendationElasticSearchRepository
     extends ElasticsearchRepository<RecommendationView, String> {
 
+  List<RecommendationView> findByGmcReferenceNumberAndTcsPersonId(String gmcReferenceNumber,
+      Long tcsPersonId);
+
+  List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
+
+  List<RecommendationView> findByTcsPersonId(Long tcsPersonId);
 }

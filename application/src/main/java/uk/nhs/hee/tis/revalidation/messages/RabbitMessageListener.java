@@ -110,9 +110,9 @@ public class RabbitMessageListener {
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
       ackMode = "NONE")
-  //@SchedulerLock(name = "IndexRebuildGetMasterJob")
   public void receiveUpdateMessageFromMasterDoctorView(final MasterDoctorViewDto masterDoctorViewDto) throws IOException {
-    log.info("Message received to get trainee record from Master index.");
-    recommendationElasticSearchService.addRecommendationViews(recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
+    log.info("Message received from Master index to update doctor record.");
+    recommendationElasticSearchService.saveRecommendationViews(
+        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
   }
 }
