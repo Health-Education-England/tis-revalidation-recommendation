@@ -60,7 +60,7 @@ public class RecommendationElasticSearchService {
    */
   public void saveRecommendationViews(RecommendationView dataToSave) {
     Iterable<RecommendationView> existingRecords = findRecommendationViewsByGmcNumberPersonId(
-        dataToSave);
+        dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId());
 
     // if doctor already exists in ES index, then update the existing record
     if (Iterables.size(existingRecords) > 0) {
@@ -80,12 +80,12 @@ public class RecommendationElasticSearchService {
    */
   private void updateRecommendationViews(Iterable<RecommendationView> existingRecords,
       RecommendationView dataToSave) {
-    existingRecords.forEach(connectedView -> {
-      dataToSave.setId(connectedView.getId());
+    existingRecords.forEach(recommendationView -> {
+      dataToSave.setId(recommendationView.getId());
       try {
         recommendationElasticSearchRepository.save(dataToSave);
       } catch (Exception ex) {
-        LOG.info("Exception in `updateConnectedViews` (GmcId: {}; PersonId: {}): {}",
+        LOG.info("Exception in `updateRecommendationViews` (GmcId: {}; PersonId: {}): {}",
             dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
       }
     });
@@ -94,39 +94,34 @@ public class RecommendationElasticSearchService {
   /**
    * find iterable of RecommendationView from elasticsearch index.
    *
-   * @param dataToSave RecommendationView to go in elasticsearch
+   * @param gmcReferenceNumber String to go in elasticsearch
+   * @param tcsPersonId        Long to go in elasticsearch
    */
   private Iterable<RecommendationView> findRecommendationViewsByGmcNumberPersonId(
-      RecommendationView dataToSave) {
+      String gmcReferenceNumber, Long tcsPersonId) {
     Iterable<RecommendationView> result = new ArrayList<>();
 
-    if (dataToSave.getGmcReferenceNumber() != null && dataToSave.getTcsPersonId() != null) {
+    if (gmcReferenceNumber != null && tcsPersonId != null) {
       try {
         result = recommendationElasticSearchRepository.findByGmcReferenceNumberAndTcsPersonId(
-            dataToSave.getGmcReferenceNumber(),
-            dataToSave.getTcsPersonId());
+            gmcReferenceNumber, tcsPersonId);
       } catch (Exception ex) {
         LOG.info("Exception in `findByGmcReferenceNumberAndTcsPersonId`"
-                + "(GmcId: {}; PersonId: {}): {}",
-            dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
+            + "(GmcId: {}; PersonId: {}): {}", gmcReferenceNumber, tcsPersonId, ex);
       }
-    } else if (dataToSave.getGmcReferenceNumber() != null
-        && dataToSave.getTcsPersonId() == null) {
+    } else if (gmcReferenceNumber != null && tcsPersonId == null) {
       try {
-        result = recommendationElasticSearchRepository.findByGmcReferenceNumber(
-            dataToSave.getGmcReferenceNumber());
+        result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
       } catch (Exception ex) {
-        LOG.info("Exception in `findByGmcReferenceNumber` (GmcId: {}): {}",
-            dataToSave.getGmcReferenceNumber(), ex);
+        LOG.info("Exception in `findByGmcReferenceNumber` (GmcId: {}): {}", gmcReferenceNumber, ex);
       }
-    } else if (dataToSave.getGmcReferenceNumber() == null
-        && dataToSave.getTcsPersonId() != null) {
+    } else if (gmcReferenceNumber == null && tcsPersonId != null) {
       try {
         result = recommendationElasticSearchRepository.findByTcsPersonId(
-            dataToSave.getTcsPersonId());
+            tcsPersonId);
       } catch (Exception ex) {
         LOG.info("Exception in `findByTcsPersonId` (PersonId: {}): {}",
-            dataToSave.getTcsPersonId(), ex);
+            tcsPersonId, ex);
       }
     }
     return result;
