@@ -30,10 +30,6 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 public interface RecommendationElasticSearchRepository
     extends ElasticsearchRepository<RecommendationView, String> {
 
-  List<RecommendationView> findByGmcReferenceNumberAndTcsPersonId(String gmcReferenceNumber,
-      Long tcsPersonId);
-
   List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
 
-  List<RecommendationView> findByTcsPersonId(Long tcsPersonId);
 }

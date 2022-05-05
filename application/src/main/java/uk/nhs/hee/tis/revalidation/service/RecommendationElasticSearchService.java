@@ -59,8 +59,8 @@ public class RecommendationElasticSearchService {
    * @param dataToSave Recommendation trainee to go in elasticsearch
    */
   public void saveRecommendationViews(RecommendationView dataToSave) {
-    Iterable<RecommendationView> existingRecords = findRecommendationViewsByGmcNumberPersonId(
-        dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId());
+    Iterable<RecommendationView> existingRecords = findRecommendationViewsByGmcNumber(
+        dataToSave.getGmcReferenceNumber());
 
     // if doctor already exists in ES index, then update the existing record
     if (Iterables.size(existingRecords) > 0) {
@@ -95,33 +95,16 @@ public class RecommendationElasticSearchService {
    * find iterable of RecommendationView from elasticsearch index.
    *
    * @param gmcReferenceNumber String to go in elasticsearch
-   * @param tcsPersonId        Long to go in elasticsearch
    */
-  private Iterable<RecommendationView> findRecommendationViewsByGmcNumberPersonId(
-      String gmcReferenceNumber, Long tcsPersonId) {
+  private Iterable<RecommendationView> findRecommendationViewsByGmcNumber(
+      String gmcReferenceNumber) {
     Iterable<RecommendationView> result = new ArrayList<>();
 
-    if (gmcReferenceNumber != null && tcsPersonId != null) {
-      try {
-        result = recommendationElasticSearchRepository.findByGmcReferenceNumberAndTcsPersonId(
-            gmcReferenceNumber, tcsPersonId);
-      } catch (Exception ex) {
-        LOG.info("Exception in `findByGmcReferenceNumberAndTcsPersonId`"
-            + "(GmcId: {}; PersonId: {}): {}", gmcReferenceNumber, tcsPersonId, ex);
-      }
-    } else if (gmcReferenceNumber != null && tcsPersonId == null) {
+    if (gmcReferenceNumber != null) {
       try {
         result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
       } catch (Exception ex) {
         LOG.info("Exception in `findByGmcReferenceNumber` (GmcId: {}): {}", gmcReferenceNumber, ex);
-      }
-    } else if (gmcReferenceNumber == null && tcsPersonId != null) {
-      try {
-        result = recommendationElasticSearchRepository.findByTcsPersonId(
-            tcsPersonId);
-      } catch (Exception ex) {
-        LOG.info("Exception in `findByTcsPersonId` (PersonId: {}): {}",
-            tcsPersonId, ex);
       }
     }
     return result;

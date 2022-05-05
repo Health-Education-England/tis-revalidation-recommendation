@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
@@ -75,6 +76,7 @@ class RecommendationElasticSearchServiceTest {
     underNotice = faker.lorem().characters(20);
 
     recommendationView = RecommendationView.builder()
+        .id("1a2a")
         .tcsPersonId((long) 111)
         .gmcReferenceNumber(gmcRef1)
         .doctorFirstName(firstName1)
@@ -101,5 +103,18 @@ class RecommendationElasticSearchServiceTest {
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.addRecommendationViews(null);
     });
+  }
+
+  @Test
+  void shouldSaveRecommendationViewsWhenTheRecordIsAlreadyThereInTheESRepository() {
+    when(recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcRef1)).thenReturn(recommendationViews);
+    recommendationElasticSearchService.saveRecommendationViews(recommendationView);
+    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
+  }
+
+  @Test
+  void shouldSaveRecommendationViewsWhenTheRecordIsNotThereInTheESRepository() {
+    recommendationElasticSearchService.saveRecommendationViews(recommendationView);
+    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
   }
 }
