@@ -38,10 +38,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.messages.receiver.EsRebuildMessageReceiver;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @ExtendWith(MockitoExtension.class)
 class RabbitMessageListenerTest {
@@ -61,6 +65,10 @@ class RabbitMessageListenerTest {
 
   @Captor
   ArgumentCaptor<RecommendationStatusCheckDto> recommendationStatusCheckDtoCaptor;
+  @Mock
+  RecommendationElasticSearchService recommendationElasticSearchService;
+  @Mock
+  private RecommendationViewMapper recommendationViewMapper;
 
   private final String gmcNumber = faker.number().digits(7);
   private final String gmcRecommendationId = faker.number().digits(3);
@@ -78,6 +86,15 @@ class RabbitMessageListenerTest {
           .designatedBodyId(designatedBody)
           .outcome(RecommendationGmcOutcome.APPROVED)
           .build();
+  @Captor
+  ArgumentCaptor<RecommendationView> recommendationViewArgumentCaptor;
+
+  private final MasterDoctorViewDto masterDoctorViewDto =
+      MasterDoctorViewDto.builder()
+          .gmcReferenceNumber(gmcNumber)
+          .designatedBody(designatedBody)
+          .underNotice("Yes")
+          .build();
 
   @Test
   void shouldHandleRecommendationStatusCheckMessages() {
@@ -85,11 +102,16 @@ class RabbitMessageListenerTest {
     verify(recommendationStatusCheckUpdatedMessageHandler)
         .updateRecommendationAndTisStatus(recommendationStatusCheckDtoCaptor.capture());
 
-    assertThat(recommendationStatusCheckDtoCaptor.getValue().getGmcReferenceNumber(), is(gmcNumber));
-    assertThat(recommendationStatusCheckDtoCaptor.getValue().getGmcRecommendationId(), is(gmcRecommendationId));
-    assertThat(recommendationStatusCheckDtoCaptor.getValue().getRecommendationId(), is(recommendationId));
-    assertThat(recommendationStatusCheckDtoCaptor.getValue().getDesignatedBodyId(), is(designatedBody));
-    assertThat(recommendationStatusCheckDtoCaptor.getValue().getOutcome(), is(RecommendationGmcOutcome.APPROVED));
+    assertThat(recommendationStatusCheckDtoCaptor.getValue().getGmcReferenceNumber(),
+        is(gmcNumber));
+    assertThat(recommendationStatusCheckDtoCaptor.getValue().getGmcRecommendationId(),
+        is(gmcRecommendationId));
+    assertThat(recommendationStatusCheckDtoCaptor.getValue().getRecommendationId(),
+        is(recommendationId));
+    assertThat(recommendationStatusCheckDtoCaptor.getValue().getDesignatedBodyId(),
+        is(designatedBody));
+    assertThat(recommendationStatusCheckDtoCaptor.getValue().getOutcome(),
+        is(RecommendationGmcOutcome.APPROVED));
   }
 
   @Test
@@ -125,5 +147,12 @@ class RabbitMessageListenerTest {
     rabbitMessageListener.receiveMessageGetMaster(getMaster);
     verify(esRebuildMessageReceiver)
         .handleMessage(getMaster);
+  }
+
+  @Test
+  void shouldReceiveUpdateMessageFromMasterDoctorView() {
+    rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto);
+    verify(recommendationElasticSearchService)
+        .saveRecommendationViews(recommendationViewArgumentCaptor.capture());
   }
 }

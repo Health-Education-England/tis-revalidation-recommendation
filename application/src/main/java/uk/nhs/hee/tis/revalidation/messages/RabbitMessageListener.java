@@ -110,9 +110,14 @@ public class RabbitMessageListener {
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
       ackMode = "NONE")
-  public void receiveUpdateMessageFromMasterDoctorView(final MasterDoctorViewDto masterDoctorViewDto) throws IOException {
-    log.info("Message received from Master index to update doctor record.");
-    recommendationElasticSearchService.saveRecommendationViews(
-        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
+  public void receiveUpdateMessageFromMasterDoctorView(final MasterDoctorViewDto masterDoctorViewDto) {
+    try {
+      log.info("Message received from Master index to update doctor record.");
+      recommendationElasticSearchService.saveRecommendationViews(
+          recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
+    } catch (Exception exception) {
+      log.warn("Rejecting message for failed recommendation status update", exception);
+      throw new AmqpRejectAndDontRequeueException(exception);
+    }
   }
 }
