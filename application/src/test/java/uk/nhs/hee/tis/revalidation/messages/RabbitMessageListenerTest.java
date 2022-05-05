@@ -155,4 +155,13 @@ class RabbitMessageListenerTest {
     verify(recommendationElasticSearchService)
         .saveRecommendationViews(recommendationViewArgumentCaptor.capture());
   }
+
+  @Test
+  void shouldNotUpdateMessageFromMasterDoctorViewOnException() {
+    doThrow(new NullPointerException()).when(recommendationElasticSearchService).saveRecommendationViews(null);
+
+    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null);
+    });
+  }
 }

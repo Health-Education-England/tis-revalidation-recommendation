@@ -22,10 +22,10 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import static java.time.LocalDate.now;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.github.javafaker.Faker;
