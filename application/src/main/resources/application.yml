@@ -74,6 +74,8 @@ app:
     reval.queue.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_QUEUE:reval.queue.gmcsync.requested.gmcclient}
     reval.routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
     reval.queue.indexrebuildgetmastercommand.requested: ${REVAL_RABBIT_INDEX_REBUILD_GETMASTER_QUEUE:reval.queue.indexrebuildgetmastercommand.requested.recommendation}
+    reval.queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
+    reval.routingKey.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW_ROUTING_KEY:reval.masterdoctorview.updated}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}

@@ -19,17 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package uk.nhs.hee.tis.revalidation.repository;
+package uk.nhs.hee.tis.revalidation.mapper;
 
-import java.util.List;
-import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
-import org.springframework.stereotype.Repository;
+import org.mapstruct.Mapper;
+import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 
-@Repository
-public interface RecommendationElasticSearchRepository
-    extends ElasticsearchRepository<RecommendationView, String> {
-
-  List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
-
+@Mapper(componentModel = "spring")
+public interface RecommendationViewMapper {
+  RecommendationView mapMasterDoctorViewDtoToRecommendationView(MasterDoctorViewDto masterDoctorViewDto);
 }

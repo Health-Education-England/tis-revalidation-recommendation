@@ -21,6 +21,8 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
+import java.util.ArrayList;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,5 +51,64 @@ public class RecommendationElasticSearchService {
       LOG.info("Exception in `addRecommendationViews` (GmcId: {}; PersonId: {}): {}",
           dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
     }
+  }
+
+  /**
+   * add new Recommendation trainee to elasticsearch index.
+   *
+   * @param dataToSave Recommendation trainee to go in elasticsearch
+   */
+  public void saveRecommendationViews(RecommendationView dataToSave) {
+    Iterable<RecommendationView> existingRecords = findRecommendationViewsByGmcNumber(
+        dataToSave.getGmcReferenceNumber());
+
+    // if doctor already exists in ES index, then update the existing record
+    if (Iterables.size(existingRecords) > 0) {
+      updateRecommendationViews(existingRecords, dataToSave);
+    }
+    // otherwise, add a new record
+    else {
+      addRecommendationViews(dataToSave);
+    }
+  }
+
+  /**
+   * update existing Recommendation to elasticsearch index.
+   *
+   * @param existingRecords existing Recommendation to be updated in elasticsearch
+   * @param dataToSave      new Recommendation details to be saved in elasticsearch
+   */
+  private void updateRecommendationViews(Iterable<RecommendationView> existingRecords,
+      RecommendationView dataToSave) {
+    existingRecords.forEach(recommendationView -> {
+      dataToSave.setId(recommendationView.getId());
+      try {
+        recommendationElasticSearchRepository.save(dataToSave);
+      } catch (Exception ex) {
+        LOG.info("Exception in `updateRecommendationViews` (GmcId: {}; PersonId: {}): {}",
+            dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
+      }
+    });
+  }
+
+  /**
+   * find iterable of RecommendationView from elasticsearch index.
+   *
+   * @param gmcReferenceNumber String to go in elasticsearch
+   */
+  private Iterable<RecommendationView> findRecommendationViewsByGmcNumber(
+      String gmcReferenceNumber) {
+    Iterable<RecommendationView> result = new ArrayList<>();
+    if (gmcReferenceNumber == null) {
+      throw new NullPointerException("gmcReferenceNumber is null");
+    }
+    else {
+      try {
+        result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
+      } catch (Exception ex) {
+        LOG.info("Exception in `findByGmcReferenceNumber` (GmcId: {}): {}", gmcReferenceNumber, ex);
+      }
+    }
+    return result;
   }
 }

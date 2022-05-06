@@ -22,10 +22,11 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import static java.time.LocalDate.now;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
@@ -75,6 +76,7 @@ class RecommendationElasticSearchServiceTest {
     underNotice = faker.lorem().characters(20);
 
     recommendationView = RecommendationView.builder()
+        .id("1a2a")
         .tcsPersonId((long) 111)
         .gmcReferenceNumber(gmcRef1)
         .doctorFirstName(firstName1)
@@ -100,6 +102,40 @@ class RecommendationElasticSearchServiceTest {
       .save(null);
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.addRecommendationViews(null);
+    });
+  }
+
+  @Test
+  void shouldSaveRecommendationViewsWhenTheRecordIsAlreadyThereInTheESRepository() {
+    when(recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcRef1))
+        .thenReturn(recommendationViews);
+    recommendationElasticSearchService.saveRecommendationViews(recommendationView);
+    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
+  }
+
+  @Test
+  void shouldSaveRecommendationViewsWhenTheRecordIsNotThereInTheESRepository() {
+    recommendationElasticSearchService.saveRecommendationViews(recommendationView);
+    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
+  }
+
+  @Test
+  void shouldThrowExceptionIfGmcReferenceNumberNull() {
+    recommendationView = RecommendationView.builder()
+        .id("1a2a")
+        .tcsPersonId((long) 111)
+        .gmcReferenceNumber(null)
+        .doctorFirstName(firstName1)
+        .doctorLastName(lastName1)
+        .submissionDate(submissionDate1)
+        .programmeName(programmeName1)
+        .designatedBody(designatedBody1)
+        .admin(admin)
+        .underNotice(underNotice)
+        .build();
+
+    assertThrows(Exception.class, () -> {
+      recommendationElasticSearchService.saveRecommendationViews(recommendationView);
     });
   }
 }
