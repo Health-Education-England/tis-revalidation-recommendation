@@ -102,7 +102,7 @@ public class RecommendationElasticSearchService {
     if (gmcReferenceNumber == null) {
       throw new NullPointerException("gmcReferenceNumber is null");
     }
-    if (gmcReferenceNumber != null) {
+    else {
       try {
         result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
       } catch (Exception ex) {
