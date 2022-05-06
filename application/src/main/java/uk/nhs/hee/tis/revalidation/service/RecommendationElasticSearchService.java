@@ -99,7 +99,9 @@ public class RecommendationElasticSearchService {
   private Iterable<RecommendationView> findRecommendationViewsByGmcNumber(
       String gmcReferenceNumber) {
     Iterable<RecommendationView> result = new ArrayList<>();
-
+    if (gmcReferenceNumber == null) {
+      throw new NullPointerException("gmcReferenceNumber is null");
+    }
     if (gmcReferenceNumber != null) {
       try {
         result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);

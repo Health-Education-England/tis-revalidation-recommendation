@@ -112,7 +112,7 @@ public class RabbitMessageListener {
       ackMode = "NONE")
   public void receiveUpdateMessageFromMasterDoctorView(final MasterDoctorViewDto masterDoctorViewDto) {
     try {
-      log.info("Message received from Master index to update doctor record.");
+      log.info("Message received from Master index to update doctor record. gmcRefNo: {}", masterDoctorViewDto.getGmcReferenceNumber());
       recommendationElasticSearchService.saveRecommendationViews(
           recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
     } catch (Exception exception) {
