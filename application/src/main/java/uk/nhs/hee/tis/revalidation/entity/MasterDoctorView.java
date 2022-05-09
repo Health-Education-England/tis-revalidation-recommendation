@@ -35,6 +35,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.elasticsearch.common.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -113,4 +114,6 @@ public class MasterDoctorView {
   private LocalDate lastUpdatedDate;
 
   private String underNotice;
+  @Nullable
+  private Boolean existsInGmc;
 }
