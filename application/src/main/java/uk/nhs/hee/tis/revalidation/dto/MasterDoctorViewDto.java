@@ -57,4 +57,5 @@ public class MasterDoctorViewDto {
   String admin;
   LocalDate lastUpdatedDate;
   String underNotice;
+  Boolean existsInGmc;
 }
