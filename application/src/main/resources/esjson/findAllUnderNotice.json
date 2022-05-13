@@ -40,6 +40,13 @@
                     "value": "*?0*"
                   }
                 }
+              },
+              {
+                "wildcard": {
+                  "programmeName": {
+                    "value": "*?0*"
+                  }
+                }
               }
             ]
           }
