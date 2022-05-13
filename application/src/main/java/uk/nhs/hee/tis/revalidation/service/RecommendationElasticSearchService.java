@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,10 @@ public class RecommendationElasticSearchService {
 
   @Autowired
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
+
+  public void getRecommendations(String searchQuery, List<String> dbcs) {
+    
+  }
 
   /**
    * add Recommendation data to elasticsearch Recommendation index.
@@ -70,6 +75,16 @@ public class RecommendationElasticSearchService {
     else {
       addRecommendationViews(dataToSave);
     }
+  }
+
+  public List<String> formatDesignatedBodyCodesForElasticsearchQuery(
+      List<String> designatedBodyCodes)
+  {
+    List<String> escapedCodes = new ArrayList<>();
+    designatedBodyCodes.forEach(code -> {
+      escapedCodes.add(code.replace("1-", ""));
+    });
+    return escapedCodes;
   }
 
   /**

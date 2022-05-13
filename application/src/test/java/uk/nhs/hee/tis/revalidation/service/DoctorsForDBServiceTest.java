@@ -60,8 +60,10 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -78,6 +80,12 @@ class DoctorsForDBServiceTest {
   @Mock
   private RecommendationService recommendationService;
 
+  @Mock
+  private RecommendationElasticSearchService recommendationElasticSearchService;
+
+  @Mock
+  private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
+
   @Captor
   ArgumentCaptor<DoctorsForDB> doctorCaptor;
 
@@ -85,6 +93,7 @@ class DoctorsForDBServiceTest {
   private Page page;
 
   private DoctorsForDB doc1, doc2, doc3, doc4, doc5;
+  private RecommendationView rv1, rv2, rv3, rv4, rv5;
   private DoctorsForDbDto docDto1, docDto2;
   private String gmcRef1, gmcRef2, gmcRef3, gmcRef4, gmcRef5;
   private String fname1, fname2, fname3, fname4, fname5;
@@ -115,9 +124,13 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
+    when(recommendationElasticSearchRepository
+        .findAll("", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+            .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
 
-    when(page.get()).thenReturn(Stream.of(doc1, doc2, doc3, doc4, doc5));
+    when(page.get()).thenReturn(Stream.of(rv1, rv2, rv3, rv4, rv5));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
@@ -141,51 +154,37 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
     assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
     assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
     assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
     assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
 
     assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef2));
     assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname2));
     assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname2));
     assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate2));
-    assertThat(doctorsForDB.get(1).getDateAdded(), is(addedDate2));
     assertThat(doctorsForDB.get(1).getUnderNotice(), is(un2.name()));
-    assertThat(doctorsForDB.get(1).getSanction(), is(sanction2));
     assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status2.name()));
-    assertThat(doctorsForDB.get(1).getConnectionStatus(), is(connectionStatus2));
 
     assertThat(doctorsForDB.get(2).getGmcReferenceNumber(), is(gmcRef3));
     assertThat(doctorsForDB.get(2).getDoctorFirstName(), is(fname3));
     assertThat(doctorsForDB.get(2).getDoctorLastName(), is(lname3));
     assertThat(doctorsForDB.get(2).getSubmissionDate(), is(subDate3));
-    assertThat(doctorsForDB.get(2).getDateAdded(), is(addedDate3));
     assertThat(doctorsForDB.get(2).getUnderNotice(), is(un3.name()));
-    assertThat(doctorsForDB.get(2).getSanction(), is(sanction3));
     assertThat(doctorsForDB.get(2).getDoctorStatus(), is(status3.name()));
-    assertThat(doctorsForDB.get(2).getConnectionStatus(), is(connectionStatus3));
 
     assertThat(doctorsForDB.get(3).getGmcReferenceNumber(), is(gmcRef4));
     assertThat(doctorsForDB.get(3).getDoctorFirstName(), is(fname4));
     assertThat(doctorsForDB.get(3).getDoctorLastName(), is(lname4));
     assertThat(doctorsForDB.get(3).getSubmissionDate(), is(subDate4));
-    assertThat(doctorsForDB.get(3).getDateAdded(), is(addedDate4));
     assertThat(doctorsForDB.get(3).getUnderNotice(), is(un4.name()));
-    assertThat(doctorsForDB.get(3).getSanction(), is(sanction4));
     assertThat(doctorsForDB.get(3).getDoctorStatus(), is(status4.name()));
-    assertThat(doctorsForDB.get(3).getConnectionStatus(), is(connectionStatus4));
+
 
     assertThat(doctorsForDB.get(4).getGmcReferenceNumber(), is(gmcRef5));
     assertThat(doctorsForDB.get(4).getDoctorFirstName(), is(fname5));
     assertThat(doctorsForDB.get(4).getDoctorLastName(), is(lname5));
     assertThat(doctorsForDB.get(4).getSubmissionDate(), is(subDate5));
-    assertThat(doctorsForDB.get(4).getDateAdded(), is(addedDate5));
     assertThat(doctorsForDB.get(4).getUnderNotice(), is(un5.name()));
-    assertThat(doctorsForDB.get(4).getSanction(), is(sanction5));
     assertThat(doctorsForDB.get(4).getDoctorStatus(), is(status5.name()));
-    assertThat(doctorsForDB.get(4).getConnectionStatus(), is(connectionStatus5));
 
   }
 
@@ -199,8 +198,12 @@ class DoctorsForDBServiceTest {
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List.of(designatedBody1);
-    when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
-    when(page.get()).thenReturn(Stream.of(doc1));
+    when(recommendationElasticSearchRepository
+        .findAll("", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
+    when(page.get()).thenReturn(Stream.of(rv1));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
@@ -224,11 +227,8 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
     assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
     assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
     assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
     assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
   }
 
   @Test
@@ -242,10 +242,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findByUnderNotice(pageableAndSortable, "", dbcs, YES))
-        .thenReturn(page);
-
-    when(page.get()).thenReturn(Stream.of(doc1, doc2));
+    when(recommendationElasticSearchRepository
+        .findByUnderNotice("", dbcs ,pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
+    when(page.get()).thenReturn(Stream.of(rv1, rv2));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
     when(repository.count()).thenReturn(5l);
@@ -268,21 +270,15 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
     assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
     assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
     assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
     assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
 
     assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef2));
     assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname2));
     assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname2));
     assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate2));
-    assertThat(doctorsForDB.get(1).getDateAdded(), is(addedDate2));
     assertThat(doctorsForDB.get(1).getUnderNotice(), is(un2.name()));
-    assertThat(doctorsForDB.get(1).getSanction(), is(sanction2));
     assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status2.name()));
-    assertThat(doctorsForDB.get(1).getConnectionStatus(), is(connectionStatus2));
 
   }
 
@@ -297,7 +293,11 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findAll(pageableAndSortable, "", dbcs, List.of())).thenReturn(page);
+    when(recommendationElasticSearchRepository
+        .findAll("", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
     when(page.get()).thenReturn(Stream.of());
     when(repository.countByUnderNoticeIn(YES)).thenReturn(0l);
     final var requestDTO = TraineeRequestDto.builder()
@@ -326,9 +326,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findAll(pageableAndSortable, "query", dbcs, List.of())).thenReturn(page);
-
-    when(page.get()).thenReturn(Stream.of(doc1, doc4));
+    when(recommendationElasticSearchRepository
+        .findAll("query", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
+    when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
@@ -352,21 +355,15 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
     assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
     assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
     assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
     assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
 
     assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef4));
     assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname4));
     assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname4));
     assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate4));
-    assertThat(doctorsForDB.get(1).getDateAdded(), is(addedDate4));
     assertThat(doctorsForDB.get(1).getUnderNotice(), is(un4.name()));
-    assertThat(doctorsForDB.get(1).getSanction(), is(sanction4));
     assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status4.name()));
-    assertThat(doctorsForDB.get(1).getConnectionStatus(), is(connectionStatus4));
 
   }
 
@@ -381,9 +378,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findAll(pageableAndSortable, "query", dbcs, List.of())).thenReturn(page);
-
-    when(page.get()).thenReturn(Stream.of(doc1, doc4));
+    when(recommendationElasticSearchRepository
+        .findAll("query", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
+    when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
@@ -407,21 +407,15 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
     assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
     assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
     assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
     assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
 
     assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef4));
     assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname4));
     assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname4));
     assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate4));
-    assertThat(doctorsForDB.get(1).getDateAdded(), is(addedDate4));
     assertThat(doctorsForDB.get(1).getUnderNotice(), is(un4.name()));
-    assertThat(doctorsForDB.get(1).getSanction(), is(sanction4));
     assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status4.name()));
-    assertThat(doctorsForDB.get(1).getConnectionStatus(), is(connectionStatus4));
 
   }
 
@@ -434,9 +428,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    when(repository.findAll(pageableAndSortable, "query", dbcs, List.of())).thenReturn(page);
-
-    when(page.get()).thenReturn(Stream.of(doc1, doc4));
+    when(recommendationElasticSearchRepository
+        .findAll("query", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(dbcs);
+    when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
@@ -460,21 +457,15 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
     assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
     assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getDateAdded(), is(addedDate1));
     assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getSanction(), is(sanction1));
     assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-    assertThat(doctorsForDB.get(0).getConnectionStatus(), is(connectionStatus1));
 
     assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef4));
     assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname4));
     assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname4));
     assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate4));
-    assertThat(doctorsForDB.get(1).getDateAdded(), is(addedDate4));
     assertThat(doctorsForDB.get(1).getUnderNotice(), is(un4.name()));
-    assertThat(doctorsForDB.get(1).getSanction(), is(sanction4));
     assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status4.name()));
-    assertThat(doctorsForDB.get(1).getConnectionStatus(), is(connectionStatus4));
 
   }
 
@@ -625,6 +616,62 @@ class DoctorsForDBServiceTest {
         now(), designatedBody4, admin4, true);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
         now(), designatedBody5, admin5, true);
+    
+    rv1 = RecommendationView.builder()
+        .gmcReferenceNumber(gmcRef1)
+        .doctorFirstName(fname1)
+        .doctorLastName(lname1)
+        .submissionDate(subDate1)
+        .underNotice(un1.name())
+        .tisStatus(status1.name())
+        .designatedBody(designatedBody1)
+        .admin(admin1)
+        .existsInGmc(true)
+        .build();
+    rv2 = RecommendationView.builder()
+        .gmcReferenceNumber(gmcRef2)
+        .doctorFirstName(fname2)
+        .doctorLastName(lname2)
+        .submissionDate(subDate2)
+        .underNotice(un2.name())
+        .tisStatus(status2.name())
+        .designatedBody(designatedBody2)
+        .admin(admin2)
+        .existsInGmc(true)
+        .build();
+    rv3 = RecommendationView.builder()
+        .gmcReferenceNumber(gmcRef3)
+        .doctorFirstName(fname3)
+        .doctorLastName(lname3)
+        .submissionDate(subDate3)
+        .underNotice(un3.name())
+        .tisStatus(status3.name())
+        .designatedBody(designatedBody3)
+        .admin(admin3)
+        .existsInGmc(true)
+        .build();
+    rv4 = RecommendationView.builder()
+        .gmcReferenceNumber(gmcRef4)
+        .doctorFirstName(fname4)
+        .doctorLastName(lname4)
+        .submissionDate(subDate4)
+        .underNotice(un4.name())
+        .tisStatus(status4.name())
+        .designatedBody(designatedBody4)
+        .admin(admin4)
+        .existsInGmc(true)
+        .build();
+    rv5 = RecommendationView.builder()
+        .gmcReferenceNumber(gmcRef5)
+        .doctorFirstName(fname5)
+        .doctorLastName(lname5)
+        .submissionDate(subDate5)
+        .underNotice(un5.name())
+        .tisStatus(status5.name())
+        .designatedBody(designatedBody5)
+        .admin(admin5)
+        .existsInGmc(true)
+        .build();
 
     docDto1 = new DoctorsForDbDto();
     docDto1.setGmcReferenceNumber(gmcRef1);

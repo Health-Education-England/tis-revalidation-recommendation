@@ -1,0 +1,60 @@
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "underNotice": "YES"
+          }
+        },
+        {
+          "match": {
+            "designatedBody": "?1"
+          }
+        },
+        {
+          "match": {
+            "existsInGmc": "true"
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              {
+                "wildcard": {
+                  "doctorFirstName": {
+                    "value": "*?0*"
+                  }
+                }
+              },
+              {
+                "wildcard": {
+                  "doctorLastName": {
+                    "value": "*?0*"
+                  }
+                }
+              },
+              {
+                "wildcard": {
+                  "gmcReferenceNumber": {
+                    "value": "*?0*"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "size": 10,
+  "from": 0,
+  "sort": [
+    {
+      "gmcReferenceNumber.keyword": {
+        "unmapped_type": "keyword",
+        "order": "asc"
+      }
+    }
+  ]
+}

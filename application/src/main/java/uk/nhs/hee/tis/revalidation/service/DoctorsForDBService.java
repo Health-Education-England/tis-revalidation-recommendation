@@ -33,6 +33,7 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IterableUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,7 +52,9 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
 @Slf4j
 @Transactional
@@ -65,12 +68,19 @@ public class DoctorsForDBService {
 
   private RecommendationService recommendationService;
 
+  private RecommendationElasticSearchService recommendationElasticSearchService;
+
+  private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
   public DoctorsForDBService(
     DoctorsForDBRepository doctorsForDBRepository,
-    RecommendationService recommendationService
+    RecommendationService recommendationService,
+    RecommendationElasticSearchRepository recommendationElasticSearchRepository,
+    RecommendationElasticSearchService recommendationElasticSearchService
   ) {
     this.doctorsRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
+    this.recommendationElasticSearchRepository = recommendationElasticSearchRepository;
+    this.recommendationElasticSearchService = recommendationElasticSearchService;
   }
 
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
@@ -175,7 +185,24 @@ public class DoctorsForDBService {
 
   }
 
-  private Page<DoctorsForDB> getSortedAndFilteredDoctorsByPageNumber(
+  private TraineeInfoDto convert(final RecommendationView doctorsForDB) {
+    final var traineeInfoDTOBuilder = TraineeInfoDto.builder()
+        .gmcReferenceNumber(doctorsForDB.getGmcReferenceNumber())
+        .doctorFirstName(doctorsForDB.getDoctorFirstName())
+        .doctorLastName(doctorsForDB.getDoctorLastName())
+        .submissionDate(doctorsForDB.getSubmissionDate())
+        .designatedBody(doctorsForDB.getDesignatedBody())
+        .underNotice(doctorsForDB.getUnderNotice())
+        .doctorStatus(doctorsForDB.getTisStatus())
+        .lastUpdatedDate(doctorsForDB.getLastUpdatedDate())
+        .admin(doctorsForDB.getAdmin())
+        .connectionStatus(getConnectionStatus(doctorsForDB.getDesignatedBody()));
+
+    return traineeInfoDTOBuilder.build();
+
+  }
+
+  private Page<RecommendationView> getSortedAndFilteredDoctorsByPageNumber(
       final TraineeRequestDto requestDTO, final List<String> hiddenGmcIds) {
     final var hiddenGmcIdsNotNull = (hiddenGmcIds == null) ? new ArrayList<String>() : hiddenGmcIds;
 
@@ -189,16 +216,21 @@ public class DoctorsForDBService {
       orders.add(lastNameOrder);
     }
     final var pageableAndSortable = of(requestDTO.getPageNumber(), pageSize, by(orders));
+    final var designatedBodyCodes =
+        recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+            requestDTO.getDbcs()
+        );
 
     if (requestDTO.isUnderNotice()) {
-      return doctorsRepository
-          .findByUnderNotice(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
-              YES);
+
+      return recommendationElasticSearchRepository
+          .findByUnderNotice(requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes,
+              pageableAndSortable);
     }
 
-    return doctorsRepository
-        .findAll(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
-            hiddenGmcIdsNotNull);
+    return recommendationElasticSearchRepository
+        .findAll(requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes,
+            hiddenGmcIdsNotNull, pageableAndSortable);
   }
 
   //TODO: explore to implement cache
