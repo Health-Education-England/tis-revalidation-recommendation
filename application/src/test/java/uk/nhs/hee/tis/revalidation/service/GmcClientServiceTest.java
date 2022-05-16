@@ -70,11 +70,6 @@ class GmcClientServiceTest {
   @Mock
   private CheckRecommendationStatusResponseCT statusResponseCT;
 
-  @Mock
-  private RecommendationService recommendationService;
-
-  @Mock
-  private RabbitTemplate rabbitTemplate;
 
   private String gmcId = faker.number().digits(8);
   private String recommendationId = faker.number().digits(10); //internal recommendationId
@@ -92,8 +87,7 @@ class GmcClientServiceTest {
   private String exchange = faker.lorem().characters(10);
   private String routingKey = faker.lorem().characters(10);
 
-  private List<RecommendationStatusCheckDto> recommendationStatusCheckDtos;
-  private RecommendationStatusCheckDto recommendationStatus1, recommendationStatus2;
+
 
   /**
    * Data setup.
@@ -103,24 +97,12 @@ class GmcClientServiceTest {
     ReflectionTestUtils.setField(gmcClientService, "gmcConnectUrl", url);
     ReflectionTestUtils.setField(gmcClientService, "gmcUserName", username);
     ReflectionTestUtils.setField(gmcClientService, "gmcPassword", password);
-    ReflectionTestUtils.setField(gmcClientService, "revalExchange", exchange);
-    ReflectionTestUtils.setField(gmcClientService, "revalRoutingKeyRecommendationStatus", routingKey);
 
-    recommendationStatus1 =
-        buildRecommendationStatusCheckDto(designatedBodyCode, gmcId, gmcRecommendationId, recommendationId);
-    recommendationStatus2 =
-        buildRecommendationStatusCheckDto(designatedBodyCode2, gmcId2, gmcRecommendationId2, recommendationId2);
-    recommendationStatusCheckDtos = List.of(recommendationStatus1,recommendationStatus2);
+
+
   }
 
-  @Test
-  void shouldSendRecommendationStatusRequestToRabbit() {
-    when(recommendationService.getRecommendationStatusCheckDtos()).thenReturn(recommendationStatusCheckDtos);
 
-    gmcClientService.sendRecommendationStatusRequestToRabbit();
-    verify(rabbitTemplate).convertAndSend(exchange, routingKey, recommendationStatus1);
-    verify(rabbitTemplate).convertAndSend(exchange, routingKey, recommendationStatus2);
-  }
 
   @Test
   void shouldReturnSuccessForCheckStatusOfRecommendation() {
@@ -226,14 +208,5 @@ class GmcClientServiceTest {
     assertThat(checkRecommendationStatusResponse, is(UNDER_REVIEW));
   }
 
-  private RecommendationStatusCheckDto buildRecommendationStatusCheckDto(final String designatedBodyId, final String gmcReferenceNumber,
-      final String gmcRecommendationId, final String recommendationId) {
-    return RecommendationStatusCheckDto.builder()
-        .designatedBodyId(designatedBodyId)
-        .gmcReferenceNumber(gmcReferenceNumber)
-        .gmcRecommendationId(gmcRecommendationId)
-        .recommendationId(recommendationId)
-        .outcome(null)
-        .build();
-  }
+
 }

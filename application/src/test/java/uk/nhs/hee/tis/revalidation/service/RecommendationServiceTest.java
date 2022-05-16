@@ -28,7 +28,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,7 +36,6 @@ import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.SUCCESS;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.REJECTED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.UNDER_REVIEW;
-import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.COMPLETED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.DRAFT;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.NOT_STARTED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.READY_TO_REVIEW;
@@ -61,6 +59,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.gmc.client.generated.TryRecommendationResponseCT;
 import uk.nhs.hee.tis.gmc.client.generated.TryRecommendationV2Response;
 import uk.nhs.hee.tis.revalidation.dto.DeferralReasonDto;
@@ -117,6 +117,9 @@ class RecommendationServiceTest {
   @Mock
   private SnapshotService snapshotService;
 
+  @Mock
+  private RabbitTemplate rabbitTemplate;
+
   private String firstName;
   private String lastName;
   private LocalDate submissionDate;
@@ -164,8 +167,17 @@ class RecommendationServiceTest {
   private LocalDate gmcSubmissionLocalDate1 = LocalDate.now();
   private LocalDate gmcSubmissionLocalDate2 = LocalDate.now().plusDays(1);
 
+  private String password = faker.lorem().characters(10);
+  private String exchange = faker.lorem().characters(10);
+  private String routingKey = faker.lorem().characters(10);
+
+  private RecommendationStatusCheckDto recommendationStatus;
+  private List<RecommendationStatusCheckDto> recommendationStatusCheckDtos;
+
   @BeforeEach
   public void setup() {
+    ReflectionTestUtils.setField(recommendationService, "revalExchange", exchange);
+    ReflectionTestUtils.setField(recommendationService, "revalRoutingKeyRecommendationStatus", routingKey);
     firstName = faker.name().firstName();
     lastName = faker.name().lastName();
     status = NOT_STARTED;
@@ -263,6 +275,11 @@ class RecommendationServiceTest {
     doctorsForDB3 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB3.setUnderNotice(NO);
 
+
+
+    recommendationStatus =
+        buildRecommendationStatusCheckDto(designatedBodyCode, gmcNumber1, gmcRecommendationId1, recommendationId);
+    recommendationStatusCheckDtos = List.of(recommendationStatus);
   }
 
   @Test
@@ -912,6 +929,37 @@ class RecommendationServiceTest {
 
   }
 
+  @Test
+  void shouldSendRecommendationStatusRequestToRabbit() {
+
+//    final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
+//    if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
+//      final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
+//          .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
+//          .gmcReferenceNumber(rec.getGmcNumber())
+//          .gmcRecommendationId(rec.getGmcRevalidationId())
+//          .recommendationId(rec.getId())
+//          .build();
+    final Recommendation recommendationCheck = Recommendation.builder()
+            .id(recommendationId)
+            .gmcNumber(gmcNumber1)
+            .gmcRevalidationId(gmcRecommendationId1)
+            .build();
+    final DoctorsForDB doctorCheck = DoctorsForDB.builder()
+        .designatedBodyCode(designatedBodyCode)
+        .build();
+
+    when(recommendationRepository.findAllByRecommendationStatus(any()))
+        .thenReturn(List.of(recommendationCheck));
+    when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(
+      Optional.of(doctorCheck)
+    );
+
+
+    recommendationService.sendRecommendationStatusRequestToRabbit();
+    verify(rabbitTemplate).convertAndSend(exchange, routingKey, recommendationStatus);
+  }
+
 
   private DoctorsForDB buildDoctorForDB(final String gmcId,
       RecommendationStatus doctorRecommendationStatus) {
@@ -983,6 +1031,17 @@ class RecommendationServiceTest {
         .deferralSubReason(deferralSubReason)
         .comments(comments)
         .admin(admin)
+        .build();
+  }
+
+  private RecommendationStatusCheckDto buildRecommendationStatusCheckDto(final String designatedBodyId, final String gmcReferenceNumber,
+      final String gmcRecommendationId, final String recommendationId) {
+    return RecommendationStatusCheckDto.builder()
+        .designatedBodyId(designatedBodyId)
+        .gmcReferenceNumber(gmcReferenceNumber)
+        .gmcRecommendationId(gmcRecommendationId)
+        .recommendationId(recommendationId)
+        .outcome(null)
         .build();
   }
 }
