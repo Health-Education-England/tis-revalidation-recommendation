@@ -43,7 +43,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.nhs.hee.tis.gmc.client.generated.DoctorForDb;
@@ -84,6 +88,28 @@ public class RecommendationServiceImpl implements RecommendationService {
 
   @Autowired
   private GmcClientService gmcClientService;
+
+  @Autowired
+  private RabbitTemplate rabbitTemplate;
+
+  @Value("${app.rabbit.reval.exchange}")
+  private String revalExchange;
+
+  @Value("${app.rabbit.reval.routingKey.recommendationstatuscheck.requested}")
+  private String revalRoutingKeyRecommendationStatus;
+
+
+  /**
+   * Cron job to send RecommendationStatusDtos to Rabbit queue for GMC recommendation status check.
+   */
+  @Scheduled(cron = "${app.gmc.recommendationstatuscheck.cronExpression}")
+  @SchedulerLock(name = "RecommendationStatusCheckJob")
+  public void sendRecommendationStatusRequestToRabbit() {
+    log.info("Start cron job: sendRecommendationStatusRequestToRabbit()");
+    getRecommendationStatusCheckDtos().forEach(
+        recommendation -> rabbitTemplate
+            .convertAndSend(revalExchange, revalRoutingKeyRecommendationStatus, recommendation));
+  }
 
   /**
    * Get trainee information with current and legacy recommendations

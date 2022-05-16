@@ -28,10 +28,7 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.convertDateInGmcFormat;
 
 import lombok.extern.slf4j.Slf4j;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
@@ -66,41 +63,16 @@ public class GmcClientService {
   @Value("${app.gmc.soapActionBase}")
   private String gmcSoapBaseAction;
 
-  @Value("${app.rabbit.reval.exchange}")
-  private String revalExchange;
-
-  @Value("${app.rabbit.reval.routingKey.recommendationstatuscheck.requested}")
-  private String revalRoutingKeyRecommendationStatus;
 
   private WebServiceTemplate webServiceTemplate;
-
-  private RecommendationService recommendationService;
-
-  private RabbitTemplate rabbitTemplate;
 
   /**
    * Constructor of GmcClientService.
    */
   public GmcClientService(
-      WebServiceTemplate webServiceTemplate,
-      RecommendationService recommendationService,
-      RabbitTemplate rabbitTemplate
+      WebServiceTemplate webServiceTemplate
   ) {
     this.webServiceTemplate = webServiceTemplate;
-    this.recommendationService = recommendationService;
-    this.rabbitTemplate = rabbitTemplate;
-  }
-
-  /**
-   * Cron job to send RecommendationStatusDtos to Rabbit queue for GMC recommendation status check.
-   */
-  @Scheduled(cron = "${app.gmc.recommendationstatuscheck.cronExpression}")
-  @SchedulerLock(name = "RecommendationStatusCheckJob")
-  public void sendRecommendationStatusRequestToRabbit() {
-    log.info("Start cron job: sendRecommendationStatusRequestToRabbit()");
-    recommendationService.getRecommendationStatusCheckDtos().forEach(
-        recommendation -> rabbitTemplate
-            .convertAndSend(revalExchange, revalRoutingKeyRecommendationStatus, recommendation));
   }
 
   public RecommendationGmcOutcome checkRecommendationStatus(final String gmcNumber,
