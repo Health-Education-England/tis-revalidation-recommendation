@@ -23,23 +23,33 @@
               {
                 "wildcard": {
                   "doctorFirstName": {
-                    "value": "*?0*"
+                    "value": "?0*"
                   }
                 }
               },
               {
                 "wildcard": {
                   "doctorLastName": {
-                    "value": "*?0*"
+                    "value": "?0*"
                   }
                 }
               },
               {
                 "wildcard": {
                   "gmcReferenceNumber": {
-                    "value": "*?0*"
+                    "value": "?0*"
                   }
                 }
+<<<<<<< Updated upstream
+=======
+              },
+              {
+                "wildcard": {
+                  "programmeName": {
+                    "value": "?0*"
+                  }
+                }
+>>>>>>> Stashed changes
               }
             ]
           }
