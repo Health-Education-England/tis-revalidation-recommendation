@@ -40,10 +40,6 @@ public class RecommendationElasticSearchService {
   @Autowired
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
-  public void getRecommendations(String searchQuery, List<String> dbcs) {
-    
-  }
-
   /**
    * add Recommendation data to elasticsearch Recommendation index.
    *
