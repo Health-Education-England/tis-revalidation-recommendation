@@ -118,7 +118,7 @@ class RabbitMessageListenerTest {
   void shouldNotRequeueDoctorUpdateMessageOnException() {
     doThrow(new NullPointerException()).when(doctorsForDBService).updateTrainee(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
       rabbitMessageListener.receivedMessage(null);
     });
   }
@@ -127,7 +127,7 @@ class RabbitMessageListenerTest {
   void shouldNotRequeueDBCStatusUpdateMessageOnException() {
     doThrow(new NullPointerException()).when(doctorsForDBService).removeDesignatedBodyCode(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
       rabbitMessageListener.receiveRemoveDoctorDesignatedBodyCodeMessage(null);
     });
   }
@@ -166,14 +166,14 @@ class RabbitMessageListenerTest {
             .underNotice("Yes")
             .build();
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
       rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto);
     });
   }
 
   @Test
   void shouldNotUpdateMessageFromMasterDoctorViewOnException() {
-    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
       rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null);
     });
   }

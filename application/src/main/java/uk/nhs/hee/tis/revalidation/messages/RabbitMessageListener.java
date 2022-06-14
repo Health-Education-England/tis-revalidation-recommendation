@@ -111,12 +111,16 @@ public class RabbitMessageListener {
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
       ackMode = "NONE")
-  public void receiveUpdateMessageFromMasterDoctorView(final MasterDoctorViewDto masterDoctorViewDto) {
+  public void receiveUpdateMessageFromMasterDoctorView(
+      final MasterDoctorViewDto masterDoctorViewDto) {
     try {
-      if(masterDoctorViewDto.getGmcReferenceNumber() == null) throw new RecommendationException(
-          "Received update message MasterDoctorView with null gmc reference number"
-      );
-      log.info("Message received from Master index to update doctor record. gmcRefNo: {}", masterDoctorViewDto.getGmcReferenceNumber());
+      if (masterDoctorViewDto.getGmcReferenceNumber() == null) {
+        throw new RecommendationException(
+            "Received update message MasterDoctorView with null gmc reference number"
+        );
+      }
+      log.info("Message received from Master index to update doctor record. gmcRefNo: {}",
+          masterDoctorViewDto.getGmcReferenceNumber());
       recommendationElasticSearchService.saveRecommendationViews(
           recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
     } catch (Exception exception) {
