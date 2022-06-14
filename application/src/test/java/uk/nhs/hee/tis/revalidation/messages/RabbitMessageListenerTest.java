@@ -157,6 +157,21 @@ class RabbitMessageListenerTest {
   }
 
   @Test
+  void shouldDiscardUpdateMessagesFromMasterDoctorViewIfGmcReferenceNumberNull() {
+    MasterDoctorViewDto testDto =
+        MasterDoctorViewDto.builder()
+            .gmcReferenceNumber(null)
+            .tcsPersonId(1L)
+            .designatedBody(designatedBody)
+            .underNotice("Yes")
+            .build();
+
+    assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
+      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto);
+    });
+  }
+
+  @Test
   void shouldNotUpdateMessageFromMasterDoctorViewOnException() {
     assertThrows(AmqpRejectAndDontRequeueException.class, ()->{
       rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null);
