@@ -34,7 +34,7 @@ public interface RecommendationElasticSearchRepository
     extends ElasticsearchRepository<RecommendationView, String> {
 
   @Query(
-      "{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName.keyword\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName.keyword\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber.keyword\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName.keyword\":{\"value\":\"?0*\"}}}]}}]}}"
+      "{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName\":{\"value\":\"?0*\"}}}]}}]}}"
   )
   Page<RecommendationView> findByUnderNotice(final String searchQuery,
       final String dbcs, final Pageable pageable);
