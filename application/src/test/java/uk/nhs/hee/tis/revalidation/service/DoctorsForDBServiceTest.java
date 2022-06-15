@@ -124,11 +124,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+        .findAll("", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
-            .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+    ).thenReturn(formattedDbcs);
 
     when(page.get()).thenReturn(Stream.of(rv1, rv2, rv3, rv4, rv5));
     when(page.getTotalPages()).thenReturn(1);
@@ -178,7 +179,6 @@ class DoctorsForDBServiceTest {
     assertThat(doctorsForDB.get(3).getUnderNotice(), is(un4.name()));
     assertThat(doctorsForDB.get(3).getDoctorStatus(), is(status4.name()));
 
-
     assertThat(doctorsForDB.get(4).getGmcReferenceNumber(), is(gmcRef5));
     assertThat(doctorsForDB.get(4).getDoctorFirstName(), is(fname5));
     assertThat(doctorsForDB.get(4).getDoctorLastName(), is(lname5));
@@ -198,11 +198,12 @@ class DoctorsForDBServiceTest {
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List.of(designatedBody1);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+        .findAll("", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+    ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
@@ -242,11 +243,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findByUnderNotice("", dbcs ,pageableAndSortable)).thenReturn(page);
+        .findByUnderNotice("", formattedDbcs, pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+    ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv2));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
@@ -293,11 +295,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+        .findAll("", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+    ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of());
     when(repository.countByUnderNoticeIn(YES)).thenReturn(0l);
     final var requestDTO = TraineeRequestDto.builder()
@@ -326,11 +329,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+        .findAll("query", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+    ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
@@ -378,11 +382,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+        .findAll("query", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+    ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
@@ -428,11 +433,12 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", dbcs, List.of(),pageableAndSortable)).thenReturn(page);
+        .findAll("query", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(dbcs);
+    ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2l);
@@ -616,7 +622,7 @@ class DoctorsForDBServiceTest {
         now(), designatedBody4, admin4, true);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
         now(), designatedBody5, admin5, true);
-    
+
     rv1 = RecommendationView.builder()
         .gmcReferenceNumber(gmcRef1)
         .doctorFirstName(fname1)

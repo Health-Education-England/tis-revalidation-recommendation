@@ -73,14 +73,13 @@ public class RecommendationElasticSearchService {
     }
   }
 
-  public List<String> formatDesignatedBodyCodesForElasticsearchQuery(
-      List<String> designatedBodyCodes)
-  {
+  public String formatDesignatedBodyCodesForElasticsearchQuery(
+      List<String> designatedBodyCodes) {
     List<String> escapedCodes = new ArrayList<>();
     designatedBodyCodes.forEach(code -> {
-      escapedCodes.add(code.replace("1-", ""));
+      escapedCodes.add(code.toLowerCase().replace("1-", ""));
     });
-    return escapedCodes;
+    return String.join(",", escapedCodes);
   }
 
   /**
@@ -112,8 +111,7 @@ public class RecommendationElasticSearchService {
     Iterable<RecommendationView> result = new ArrayList<>();
     if (gmcReferenceNumber == null) {
       throw new NullPointerException("gmcReferenceNumber is null");
-    }
-    else {
+    } else {
       try {
         result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
       } catch (Exception ex) {

@@ -49,8 +49,11 @@ public class RecommendationView {
   @Column(name = "id")
   private String id;
   private Long tcsPersonId;
+  @Field(type = FieldType.Keyword)
   private String gmcReferenceNumber;
+  @Field(type = FieldType.Keyword)
   private String doctorFirstName;
+  @Field(type = FieldType.Keyword)
   private String doctorLastName;
   private String designatedBody;
   @Field(type = FieldType.Date, format = DateFormat.custom, pattern = "uuuu-MM-dd")
@@ -58,6 +61,7 @@ public class RecommendationView {
   private LocalDate submissionDate;
   private String gmcStatus;
   private String tisStatus;
+  @Field(type = FieldType.Keyword)
   private String programmeName;
   private String membershipType;
   @Field(type = FieldType.Date, format = DateFormat.custom, pattern = "uuuu-MM-dd")

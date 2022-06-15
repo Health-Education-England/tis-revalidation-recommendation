@@ -101,7 +101,7 @@ class RecommendationElasticSearchServiceTest {
   @Test
   void shouldThrowExceptionWhenSavingNull() {
     doThrow(new NullPointerException()).when(recommendationElasticSearchRepository)
-      .save(null);
+        .save(null);
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.addRecommendationViews(null);
     });
@@ -144,15 +144,13 @@ class RecommendationElasticSearchServiceTest {
   @Test
   void shouldFormatDesignatedBodyCodesForElasticsearchQuery() {
     final String dbc1 = "1-AIIDHJ";
-    final String dbc1Formatted = "AIIDHJ";
     final String dbc2 = "AIIDMQ";
-    final String dbc2Formatted = "AIIDMQ";
+    final String dbcformatted = "aiidhj, aiidmq";
     List<String> dbcs = List.of(dbc1, dbc2);
 
     final var result =
-      recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs);
+        recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs);
 
-    assertThat(result.get(0), is(dbc1Formatted));
-    assertThat(result.get(1), is(dbc2Formatted));
+    assertThat(result, is(dbcformatted));
   }
 }

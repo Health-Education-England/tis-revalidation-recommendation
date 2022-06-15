@@ -34,16 +34,16 @@ public interface RecommendationElasticSearchRepository
     extends ElasticsearchRepository<RecommendationView, String> {
 
   @Query(
-    "{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName\":{\"value\":\"?0*\"}}}]}}]}}"
+      "{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName.keyword\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName.keyword\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber.keyword\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName.keyword\":{\"value\":\"?0*\"}}}]}}]}}"
   )
   Page<RecommendationView> findByUnderNotice(final String searchQuery,
-      final List<String> dbcs, final Pageable pageable);
+      final String dbcs, final Pageable pageable);
 
   @Query(
-    "{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName\":{\"value\":\"?0*\"}}}]}}]}}"
+      "{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName\":{\"value\":\"?0*\"}}}]}}]}}"
   )
   Page<RecommendationView> findAll(final String searchQuery,
-      final List<String> dbcs, List<String> hiddenGmcIds, final Pageable pageable);
+      final String dbcs, List<String> hiddenGmcIds, final Pageable pageable);
 
   List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
 
