@@ -49,4 +49,6 @@ public class TraineeInfoDto {
   private LocalDate lastUpdatedDate;
   private String designatedBody;
   private String connectionStatus;
+  private String programmeName;
+  private LocalDate curriculumEndDate;
 }

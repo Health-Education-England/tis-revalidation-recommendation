@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,15 @@ public class RecommendationElasticSearchService {
     }
   }
 
+  public String formatDesignatedBodyCodesForElasticsearchQuery(
+      List<String> designatedBodyCodes) {
+    List<String> escapedCodes = new ArrayList<>();
+    designatedBodyCodes.forEach(code -> {
+      escapedCodes.add(code.toLowerCase().replace("1-", ""));
+    });
+    return String.join(",", escapedCodes);
+  }
+
   /**
    * update existing Recommendation to elasticsearch index.
    *
@@ -101,8 +111,7 @@ public class RecommendationElasticSearchService {
     Iterable<RecommendationView> result = new ArrayList<>();
     if (gmcReferenceNumber == null) {
       throw new NullPointerException("gmcReferenceNumber is null");
-    }
-    else {
+    } else {
       try {
         result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
       } catch (Exception ex) {

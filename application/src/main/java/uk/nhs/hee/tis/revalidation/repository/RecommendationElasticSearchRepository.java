@@ -22,6 +22,9 @@
 package uk.nhs.hee.tis.revalidation.repository;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
@@ -29,6 +32,18 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 @Repository
 public interface RecommendationElasticSearchRepository
     extends ElasticsearchRepository<RecommendationView, String> {
+
+  @Query(
+      "{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName\":{\"value\":\"?0*\"}}}]}}]}}"
+  )
+  Page<RecommendationView> findByUnderNotice(final String searchQuery,
+      final String dbcs, final Pageable pageable);
+
+  @Query(
+      "{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"programmeName\":{\"value\":\"?0*\"}}}]}}]}}"
+  )
+  Page<RecommendationView> findAll(final String searchQuery,
+      final String dbcs, List<String> hiddenGmcIds, final Pageable pageable);
 
   List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
 

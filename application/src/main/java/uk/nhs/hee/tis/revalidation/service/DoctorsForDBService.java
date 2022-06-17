@@ -46,12 +46,14 @@ import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
-import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
 @Slf4j
 @Transactional
@@ -65,12 +67,24 @@ public class DoctorsForDBService {
 
   private RecommendationService recommendationService;
 
+  private RecommendationElasticSearchService recommendationElasticSearchService;
+
+  private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
+
+  private RecommendationViewMapper recommendationViewMapper;
+
   public DoctorsForDBService(
-    DoctorsForDBRepository doctorsForDBRepository,
-    RecommendationService recommendationService
+      DoctorsForDBRepository doctorsForDBRepository,
+      RecommendationService recommendationService,
+      RecommendationElasticSearchRepository recommendationElasticSearchRepository,
+      RecommendationElasticSearchService recommendationElasticSearchService,
+      RecommendationViewMapper recommendationViewMapper
   ) {
     this.doctorsRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
+    this.recommendationElasticSearchRepository = recommendationElasticSearchRepository;
+    this.recommendationElasticSearchService = recommendationElasticSearchService;
+    this.recommendationViewMapper = recommendationViewMapper;
   }
 
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
@@ -78,7 +92,7 @@ public class DoctorsForDBService {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
     final var doctorsList = paginatedDoctors.get().collect(toList());
     final var traineeDoctors = doctorsList.stream().map(d ->
-        convert(d)).collect(toList());
+        recommendationViewMapper.toTraineeInfoDto(d)).collect(toList());
 
     return TraineeSummaryDto.builder()
         .traineeInfo(traineeDoctors)
@@ -92,18 +106,17 @@ public class DoctorsForDBService {
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
     final var doctorsForDB = DoctorsForDB.convert(gmcDoctor);
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
-    if (doctor.isPresent() ) {
+    if (doctor.isPresent()) {
       doctorsForDB.setAdmin(doctor.get().getAdmin());
-      if(gmcDoctor.getUnderNotice().equals(NO.value())) {
+      if (gmcDoctor.getUnderNotice().equals(NO.value())) {
         doctorsForDB.setDoctorStatus(RecommendationStatus.COMPLETED);
-      }
-      else {
+      } else {
         doctorsForDB.setDoctorStatus(
-          recommendationService.getRecommendationStatusForTrainee(gmcDoctor.getGmcReferenceNumber())
+            recommendationService.getRecommendationStatusForTrainee(
+                gmcDoctor.getGmcReferenceNumber())
         );
       }
-    }
-    else {
+    } else {
       doctorsForDB.setDoctorStatus(RecommendationStatus.NOT_STARTED);
     }
     doctorsRepository.save(doctorsForDB);
@@ -175,7 +188,7 @@ public class DoctorsForDBService {
 
   }
 
-  private Page<DoctorsForDB> getSortedAndFilteredDoctorsByPageNumber(
+  private Page<RecommendationView> getSortedAndFilteredDoctorsByPageNumber(
       final TraineeRequestDto requestDTO, final List<String> hiddenGmcIds) {
     final var hiddenGmcIdsNotNull = (hiddenGmcIds == null) ? new ArrayList<String>() : hiddenGmcIds;
 
@@ -189,16 +202,21 @@ public class DoctorsForDBService {
       orders.add(lastNameOrder);
     }
     final var pageableAndSortable = of(requestDTO.getPageNumber(), pageSize, by(orders));
+    final var designatedBodyCodes =
+        recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+            requestDTO.getDbcs()
+        );
 
     if (requestDTO.isUnderNotice()) {
-      return doctorsRepository
-          .findByUnderNotice(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
-              YES);
+
+      return recommendationElasticSearchRepository
+          .findByUnderNotice(requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes,
+              pageableAndSortable);
     }
 
-    return doctorsRepository
-        .findAll(pageableAndSortable, requestDTO.getSearchQuery(), requestDTO.getDbcs(),
-            hiddenGmcIdsNotNull);
+    return recommendationElasticSearchRepository
+        .findAll(requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes,
+            hiddenGmcIdsNotNull, pageableAndSortable);
   }
 
   //TODO: explore to implement cache

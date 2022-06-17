@@ -22,6 +22,8 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import static java.time.LocalDate.now;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -99,7 +101,7 @@ class RecommendationElasticSearchServiceTest {
   @Test
   void shouldThrowExceptionWhenSavingNull() {
     doThrow(new NullPointerException()).when(recommendationElasticSearchRepository)
-      .save(null);
+        .save(null);
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.addRecommendationViews(null);
     });
@@ -137,5 +139,18 @@ class RecommendationElasticSearchServiceTest {
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.saveRecommendationViews(recommendationView);
     });
+  }
+
+  @Test
+  void shouldFormatDesignatedBodyCodesForElasticsearchQuery() {
+    final String dbc1 = "1-AIIDHJ";
+    final String dbc2 = "AIIDMQ";
+    final String dbcformatted = "aiidhj,aiidmq";
+    List<String> dbcs = List.of(dbc1, dbc2);
+
+    final var result =
+        recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs);
+
+    assertThat(result, is(dbcformatted));
   }
 }
