@@ -33,7 +33,6 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.IterableUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,12 +46,12 @@ import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
-import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
@@ -71,16 +70,21 @@ public class DoctorsForDBService {
   private RecommendationElasticSearchService recommendationElasticSearchService;
 
   private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
+
+  private RecommendationViewMapper recommendationViewMapper;
+
   public DoctorsForDBService(
-    DoctorsForDBRepository doctorsForDBRepository,
-    RecommendationService recommendationService,
-    RecommendationElasticSearchRepository recommendationElasticSearchRepository,
-    RecommendationElasticSearchService recommendationElasticSearchService
+      DoctorsForDBRepository doctorsForDBRepository,
+      RecommendationService recommendationService,
+      RecommendationElasticSearchRepository recommendationElasticSearchRepository,
+      RecommendationElasticSearchService recommendationElasticSearchService,
+      RecommendationViewMapper recommendationViewMapper
   ) {
     this.doctorsRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
     this.recommendationElasticSearchRepository = recommendationElasticSearchRepository;
     this.recommendationElasticSearchService = recommendationElasticSearchService;
+    this.recommendationViewMapper = recommendationViewMapper;
   }
 
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
@@ -88,7 +92,7 @@ public class DoctorsForDBService {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
     final var doctorsList = paginatedDoctors.get().collect(toList());
     final var traineeDoctors = doctorsList.stream().map(d ->
-        convert(d)).collect(toList());
+        recommendationViewMapper.toTraineeInfoDto(d)).collect(toList());
 
     return TraineeSummaryDto.builder()
         .traineeInfo(traineeDoctors)
@@ -102,18 +106,17 @@ public class DoctorsForDBService {
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
     final var doctorsForDB = DoctorsForDB.convert(gmcDoctor);
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
-    if (doctor.isPresent() ) {
+    if (doctor.isPresent()) {
       doctorsForDB.setAdmin(doctor.get().getAdmin());
-      if(gmcDoctor.getUnderNotice().equals(NO.value())) {
+      if (gmcDoctor.getUnderNotice().equals(NO.value())) {
         doctorsForDB.setDoctorStatus(RecommendationStatus.COMPLETED);
-      }
-      else {
+      } else {
         doctorsForDB.setDoctorStatus(
-          recommendationService.getRecommendationStatusForTrainee(gmcDoctor.getGmcReferenceNumber())
+            recommendationService.getRecommendationStatusForTrainee(
+                gmcDoctor.getGmcReferenceNumber())
         );
       }
-    }
-    else {
+    } else {
       doctorsForDB.setDoctorStatus(RecommendationStatus.NOT_STARTED);
     }
     doctorsRepository.save(doctorsForDB);
@@ -180,23 +183,6 @@ public class DoctorsForDBService {
         .lastUpdatedDate(doctorsForDB.getLastUpdatedDate())
         .admin(doctorsForDB.getAdmin())
         .connectionStatus(getConnectionStatus(doctorsForDB.getDesignatedBodyCode()));
-
-    return traineeInfoDTOBuilder.build();
-
-  }
-
-  private TraineeInfoDto convert(final RecommendationView doctorsForDB) {
-    final var traineeInfoDTOBuilder = TraineeInfoDto.builder()
-        .gmcReferenceNumber(doctorsForDB.getGmcReferenceNumber())
-        .doctorFirstName(doctorsForDB.getDoctorFirstName())
-        .doctorLastName(doctorsForDB.getDoctorLastName())
-        .submissionDate(doctorsForDB.getSubmissionDate())
-        .designatedBody(doctorsForDB.getDesignatedBody())
-        .underNotice(doctorsForDB.getUnderNotice())
-        .doctorStatus(doctorsForDB.getTisStatus())
-        .lastUpdatedDate(doctorsForDB.getLastUpdatedDate())
-        .admin(doctorsForDB.getAdmin())
-        .connectionStatus(getConnectionStatus(doctorsForDB.getDesignatedBody()));
 
     return traineeInfoDTOBuilder.build();
 

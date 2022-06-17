@@ -47,6 +47,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -62,6 +63,7 @@ import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
+import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
@@ -85,6 +87,9 @@ class DoctorsForDBServiceTest {
 
   @Mock
   private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
+
+  @Spy
+  private RecommendationViewMapper recommendationViewMapper;
 
   @Captor
   ArgumentCaptor<DoctorsForDB> doctorCaptor;
