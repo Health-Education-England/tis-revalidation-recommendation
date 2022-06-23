@@ -40,7 +40,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -50,7 +49,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uk.nhs.hee.tis.gmc.client.generated.DoctorForDb;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
@@ -204,7 +202,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         break;
     }
 
-    recommendation.setActualSubmissionDate(now());
     Recommendation savedRecommendation = recommendationRepository.save(recommendation);
     doctor.setLastUpdatedDate(now());
     doctor.setDoctorStatus(
