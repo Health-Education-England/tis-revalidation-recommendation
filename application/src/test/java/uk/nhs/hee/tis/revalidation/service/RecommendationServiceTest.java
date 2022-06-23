@@ -56,6 +56,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -119,6 +121,9 @@ class RecommendationServiceTest {
 
   @Mock
   private RabbitTemplate rabbitTemplate;
+
+  @Captor
+  private ArgumentCaptor<Recommendation> recommendationCaptor;
 
   private String firstName;
   private String lastName;
@@ -274,8 +279,6 @@ class RecommendationServiceTest {
     doctorsForDB2.setUnderNotice(YES);
     doctorsForDB3 = buildDoctorForDB(gmcNumber1, RecommendationStatus.NOT_STARTED);
     doctorsForDB3.setUnderNotice(NO);
-
-
 
     recommendationStatus =
         buildRecommendationStatusCheckDto(designatedBodyCode, gmcNumber1, gmcRecommendationId1, recommendationId);
@@ -452,7 +455,9 @@ class RecommendationServiceTest {
 
     recommendationService.saveRecommendation(recordDTO);
 
-    verify(recommendationRepository).save(any());
+    verify(recommendationRepository).save(recommendationCaptor.capture());
+    Recommendation recommendation = recommendationCaptor.getValue();
+    assertThat(recommendation.getActualSubmissionDate(), is(nullValue()));
   }
 
   @Test
@@ -618,7 +623,9 @@ class RecommendationServiceTest {
 
     recommendationService.updateRecommendation(recordDTO);
 
-    verify(recommendationRepository).save(any());
+    verify(recommendationRepository).save(recommendationCaptor.capture());
+    Recommendation recommendationForSave = recommendationCaptor.getValue();
+    assertThat(recommendationForSave.getActualSubmissionDate(), is(nullValue()));
   }
 
   @Test
