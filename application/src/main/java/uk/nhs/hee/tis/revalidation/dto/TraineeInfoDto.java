@@ -45,10 +45,12 @@ public class TraineeInfoDto {
   private String underNotice;
   private String sanction;
   private String doctorStatus;
+  private String gmcOutcome;
   private String admin;
   private LocalDate lastUpdatedDate;
   private String designatedBody;
   private String connectionStatus;
   private String programmeName;
+  private String programmeMembershipType;
   private LocalDate curriculumEndDate;
 }
