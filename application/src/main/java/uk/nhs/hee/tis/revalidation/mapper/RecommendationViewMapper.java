@@ -29,8 +29,12 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 
 @Mapper(componentModel = "spring")
 public interface RecommendationViewMapper {
-  RecommendationView mapMasterDoctorViewDtoToRecommendationView(MasterDoctorViewDto masterDoctorViewDto);
 
-  @Mapping(source="tisStatus", target = "doctorStatus")
+  RecommendationView mapMasterDoctorViewDtoToRecommendationView(
+      MasterDoctorViewDto masterDoctorViewDto);
+
+  @Mapping(source = "tisStatus", target = "doctorStatus")
+  @Mapping(source = "gmcStatus", target = "gmcOutcome")
+  @Mapping(source = "membershipType", target = "programmeMembershipType")
   TraineeInfoDto toTraineeInfoDto(RecommendationView recommendationView);
 }
