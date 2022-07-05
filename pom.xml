@@ -30,7 +30,7 @@
         <shedlock.version>4.31.0</shedlock.version>
         <gmc-api.version>1.0.0</gmc-api.version>
         <jaxb-runtime.version>2.3.3</jaxb-runtime.version>
-        <sentry.version>5.2.2</sentry.version>
+        <sentry.version>6.1.4</sentry.version>
         <!-- Sonar cloud -->
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <!--suppress UnresolvedMavenProperty -->
