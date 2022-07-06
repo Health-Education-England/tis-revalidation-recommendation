@@ -38,11 +38,13 @@ public class SwaggerConfig {
 
   @Bean
   public Docket api() {
-    return new Docket(DocumentationType.SWAGGER_2).select()
+    return new Docket(DocumentationType.OAS_30)
+        .apiInfo(apiEndPointsInfo())
+        .select()
         .apis(RequestHandlerSelectors
             .basePackage("uk.nhs.hee.tis.revalidation.controller"))
         .paths(PathSelectors.regex("/.*"))
-        .build().apiInfo(apiEndPointsInfo());
+        .build();
   }
 
   private ApiInfo apiEndPointsInfo() {

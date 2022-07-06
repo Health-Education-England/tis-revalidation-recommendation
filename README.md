@@ -28,6 +28,8 @@ mvn clean verify -Pintegration-tests
 
 Above command will setup docker environment on your local machine before it execute integration tests from integration-tests module.
 
+# To access Swagger UI on local
+http://localhost:8080/revalidation/swagger-ui/index.html
 
 # Cron Jobs
 ## Gmc Nightly Doctor Sync (GmcDoctorNightlySyncService.startNightlyGmcDoctorSync)
