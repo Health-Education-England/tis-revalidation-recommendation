@@ -79,6 +79,7 @@ class RecommendationControllerTest {
   private String lastName = faker.name().lastName();
   private LocalDate submissionDate = LocalDate.now();
   private LocalDate dateAdded = LocalDate.now();
+  private final LocalDate today = LocalDate.now();
   private UnderNotice underNotice = faker.options().option(UnderNotice.class);
   private String sanction = faker.lorem().characters(2);
   private RecommendationStatus status = faker.options().option(RecommendationStatus.class);
@@ -143,6 +144,7 @@ class RecommendationControllerTest {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
+        .gmcSubmissionDate(gmcSubmissionDate)
         .deferralDate(deferralDate)
         .deferralReason(deferralReason1)
         .deferralSubReason(deferralSubReason1)
@@ -181,6 +183,7 @@ class RecommendationControllerTest {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
+        .gmcSubmissionDate(gmcSubmissionDate)
         .comments(List.of())
         .build();
 
@@ -200,6 +203,7 @@ class RecommendationControllerTest {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
+        .gmcSubmissionDate(gmcSubmissionDate)
         .deferralDate(deferralDate.minusDays(1))
         .deferralReason(deferralReason1)
         .deferralSubReason(deferralSubReason1)
@@ -216,11 +220,75 @@ class RecommendationControllerTest {
   }
 
   @Test
+  void shouldNotThroughErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsWithin120DaysFromToday()
+      throws Exception {
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(gmcId)
+        .recommendationType(DEFER.name())
+        .gmcSubmissionDate(today.plusDays(5))
+        .deferralDate(deferralDate)
+        .deferralReason(deferralReason1)
+        .deferralSubReason(deferralSubReason1)
+        .comments(List.of())
+        .build();
+
+    this.mockMvc.perform(post(RECOMMENDATION_API_URL)
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(recordDTO)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldNotThroughErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsExactly120DaysFromToday()
+      throws Exception {
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(gmcId)
+        .recommendationType(DEFER.name())
+        .gmcSubmissionDate(today.plusDays(120))
+        .deferralDate(deferralDate)
+        .deferralReason(deferralReason1)
+        .deferralSubReason(deferralSubReason1)
+        .comments(List.of())
+        .build();
+
+    this.mockMvc.perform(post(RECOMMENDATION_API_URL)
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(recordDTO)))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldThroughErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsMoreThan120DaysAfterToday()
+      throws Exception {
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(gmcId)
+        .recommendationType(DEFER.name())
+        .gmcSubmissionDate(today.plusDays(121))
+        .deferralDate(deferralDate)
+        .deferralReason(deferralReason1)
+        .deferralSubReason(deferralSubReason1)
+        .comments(List.of())
+        .build();
+
+    final var expectedErrors = List
+        .of("GMC Submission due date is not less than or equal to 120 days from today");
+    this.mockMvc.perform(post(RECOMMENDATION_API_URL)
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(recordDTO)))
+        .andExpect(status().is4xxClientError())
+        .andExpect(content().json(mapper.writeValueAsString(expectedErrors)));
+  }
+
+  @Test
   void shouldThroughExceptionWhenRecommendationIfDeferralReasonRequiredSubReasonAndNotProvided()
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
+        .gmcSubmissionDate(gmcSubmissionDate)
         .deferralDate(deferralDate.minusDays(1))
         .deferralReason(deferralReason1)
         .deferralSubReason(null)
@@ -242,6 +310,7 @@ class RecommendationControllerTest {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
+        .gmcSubmissionDate(gmcSubmissionDate)
         .deferralDate(deferralDate)
         .deferralReason(deferralReason2)
         .deferralSubReason(null)
@@ -289,6 +358,7 @@ class RecommendationControllerTest {
         .gmcNumber(gmcId)
         .recommendationId(recommendationId)
         .recommendationType(DEFER.name())
+        .gmcSubmissionDate(gmcSubmissionDate)
         .deferralDate(deferralDate)
         .deferralReason(deferralReason1)
         .deferralSubReason(deferralSubReason1)

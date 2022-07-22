@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.validator;
 
 import static java.time.LocalDate.now;
 
+import java.time.temporal.ChronoUnit;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -43,7 +44,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
   public void validate(Object target, Errors errors) {
 
     if (errors.getErrorCount() == 0) {
-      final var recordDTO = (TraineeRecommendationRecordDto) target;
+      var recordDTO = (TraineeRecommendationRecordDto) target;
       if (!StringUtils.hasLength(recordDTO.getGmcNumber())) {
         errors.reject("GmcNumber", "Gmc Number can't be empty or null");
       }
@@ -55,6 +56,14 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
         if (RecommendationType.DEFER.equals(recommendationType)) {
           if (recordDTO.getDeferralDate() == null || recordDTO.getDeferralDate().isBefore(now())) {
             errors.reject("DeferralDate", "Deferral date can't be empty or in past");
+          }
+          //Doctor X has a submission due date of 120 days from today (today <= 120 days)
+          if (recordDTO.getGmcSubmissionDate() != null
+              && (ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) <= 120) {
+            recordDTO = (TraineeRecommendationRecordDto) target;
+          } else {
+            errors.reject("GmcSubmissionDate",
+                "GMC Submission due date is not less than or equal to 120 days from today");
           }
           if (!StringUtils.hasLength(recordDTO.getDeferralReason())) {
             errors.reject("DeferralReason", "Deferral Reason can't be empty or null");
