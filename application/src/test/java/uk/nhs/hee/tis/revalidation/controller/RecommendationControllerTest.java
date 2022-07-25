@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.controller;
 
 import static java.lang.String.format;
+import static java.time.LocalDate.now;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,8 +38,12 @@ import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -77,25 +82,25 @@ class RecommendationControllerTest {
   private String recommendationId = faker.number().digits(8);
   private String firstName = faker.name().firstName();
   private String lastName = faker.name().lastName();
-  private LocalDate submissionDate = LocalDate.now();
-  private LocalDate dateAdded = LocalDate.now();
-  private final LocalDate today = LocalDate.now();
+  private final LocalDate submissionDate = now();
+  private final LocalDate dateAdded = now();
+  private final LocalDate today = now();
   private UnderNotice underNotice = faker.options().option(UnderNotice.class);
   private String sanction = faker.lorem().characters(2);
   private RecommendationStatus status = faker.options().option(RecommendationStatus.class);
-  private LocalDate curriculumEndDate = LocalDate.now();
+  private final LocalDate curriculumEndDate = now();
   private String programmeName = faker.lorem().sentence(3);
   private String programmeMembershipType = faker.lorem().characters(10);
   private String currentGrade = faker.lorem().characters(4);
   private String deferralReason1 = "1";
   private String deferralReason2 = "2";
   private String deferralSubReason1 = "1";
-  private LocalDate deferralDate = LocalDate.now();
+  private final LocalDate deferralDate = now();
   private String deferralComments = faker.lorem().sentence(5);
   private String recommendationType = faker.options().option(RecommendationType.class).name();
   private String gmcOutcome = faker.options().option(RecommendationGmcOutcome.class).name();
-  private LocalDate gmcSubmissionDate = LocalDate.now();
-  private LocalDate actualSubmissionDate = LocalDate.now();
+  private final LocalDate gmcSubmissionDate = now();
+  private final LocalDate actualSubmissionDate = now();
   private String admin = faker.name().fullName();
 
   @Test
@@ -159,7 +164,7 @@ class RecommendationControllerTest {
   }
 
   @Test
-  void shouldThroughExceptionWhenGmcIdOrRecommendationTypeMissingInRecommendationRequest()
+  void shouldThrowExceptionWhenGmcIdOrRecommendationTypeMissingInRecommendationRequest()
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber("")
@@ -178,7 +183,7 @@ class RecommendationControllerTest {
   }
 
   @Test
-  void shouldThroughExceptionWhenRecommendationIsDeferAndDateAndReasonAreMissingInRecommendationRequest()
+  void shouldThrowExceptionWhenRecommendationIsDeferAndDateAndReasonAreMissingInRecommendationRequest()
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
@@ -198,7 +203,7 @@ class RecommendationControllerTest {
   }
 
   @Test
-  void shouldThroughExceptionWhenRecommendationIsDeferAndDeferralDateIsInPast()
+  void shouldThrowExceptionWhenRecommendationIsDeferAndDeferralDateIsInPast()
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
@@ -219,13 +224,14 @@ class RecommendationControllerTest {
         .andExpect(content().json(mapper.writeValueAsString(expectedErrors)));
   }
 
-  @Test
-  void shouldNotThroughErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsWithin120DaysFromToday()
-      throws Exception {
+  @ParameterizedTest(name = "Deferral recommendation will be successful when GMC submission date: {0} is within or exactly 120 days from today")
+  @MethodSource("gmcSubmissionDateProvider")
+  void shouldNotThrowErrorWhenRecommendationIsDeferAndGmcSubmissionIsWithin120DaysOrExactlyFromToday(
+      LocalDate newGmcSubmissionDate) throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
-        .gmcSubmissionDate(today.plusDays(5))
+        .gmcSubmissionDate(newGmcSubmissionDate)
         .deferralDate(deferralDate)
         .deferralReason(deferralReason1)
         .deferralSubReason(deferralSubReason1)
@@ -240,27 +246,7 @@ class RecommendationControllerTest {
   }
 
   @Test
-  void shouldNotThroughErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsExactly120DaysFromToday()
-      throws Exception {
-    final var recordDTO = TraineeRecommendationRecordDto.builder()
-        .gmcNumber(gmcId)
-        .recommendationType(DEFER.name())
-        .gmcSubmissionDate(today.plusDays(120))
-        .deferralDate(deferralDate)
-        .deferralReason(deferralReason1)
-        .deferralSubReason(deferralSubReason1)
-        .comments(List.of())
-        .build();
-
-    this.mockMvc.perform(post(RECOMMENDATION_API_URL)
-        .contentType(MediaType.APPLICATION_JSON)
-        .accept(MediaType.APPLICATION_JSON)
-        .content(mapper.writeValueAsString(recordDTO)))
-        .andExpect(status().isOk());
-  }
-
-  @Test
-  void shouldThroughErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsMoreThan120DaysAfterToday()
+  void shouldThrowErrorWhenRecommendationIsDeferAndGmcSubmissionDateIsMoreThan120DaysAfterToday()
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
@@ -273,7 +259,7 @@ class RecommendationControllerTest {
         .build();
 
     final var expectedErrors = List
-        .of("GMC Submission due date is not less than or equal to 120 days from today");
+        .of("Deferral is not permitted at this time since submission due date is greater than 120 days from today");
     this.mockMvc.perform(post(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
@@ -283,7 +269,7 @@ class RecommendationControllerTest {
   }
 
   @Test
-  void shouldThroughExceptionWhenRecommendationIfDeferralReasonRequiredSubReasonAndNotProvided()
+  void shouldThrowExceptionWhenRecommendationIfDeferralReasonRequiredSubReasonAndNotProvided()
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
@@ -425,4 +411,11 @@ class RecommendationControllerTest {
         .build();
   }
 
+  private static Stream<Arguments> gmcSubmissionDateProvider() {
+    return Stream.of(
+        Arguments.of(now().plusDays(120)),
+        Arguments.of(now().plusDays(5)),
+        Arguments.of(now().plusDays(1))
+    );
+  }
 }

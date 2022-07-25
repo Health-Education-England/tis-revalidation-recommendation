@@ -44,7 +44,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
   public void validate(Object target, Errors errors) {
 
     if (errors.getErrorCount() == 0) {
-      var recordDTO = (TraineeRecommendationRecordDto) target;
+      final var recordDTO = (TraineeRecommendationRecordDto) target;
       if (!StringUtils.hasLength(recordDTO.getGmcNumber())) {
         errors.reject("GmcNumber", "Gmc Number can't be empty or null");
       }
@@ -58,12 +58,10 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
             errors.reject("DeferralDate", "Deferral date can't be empty or in past");
           }
           //Doctor X has a submission due date of 120 days from today (today <= 120 days)
-          if (recordDTO.getGmcSubmissionDate() != null
-              && (ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) <= 120) {
-            recordDTO = (TraineeRecommendationRecordDto) target;
-          } else {
+          if (!(recordDTO.getGmcSubmissionDate() != null
+              && (ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) <= 120)) {
             errors.reject("GmcSubmissionDate",
-                "GMC Submission due date is not less than or equal to 120 days from today");
+                "Deferral is not permitted at this time since submission due date is greater than 120 days from today");
           }
           if (!StringUtils.hasLength(recordDTO.getDeferralReason())) {
             errors.reject("DeferralReason", "Deferral Reason can't be empty or null");
