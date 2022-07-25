@@ -415,7 +415,10 @@ class RecommendationControllerTest {
     return Stream.of(
         Arguments.of(now().plusDays(120)),
         Arguments.of(now().plusDays(5)),
-        Arguments.of(now().plusDays(1))
+        Arguments.of(now().plusDays(1)),
+        Arguments.of(now().minusDays(1)),
+        Arguments.of(now().minusDays(120)),
+        Arguments.of(now().minusDays(121))
     );
   }
 }
