@@ -61,6 +61,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
 import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @Slf4j
@@ -89,6 +90,9 @@ public class RecommendationServiceImpl implements RecommendationService {
 
   @Autowired
   private RabbitTemplate rabbitTemplate;
+
+  @Autowired
+  private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
   @Value("${app.rabbit.reval.exchange}")
   private String revalExchange;
@@ -261,6 +265,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         doctor.setDoctorStatus(getRecommendationStatusForTrainee(gmcNumber)
         );
         doctorsForDBRepository.save(doctor);
+        setElasticsearchStatusesForSubmittedRecommendation(doctor.getGmcReferenceNumber());
         return true;
       } else {
         final var responseCode = GmcResponseCode.fromCode(returnCode);
@@ -343,17 +348,17 @@ public class RecommendationServiceImpl implements RecommendationService {
     List<RecommendationStatusCheckDto> recommendationStatusCheckDtos = new ArrayList<>();
     recommendationRepository
         .findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC).forEach(rec -> {
-      final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
-      if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
-        final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
-            .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
-            .gmcReferenceNumber(rec.getGmcNumber())
-            .gmcRecommendationId(rec.getGmcRevalidationId())
-            .recommendationId(rec.getId())
-            .build();
-        recommendationStatusCheckDtos.add(recommendationStatusDto);
-      }
-    });
+          final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
+          if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
+            final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
+                .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
+                .gmcReferenceNumber(rec.getGmcNumber())
+                .gmcRecommendationId(rec.getGmcRevalidationId())
+                .recommendationId(rec.getId())
+                .build();
+            recommendationStatusCheckDtos.add(recommendationStatusDto);
+          }
+        });
     return recommendationStatusCheckDtos;
   }
 
@@ -440,9 +445,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     recommendationRepository.findByGmcNumber(gmcNumber).stream()
         .filter(inProgressFilter)
         .findFirst().ifPresent(r -> {
-      throw new RecommendationException(
-          "Trainee already has a recommendation in draft or waiting for approval from GMC.");
-    });
+          throw new RecommendationException(
+              "Trainee already has a recommendation in draft or waiting for approval from GMC.");
+        });
   }
 
   private TraineeRecommendationRecordDto buildTraineeRecommendationRecordDto(String gmcNumber,
@@ -475,6 +480,17 @@ public class RecommendationServiceImpl implements RecommendationService {
         .isBefore(LocalDate.now().minusMonths(1));
 
     return approved && underNotice && notRecent;
+  }
+
+  // TODO: this is a bit of a hack, need a better solution for mitigating CDC delay
+  private void setElasticsearchStatusesForSubmittedRecommendation(String gmcNumber) {
+    var document = recommendationElasticSearchRepository
+        .findByGmcReferenceNumber(gmcNumber).get(0);
+
+    document.setGmcStatus(UNDER_REVIEW.getOutcome());
+    document.setTisStatus(SUBMITTED_TO_GMC.toString());
+
+    recommendationElasticSearchRepository.save(document);
   }
 
   /**
