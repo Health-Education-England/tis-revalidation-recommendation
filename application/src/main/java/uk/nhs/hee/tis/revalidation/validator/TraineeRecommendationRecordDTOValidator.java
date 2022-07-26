@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.validator;
 
 import static java.time.LocalDate.now;
 
+import java.time.temporal.ChronoUnit;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -55,6 +56,12 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
         if (RecommendationType.DEFER.equals(recommendationType)) {
           if (recordDTO.getDeferralDate() == null || recordDTO.getDeferralDate().isBefore(now())) {
             errors.reject("DeferralDate", "Deferral date can't be empty or in past");
+          }
+          //Doctor X has a submission due date of 120 days from today (today <= 120 days)
+          if (recordDTO.getGmcSubmissionDate() == null
+              || (ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) > 120) {
+            errors.reject("GmcSubmissionDate",
+                "Deferral is not permitted at this time since submission due date is greater than 120 days from today");
           }
           if (!StringUtils.hasLength(recordDTO.getDeferralReason())) {
             errors.reject("DeferralReason", "Deferral Reason can't be empty or null");
