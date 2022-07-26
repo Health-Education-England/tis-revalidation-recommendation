@@ -59,7 +59,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
           }
           //Doctor X has a submission due date of 120 days from today (today <= 120 days)
           if (recordDTO.getGmcSubmissionDate() == null
-              || !((ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) <= 120)) {
+              || (ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) > 120) {
             errors.reject("GmcSubmissionDate",
                 "Deferral is not permitted at this time since submission due date is greater than 120 days from today");
           }
