@@ -82,9 +82,7 @@ class RecommendationControllerTest {
   private String recommendationId = faker.number().digits(8);
   private String firstName = faker.name().firstName();
   private String lastName = faker.name().lastName();
-  private final LocalDate submissionDate = now();
-  private final LocalDate dateAdded = now();
-  private final LocalDate today = now();
+  private final static LocalDate today = now();
   private UnderNotice underNotice = faker.options().option(UnderNotice.class);
   private String sanction = faker.lorem().characters(2);
   private RecommendationStatus status = faker.options().option(RecommendationStatus.class);
@@ -413,12 +411,12 @@ class RecommendationControllerTest {
 
   private static Stream<Arguments> gmcSubmissionDateProvider() {
     return Stream.of(
-        Arguments.of(now().plusDays(120)),
-        Arguments.of(now().plusDays(5)),
-        Arguments.of(now().plusDays(1)),
-        Arguments.of(now().minusDays(1)),
-        Arguments.of(now().minusDays(120)),
-        Arguments.of(now().minusDays(121))
+        Arguments.of(today.plusDays(120)),
+        Arguments.of(today.plusDays(5)),
+        Arguments.of(today.plusDays(1)),
+        Arguments.of(today.minusDays(1)),
+        Arguments.of(today.minusDays(120)),
+        Arguments.of(today.minusDays(121))
     );
   }
 }
