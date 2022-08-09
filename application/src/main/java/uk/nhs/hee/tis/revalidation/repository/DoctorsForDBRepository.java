@@ -22,14 +22,19 @@
 package uk.nhs.hee.tis.revalidation.repository;
 
 
+import static java.lang.String.format;
+
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
+import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 
 @Repository
 public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, String> {

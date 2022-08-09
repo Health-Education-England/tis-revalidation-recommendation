@@ -21,18 +21,27 @@
 
 package uk.nhs.hee.tis.revalidation.validator;
 
+import static java.lang.String.format;
 import static java.time.LocalDate.now;
 
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
+import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
+import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 public class TraineeRecommendationRecordDTOValidator implements Validator {
 
   public static final String INSUFFICIENT_EVIDENCE = "1";
+  private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
+
+  @Autowired
+  private DoctorsForDBRepository doctorsForDBRepository;
 
   @Override
   public boolean supports(Class<?> aClass) {
@@ -58,8 +67,8 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
             errors.reject("DeferralDate", "Deferral date can't be empty or in past");
           }
           //Doctor X has a submission due date of 120 days from today (today <= 120 days)
-          if (recordDTO.getGmcSubmissionDate() == null
-              || (ChronoUnit.DAYS.between(now(), recordDTO.getGmcSubmissionDate())) > 120) {
+          if (getDoctorGmcSubmissionDueDate(recordDTO) == null
+              || (ChronoUnit.DAYS.between(now(), getDoctorGmcSubmissionDueDate(recordDTO))) > 120) {
             errors.reject("GmcSubmissionDate",
                 "Deferral is not permitted at this time since submission due date is greater than 120 days from today");
           }
@@ -72,5 +81,16 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
         }
       }
     }
+  }
+
+  private LocalDate getDoctorGmcSubmissionDueDate(TraineeRecommendationRecordDto recordDto) {
+    final var doctorsForDB = doctorsForDBRepository.findById(recordDto.getGmcNumber());
+    if (doctorsForDB.isEmpty()) {
+      throw new RecommendationException(
+          format(DOCTOR_NOT_FOUND_MESSAGE, recordDto.getGmcNumber()));
+    }
+    final var doctor = doctorsForDB.get();
+    final var submissionDate = doctor.getSubmissionDate();
+    return submissionDate;
   }
 }
