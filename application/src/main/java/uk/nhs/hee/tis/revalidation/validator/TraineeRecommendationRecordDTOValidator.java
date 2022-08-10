@@ -40,8 +40,13 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
   public static final String INSUFFICIENT_EVIDENCE = "1";
   private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
 
-  @Autowired
+  /*@Autowired
+  private DoctorsForDBRepository doctorsForDBRepository;*/
   private DoctorsForDBRepository doctorsForDBRepository;
+
+  public TraineeRecommendationRecordDTOValidator(DoctorsForDBRepository doctorsForDBRepository) {
+    this.doctorsForDBRepository = doctorsForDBRepository;
+  }
 
   @Override
   public boolean supports(Class<?> aClass) {

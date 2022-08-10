@@ -34,11 +34,14 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
+import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.validator.TraineeRecommendationRecordDTOValidator;
 
 @EnableMongock
 @SpringBootApplication
 public class RevalidationApplication {
+
+  private DoctorsForDBRepository doctorsForDBRepository;
 
   public static void main(String[] args) {
     SpringApplication.run(RevalidationApplication.class, args);
@@ -59,7 +62,7 @@ public class RevalidationApplication {
 
   @Bean
   public TraineeRecommendationRecordDTOValidator traineeRecommendationRecordDTOValidator() {
-    return new TraineeRecommendationRecordDTOValidator();
+    return new TraineeRecommendationRecordDTOValidator(doctorsForDBRepository);
   }
 
   @Bean
