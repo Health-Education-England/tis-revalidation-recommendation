@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.controller;
 
 import static java.lang.String.format;
 import static java.time.LocalDate.now;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.NON_ENGAGEMENT;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.REVALIDATE;
+import static org.mockito.Mockito.doThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
@@ -48,8 +50,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatus.Series;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.validation.Errors;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.client.HttpClientErrorException;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
@@ -57,7 +65,9 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
+import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.service.RecommendationService;
+import uk.nhs.hee.tis.revalidation.validator.TraineeRecommendationRecordDTOValidator;
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest(RecommendationController.class)
@@ -77,6 +87,12 @@ class RecommendationControllerTest {
 
   @MockBean
   private RecommendationService service;
+
+  @MockBean
+  private TraineeRecommendationRecordDTOValidator traineeRecommendationRecordDTOValidator;
+
+  @MockBean
+  private DoctorsForDBRepository doctorsForDBRepository;
 
   private String gmcId = faker.number().digits(7);
   private String recommendationId = faker.number().digits(8);
@@ -162,7 +178,7 @@ class RecommendationControllerTest {
   }
 
   @Test
-  void shouldThrowExceptionWhenGmcIdOrRecommendationTypeMissingInRecommendationRequest()
+  void shouldThrowExceptionWhenGmcIdOrRecommendationTypeMissingInRecommendationRequest()////
       throws Exception {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber("")
@@ -255,9 +271,15 @@ class RecommendationControllerTest {
         .deferralSubReason(deferralSubReason1)
         .comments(List.of())
         .build();
+    //doThrow(new NullPointerException()).when(doctorsForDBService).removeDesignatedBodyCode(any());
+
 
     final var expectedErrors = List
         .of("Deferral is not permitted at this time since submission due date is greater than 120 days from today");
+    when(traineeRecommendationRecordDTOValidator.getDoctorGmcSubmissionDueDate(recordDTO)).thenReturn(gmcSubmissionDate);
+    doThrow(new Exception()).when(traineeRecommendationRecordDTOValidator).validate(
+        recordDTO, any(Errors.class));
+
     this.mockMvc.perform(post(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
@@ -278,6 +300,8 @@ class RecommendationControllerTest {
         .deferralSubReason(null)
         .comments(List.of())
         .build();
+
+    //when(traineeRecommendationRecordDTOValidator.getDoctorGmcSubmissionDueDate(recordDTO)).thenReturn(gmcSubmissionDate);
 
     final var expectedErrors = List.of("Deferral date can't be empty or in past",
         "Deferral Sub Reason can't be empty or null");
@@ -348,6 +372,7 @@ class RecommendationControllerTest {
         .deferralSubReason(deferralSubReason1)
         .comments(List.of())
         .build();
+   // when(traineeRecommendationRecordDTOValidator.getDoctorGmcSubmissionDueDate(recordDTO)).thenReturn(gmcSubmissionDate);
 
     this.mockMvc.perform(put(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)

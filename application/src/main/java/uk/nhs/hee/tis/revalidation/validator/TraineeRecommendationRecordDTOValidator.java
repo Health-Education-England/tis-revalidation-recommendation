@@ -27,6 +27,7 @@ import static java.time.LocalDate.now;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -35,18 +36,14 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
 import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
+@Component
 public class TraineeRecommendationRecordDTOValidator implements Validator {
 
   public static final String INSUFFICIENT_EVIDENCE = "1";
   private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
 
-  /*@Autowired
-  private DoctorsForDBRepository doctorsForDBRepository;*/
+  @Autowired
   private DoctorsForDBRepository doctorsForDBRepository;
-
-  public TraineeRecommendationRecordDTOValidator(DoctorsForDBRepository doctorsForDBRepository) {
-    this.doctorsForDBRepository = doctorsForDBRepository;
-  }
 
   @Override
   public boolean supports(Class<?> aClass) {
@@ -88,7 +85,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
     }
   }
 
-  private LocalDate getDoctorGmcSubmissionDueDate(TraineeRecommendationRecordDto recordDto) {
+  public LocalDate getDoctorGmcSubmissionDueDate(TraineeRecommendationRecordDto recordDto) {
     final var doctorsForDB = doctorsForDBRepository.findById(recordDto.getGmcNumber());
     if (doctorsForDB.isEmpty()) {
       throw new RecommendationException(

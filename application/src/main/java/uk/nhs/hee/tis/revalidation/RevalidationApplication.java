@@ -41,7 +41,7 @@ import uk.nhs.hee.tis.revalidation.validator.TraineeRecommendationRecordDTOValid
 @SpringBootApplication
 public class RevalidationApplication {
 
-  private DoctorsForDBRepository doctorsForDBRepository;
+  //private DoctorsForDBRepository doctorsForDBRepository;
 
   public static void main(String[] args) {
     SpringApplication.run(RevalidationApplication.class, args);
@@ -60,10 +60,10 @@ public class RevalidationApplication {
     return new RestTemplate();
   }
 
-  @Bean
+/*  @Bean
   public TraineeRecommendationRecordDTOValidator traineeRecommendationRecordDTOValidator() {
     return new TraineeRecommendationRecordDTOValidator(doctorsForDBRepository);
-  }
+  }*/
 
   @Bean
   public Jaxb2Marshaller marshaller() {
