@@ -69,7 +69,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
             errors.reject("DeferralDate", "Deferral date can't be empty or in past");
           }
           //Doctor X has a submission due date of 120 days from today (today <= 120 days)
-          if (getDoctorGmcSubmissionDueDate(recordDTO) == null
+          else if (getDoctorGmcSubmissionDueDate(recordDTO) == null
               || (ChronoUnit.DAYS.between(now(), getDoctorGmcSubmissionDueDate(recordDTO))) > 120) {
             errors.reject("GmcSubmissionDate",
                 "Deferral is not permitted at this time since submission due date is greater than 120 days from today");
@@ -85,7 +85,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
     }
   }
 
-  public LocalDate getDoctorGmcSubmissionDueDate(TraineeRecommendationRecordDto recordDto) {
+  private LocalDate getDoctorGmcSubmissionDueDate(TraineeRecommendationRecordDto recordDto) {
     final var doctorsForDB = doctorsForDBRepository.findById(recordDto.getGmcNumber());
     if (doctorsForDB.isEmpty()) {
       throw new RecommendationException(
