@@ -92,7 +92,6 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
           format(DOCTOR_NOT_FOUND_MESSAGE, recordDto.getGmcNumber()));
     }
     final var doctor = doctorsForDB.get();
-    final var submissionDate = doctor.getSubmissionDate();
-    return submissionDate;
+    return doctor.getSubmissionDate();
   }
 }
