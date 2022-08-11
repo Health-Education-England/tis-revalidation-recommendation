@@ -294,7 +294,7 @@ class RecommendationControllerTest {
             today.plusDays(121)).build()));
 
     final var expectedErrors = List
-        .of("Deferral is not permitted at this time since submission due date is greater than 120 days from today");
+        .of("Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null");
 
     this.mockMvc.perform(post(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)

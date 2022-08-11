@@ -25,7 +25,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INTERNAL_ERROR;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INVALID_CREDENTIALS;
@@ -37,21 +36,18 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROV
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.UNDER_REVIEW;
 
 import com.github.javafaker.Faker;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.ws.client.core.WebServiceTemplate;
 import org.springframework.ws.soap.client.core.SoapActionCallback;
 import uk.nhs.hee.tis.gmc.client.generated.CheckRecommendationStatus;
 import uk.nhs.hee.tis.gmc.client.generated.CheckRecommendationStatusResponse;
 import uk.nhs.hee.tis.gmc.client.generated.CheckRecommendationStatusResponseCT;
-import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 
 @ExtendWith(MockitoExtension.class)
 class GmcClientServiceTest {
@@ -71,23 +67,21 @@ class GmcClientServiceTest {
   private CheckRecommendationStatusResponseCT statusResponseCT;
 
 
-  private String gmcId = faker.number().digits(8);
-  private String recommendationId = faker.number().digits(10); //internal recommendationId
-  private String gmcRecommendationId = faker.number()
+  private final String gmcId = faker.number().digits(8);
+  private final String recommendationId = faker.number().digits(10); //internal recommendationId
+  private final String gmcRecommendationId = faker.number()
       .digits(10); //gmc Revalidation Id which we will receive when we submit recommendation.
-  private String designatedBodyCode = faker.lorem().characters(8);
-  private String gmcId2 = faker.number().digits(8);
-  private String recommendationId2 = faker.number().digits(10);
-  private String gmcRecommendationId2 = faker.number()
+  private final String designatedBodyCode = faker.lorem().characters(8);
+  private final String gmcId2 = faker.number().digits(8);
+  private final String recommendationId2 = faker.number().digits(10);
+  private final String gmcRecommendationId2 = faker.number()
       .digits(10);
-  private String designatedBodyCode2 = faker.lorem().characters(8);
-  private String url = faker.lorem().characters(10);
-  private String username = faker.lorem().characters(10);
-  private String password = faker.lorem().characters(10);
-  private String exchange = faker.lorem().characters(10);
-  private String routingKey = faker.lorem().characters(10);
-
-
+  private final String designatedBodyCode2 = faker.lorem().characters(8);
+  private final String url = faker.lorem().characters(10);
+  private final String username = faker.lorem().characters(10);
+  private final String password = faker.lorem().characters(10);
+  private final String exchange = faker.lorem().characters(10);
+  private final String routingKey = faker.lorem().characters(10);
 
   /**
    * Data setup.
@@ -98,11 +92,7 @@ class GmcClientServiceTest {
     ReflectionTestUtils.setField(gmcClientService, "gmcUserName", username);
     ReflectionTestUtils.setField(gmcClientService, "gmcPassword", password);
 
-
-
   }
-
-
 
   @Test
   void shouldReturnSuccessForCheckStatusOfRecommendation() {
@@ -207,6 +197,4 @@ class GmcClientServiceTest {
     assertNotNull(checkRecommendationStatusResponse);
     assertThat(checkRecommendationStatusResponse, is(UNDER_REVIEW));
   }
-
-
 }

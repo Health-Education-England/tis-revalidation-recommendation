@@ -24,6 +24,7 @@ package uk.nhs.hee.tis.revalidation.validator;
 import static java.time.LocalDate.now;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 
@@ -40,6 +41,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -52,10 +54,12 @@ class TraineeRecommendationRecordDTOValidatorTest {
   private final String gmcId = faker.number().digits(7);
   private final String deferralReason1 = "1";
   private final String deferralSubReason1 = "1";
+  private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
   @InjectMocks
   private TraineeRecommendationRecordDTOValidator validatorUnderTest;
+  private DoctorsForDB doctorsForDB;
 
 
   @Test
@@ -167,7 +171,65 @@ class TraineeRecommendationRecordDTOValidatorTest {
     assertThat("gmcSubmissionDateValidation", is(errors.getObjectName()));
     assertThat("GmcSubmissionDate", is(errors.getAllErrors().get(0).getCode()));
     assertThat(
-        "Deferral is not permitted at this time since submission due date is greater than 120 days from today",
+        "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null",
+        is(errors.getAllErrors().get(0).getDefaultMessage()));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenDoctorsForDbIsEmpty() {
+
+    //Given
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber("6576811")
+        .recommendationType(DEFER.name())
+        .gmcSubmissionDate(today.plusDays(121))
+        .deferralDate(deferralDate)
+        .deferralReason(deferralReason1)
+        .deferralSubReason(deferralSubReason1)
+        .comments(List.of())
+        .build();
+
+    Errors errors = new BeanPropertyBindingResult(recordDTO, "gmcSubmissionDateValidation");
+
+    when(doctorsForDBRepository.findById(recordDTO.getGmcNumber())).thenReturn(Optional.empty());
+
+    //When
+    Exception exception = assertThrows(RecommendationException.class, () -> {
+      validatorUnderTest.validate(recordDTO, errors);
+    });
+
+    //Then
+    assertThat("Doctor 6576811 does not exist!", is(exception.getMessage()));
+  }
+
+  @Test
+  void shouldThrowExceptionWhenDoctorsSubmissionDueDateIsNull() {
+
+    //Given
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(gmcId)
+        .recommendationType(DEFER.name())
+        .gmcSubmissionDate(today.plusDays(121))
+        .deferralDate(deferralDate)
+        .deferralReason(deferralReason1)
+        .deferralSubReason(deferralSubReason1)
+        .comments(List.of())
+        .build();
+
+    Errors errors = new BeanPropertyBindingResult(recordDTO, "gmcSubmissionDateValidation");
+
+    when(doctorsForDBRepository.findById(recordDTO.getGmcNumber())).thenReturn(Optional.ofNullable(
+        DoctorsForDB.builder().submissionDate(null).build()));
+
+    //When
+    validatorUnderTest.validate(recordDTO, errors);
+
+    //Then
+    assertThat(true, is(errors.hasErrors()));
+    assertThat("gmcSubmissionDateValidation", is(errors.getObjectName()));
+    assertThat("GmcSubmissionDate", is(errors.getAllErrors().get(0).getCode()));
+    assertThat(
+        "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null",
         is(errors.getAllErrors().get(0).getDefaultMessage()));
   }
 }
