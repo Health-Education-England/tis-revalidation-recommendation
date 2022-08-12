@@ -54,21 +54,46 @@ class TraineeRecommendationRecordDTOValidatorTest {
   private final String gmcId = faker.number().digits(7);
   private final String deferralReason1 = "1";
   private final String deferralSubReason1 = "1";
-  private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
+
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
   @InjectMocks
   private TraineeRecommendationRecordDTOValidator validatorUnderTest;
   private DoctorsForDB doctorsForDB;
 
-
   @Test
-  void shouldValidateWhenGmcNumberOrRecommendationTypeEmptyOrNullInRecommendationRequest() {
+  void shouldValidateWhenGmcNumberOrRecommendationTypeIsEmptyInRecommendationRequest() {
 
     //Given
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber("")
         .recommendationType("")
+        .comments(List.of())
+        .build();
+
+    Errors errors = new BeanPropertyBindingResult(recordDTO, "nullGmcOrRecommendationType");
+
+    //When
+    validatorUnderTest.validate(recordDTO, errors);
+
+    //Then
+    assertThat(true, is(errors.hasErrors()));
+    assertThat("nullGmcOrRecommendationType", is(errors.getObjectName()));
+    assertThat("GmcNumber", is(errors.getAllErrors().get(0).getCode()));
+    assertThat("Gmc Number can't be empty or null",
+        is(errors.getAllErrors().get(0).getDefaultMessage()));
+    assertThat("RecommendationType", is(errors.getAllErrors().get(1).getCode()));
+    assertThat("Recommendation type can't be empty or null",
+        is(errors.getAllErrors().get(1).getDefaultMessage()));
+  }
+
+  @Test
+  void shouldValidateWhenGmcNumberOrRecommendationTypeIsNullInRecommendationRequest() {
+
+    //Given
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(null)
+        .recommendationType(null)
         .comments(List.of())
         .build();
 
