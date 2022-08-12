@@ -24,7 +24,6 @@ package uk.nhs.hee.tis.revalidation.validator;
 import static java.time.LocalDate.now;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 
@@ -41,7 +40,6 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
-import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -82,9 +80,6 @@ class TraineeRecommendationRecordDTOValidatorTest {
     assertThat("GmcNumber", is(errors.getAllErrors().get(0).getCode()));
     assertThat("Gmc Number can't be empty or null",
         is(errors.getAllErrors().get(0).getDefaultMessage()));
-    assertThat("RecommendationType", is(errors.getAllErrors().get(1).getCode()));
-    assertThat("Recommendation type can't be empty or null",
-        is(errors.getAllErrors().get(1).getDefaultMessage()));
   }
 
   @Test
@@ -108,9 +103,6 @@ class TraineeRecommendationRecordDTOValidatorTest {
     assertThat("GmcNumber", is(errors.getAllErrors().get(0).getCode()));
     assertThat("Gmc Number can't be empty or null",
         is(errors.getAllErrors().get(0).getDefaultMessage()));
-    assertThat("RecommendationType", is(errors.getAllErrors().get(1).getCode()));
-    assertThat("Recommendation type can't be empty or null",
-        is(errors.getAllErrors().get(1).getDefaultMessage()));
   }
 
   @Test
@@ -219,12 +211,14 @@ class TraineeRecommendationRecordDTOValidatorTest {
     when(doctorsForDBRepository.findById(recordDTO.getGmcNumber())).thenReturn(Optional.empty());
 
     //When
-    Exception exception = assertThrows(RecommendationException.class, () -> {
-      validatorUnderTest.validate(recordDTO, errors);
-    });
+    validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat("Doctor 6576811 does not exist!", is(exception.getMessage()));
+    assertThat(true, is(errors.hasErrors()));
+    assertThat("gmcSubmissionDateValidation", is(errors.getObjectName()));
+    assertThat("DoctorForDB", is(errors.getAllErrors().get(0).getCode()));
+    assertThat("Doctor 6576811 does not exist!",
+        is(errors.getAllErrors().get(0).getDefaultMessage()));
   }
 
   @Test
