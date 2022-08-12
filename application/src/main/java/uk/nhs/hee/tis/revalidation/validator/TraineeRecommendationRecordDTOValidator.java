@@ -33,7 +33,6 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
-import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @Component
@@ -56,42 +55,57 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
 
     if (errors.getErrorCount() == 0) {
       final var recordDTO = (TraineeRecommendationRecordDto) target;
+
       if (!StringUtils.hasLength(recordDTO.getGmcNumber())) {
         errors.reject("GmcNumber", "Gmc Number can't be empty or null");
+        return;
       }
+
       if (!StringUtils.hasLength(recordDTO.getRecommendationType())) {
         errors.reject("RecommendationType", "Recommendation type can't be empty or null");
       } else {
-        final var recommendationType = RecommendationType
-            .valueOf(recordDTO.getRecommendationType());
+        final var recommendationType = RecommendationType.valueOf(
+            recordDTO.getRecommendationType());
+
         if (RecommendationType.DEFER.equals(recommendationType)) {
-          if (recordDTO.getDeferralDate() == null || recordDTO.getDeferralDate().isBefore(now())) {
-            errors.reject("DeferralDate", "Deferral date can't be empty or in past");
-          }
-          //Doctor X has a submission due date of 120 days from today (today <= 120 days)
-          else if (getDoctorGmcSubmissionDueDate(recordDTO) == null
-              || (ChronoUnit.DAYS.between(now(), getDoctorGmcSubmissionDueDate(recordDTO))) > 120) {
-            errors.reject("GmcSubmissionDate",
-                "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null");
-          }
-          if (!StringUtils.hasLength(recordDTO.getDeferralReason())) {
-            errors.reject("DeferralReason", "Deferral Reason can't be empty or null");
-          } else if (recordDTO.getDeferralReason().equalsIgnoreCase(INSUFFICIENT_EVIDENCE)
-              && !StringUtils.hasLength(recordDTO.getDeferralSubReason())) {
-            errors.reject("DeferralSubReason", "Deferral Sub Reason can't be empty or null");
-          }
+          validateDefer(recordDTO, errors);
         }
       }
     }
   }
 
-  private LocalDate getDoctorGmcSubmissionDueDate(TraineeRecommendationRecordDto recordDto) {
-    final var doctorsForDB = doctorsForDBRepository.findById(recordDto.getGmcNumber());
-    if (doctorsForDB.isEmpty()) {
-      throw new RecommendationException(
-          format(DOCTOR_NOT_FOUND_MESSAGE, recordDto.getGmcNumber()));
+  protected void validateDefer(TraineeRecommendationRecordDto recordDto, Errors errors) {
+
+    if (recordDto.getDeferralDate() == null || recordDto.getDeferralDate().isBefore(now())) {
+      errors.reject("DeferralDate", "Deferral date can't be empty or in past");
+    } else {
+      validateIfDeferAllowed(recordDto, errors);
     }
-    final var doctor = doctorsForDB.get();
-    return doctor.getSubmissionDate();
+
+    validateDeferReasons(recordDto, errors);
+  }
+
+  protected void validateIfDeferAllowed(TraineeRecommendationRecordDto recordDto, Errors errors) {
+    final var doctorsForDb = doctorsForDBRepository.findById(recordDto.getGmcNumber());
+    if (doctorsForDb.isEmpty()) {
+      errors.reject("DoctorForDB", format(DOCTOR_NOT_FOUND_MESSAGE, recordDto.getGmcNumber()));
+    } else {
+      final var doctor = doctorsForDb.get();
+      LocalDate gmcSubmissionDueDate = doctor.getSubmissionDate();
+      if (gmcSubmissionDueDate == null
+          || (ChronoUnit.DAYS.between(now(), gmcSubmissionDueDate)) > 120) {
+        errors.reject("GmcSubmissionDate",
+            "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null");
+      }
+    }
+  }
+
+  protected void validateDeferReasons(TraineeRecommendationRecordDto recordDto, Errors errors) {
+    if (!StringUtils.hasLength(recordDto.getDeferralReason())) {
+      errors.reject("DeferralReason", "Deferral Reason can't be empty or null");
+    } else if (recordDto.getDeferralReason().equalsIgnoreCase(INSUFFICIENT_EVIDENCE)
+        && !StringUtils.hasLength(recordDto.getDeferralSubReason())) {
+      errors.reject("DeferralSubReason", "Deferral Sub Reason can't be empty or null");
+    }
   }
 }
