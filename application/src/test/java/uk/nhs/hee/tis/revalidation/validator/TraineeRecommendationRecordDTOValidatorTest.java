@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.validator;
 
 import static java.time.LocalDate.now;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.when;
@@ -31,6 +32,7 @@ import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,6 +47,19 @@ import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 @ExtendWith(MockitoExtension.class)
 class TraineeRecommendationRecordDTOValidatorTest {
 
+  private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
+  private static final String GMC_NUMBER_NOT_SPECIFIED = "Gmc Number can't be empty or null";
+  private static final String RECOMMENDATION_TYPE_NOT_SPECIFIED =
+      "Recommendation type can't be empty or null";
+  private static final String DEFERRAL_DATE_NOT_SPECIFIED_OR_NOT_CORRECT =
+      "Deferral date can't be empty or in past";
+  private static final String DEFERRAL_NOT_PERMITTED =
+      "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null";
+  private static final String DEFERRAL_REASON_NOT_SPECIFIED =
+      "Deferral Reason can't be empty or null";
+  private static final String DEFERRAL_SUB_REASON_NOT_SPECIFIED =
+      "Deferral Sub Reason can't be empty or null";
+
   private final static LocalDate today = now();
   private final Faker faker = new Faker();
   private final LocalDate gmcSubmissionDate = now();
@@ -57,16 +72,14 @@ class TraineeRecommendationRecordDTOValidatorTest {
   private DoctorsForDBRepository doctorsForDBRepository;
   @InjectMocks
   private TraineeRecommendationRecordDTOValidator validatorUnderTest;
-  private DoctorsForDB doctorsForDB;
 
   @Test
-  void shouldValidateWhenGmcNumberOrRecommendationTypeIsEmptyInRecommendationRequest() {
+  void shouldValidateWhenGmcNumberAndRecommendationTypeIsEmpty() {
 
     //Given
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber("")
         .recommendationType("")
-        .comments(List.of())
         .build();
 
     Errors errors = new BeanPropertyBindingResult(recordDTO, "nullGmcOrRecommendationType");
@@ -75,21 +88,22 @@ class TraineeRecommendationRecordDTOValidatorTest {
     validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("nullGmcOrRecommendationType", is(errors.getObjectName()));
-    assertThat("GmcNumber", is(errors.getAllErrors().get(0).getCode()));
-    assertThat("Gmc Number can't be empty or null",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
+    assertThat(errors.getErrorCount(), is(2));
+    assertThat(errors.getObjectName(), is("nullGmcOrRecommendationType"));
+
+    List<String> errMsgList = errors.getAllErrors().stream().map(
+        e -> e.getDefaultMessage()).collect(Collectors.toList());
+    assertThat(errMsgList, hasItem(GMC_NUMBER_NOT_SPECIFIED));
+    assertThat(errMsgList, hasItem(RECOMMENDATION_TYPE_NOT_SPECIFIED));
   }
 
   @Test
-  void shouldValidateWhenGmcNumberOrRecommendationTypeIsNullInRecommendationRequest() {
+  void shouldValidateWhenGmcNumberAndRecommendationTypeIsNull() {
 
     //Given
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(null)
         .recommendationType(null)
-        .comments(List.of())
         .build();
 
     Errors errors = new BeanPropertyBindingResult(recordDTO, "nullGmcOrRecommendationType");
@@ -98,23 +112,26 @@ class TraineeRecommendationRecordDTOValidatorTest {
     validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("nullGmcOrRecommendationType", is(errors.getObjectName()));
-    assertThat("GmcNumber", is(errors.getAllErrors().get(0).getCode()));
-    assertThat("Gmc Number can't be empty or null",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
+    assertThat(errors.getErrorCount(), is(2));
+    assertThat(errors.getObjectName(), is("nullGmcOrRecommendationType"));
+
+    List<String> errMsgList = errors.getAllErrors().stream().map(
+        e -> e.getDefaultMessage()).collect(Collectors.toList());
+    assertThat(errMsgList, hasItem(GMC_NUMBER_NOT_SPECIFIED));
+    assertThat(errMsgList, hasItem(RECOMMENDATION_TYPE_NOT_SPECIFIED));
   }
 
   @Test
-  void shouldValidateWhenRecommendationIsDeferAndDateAndReasonAreMissingInRecommendationRequest() {
+  void shouldValidateWhenRecommendationIsDeferAndDateAndReasonAreMissing() {
 
     //Given
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
-        .gmcSubmissionDate(gmcSubmissionDate)
-        .comments(List.of())
         .build();
+
+    when(doctorsForDBRepository.findById(gmcId)).thenReturn(Optional.of(
+        DoctorsForDB.builder().submissionDate(today).build()));
 
     Errors errors = new BeanPropertyBindingResult(recordDTO, "nullDeferralDateAndReason");
 
@@ -122,29 +139,29 @@ class TraineeRecommendationRecordDTOValidatorTest {
     validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("nullDeferralDateAndReason", is(errors.getObjectName()));
-    assertThat("DeferralDate", is(errors.getAllErrors().get(0).getCode()));
-    assertThat("Deferral date can't be empty or in past",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
-    assertThat("DeferralReason", is(errors.getAllErrors().get(1).getCode()));
-    assertThat("Deferral Reason can't be empty or null",
-        is(errors.getAllErrors().get(1).getDefaultMessage()));
+    assertThat(errors.getErrorCount(), is(2));
+    assertThat(errors.getObjectName(), is("nullDeferralDateAndReason"));
+
+    List<String> errMsgList = errors.getAllErrors().stream().map(
+        e -> e.getDefaultMessage()).collect(Collectors.toList());
+    assertThat(errMsgList, hasItem(DEFERRAL_DATE_NOT_SPECIFIED_OR_NOT_CORRECT));
+    assertThat(errMsgList, hasItem(DEFERRAL_REASON_NOT_SPECIFIED));
   }
 
   @Test
-  void shouldValidateWhenDeferralReasonRequiredAndSubReasonNotProvidedInRecommendationRequest() {
+  void shouldValidateWhenDeferralReasonRequiredAndSubReasonNotProvided() {
 
     //Given
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
-        .gmcSubmissionDate(gmcSubmissionDate)
         .deferralDate(deferralDate.minusDays(1))
         .deferralReason(deferralReason1)
         .deferralSubReason(null)
-        .comments(List.of())
         .build();
+
+    when(doctorsForDBRepository.findById(gmcId)).thenReturn(Optional.of(
+        DoctorsForDB.builder().submissionDate(today.plusDays(120)).build()));
 
     Errors errors = new BeanPropertyBindingResult(recordDTO, "nullDeferralSubReason");
 
@@ -152,14 +169,13 @@ class TraineeRecommendationRecordDTOValidatorTest {
     validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("nullDeferralSubReason", is(errors.getObjectName()));
-    assertThat("DeferralDate", is(errors.getAllErrors().get(0).getCode()));
-    assertThat("Deferral date can't be empty or in past",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
-    assertThat("DeferralSubReason", is(errors.getAllErrors().get(1).getCode()));
-    assertThat("Deferral Sub Reason can't be empty or null",
-        is(errors.getAllErrors().get(1).getDefaultMessage()));
+    assertThat(errors.getErrorCount(), is(2));
+    assertThat(errors.getObjectName(), is("nullDeferralSubReason"));
+
+    List<String> errMsgList = errors.getAllErrors().stream().map(
+        e -> e.getDefaultMessage()).collect(Collectors.toList());
+    assertThat(errMsgList, hasItem(DEFERRAL_DATE_NOT_SPECIFIED_OR_NOT_CORRECT));
+    assertThat(errMsgList, hasItem(DEFERRAL_SUB_REASON_NOT_SPECIFIED));
   }
 
   @Test
@@ -169,13 +185,12 @@ class TraineeRecommendationRecordDTOValidatorTest {
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
-        .gmcSubmissionDate(today.plusDays(121))
         .deferralDate(deferralDate)
         .deferralReason(deferralReason1)
         .deferralSubReason(deferralSubReason1)
-        .comments(List.of())
         .build();
-    when(doctorsForDBRepository.findById(recordDTO.getGmcNumber())).thenReturn(Optional.ofNullable(
+
+    when(doctorsForDBRepository.findById(gmcId)).thenReturn(Optional.of(
         DoctorsForDB.builder().submissionDate(today.plusDays(121)).build()));
 
     Errors errors = new BeanPropertyBindingResult(recordDTO, "gmcSubmissionDateValidation");
@@ -184,71 +199,61 @@ class TraineeRecommendationRecordDTOValidatorTest {
     validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("gmcSubmissionDateValidation", is(errors.getObjectName()));
-    assertThat("GmcSubmissionDate", is(errors.getAllErrors().get(0).getCode()));
-    assertThat(
-        "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
+    assertThat(errors.getErrorCount(), is(1));
+    assertThat(errors.getObjectName(), is("gmcSubmissionDateValidation"));
+    assertThat(errors.getAllErrors().get(0).getDefaultMessage(), is(DEFERRAL_NOT_PERMITTED));
   }
 
   @Test
-  void shouldThrowExceptionWhenDoctorsForDbIsEmpty() {
-
-    //Given
-    final var recordDTO = TraineeRecommendationRecordDto.builder()
-        .gmcNumber("6576811")
-        .recommendationType(DEFER.name())
-        .gmcSubmissionDate(today.plusDays(121))
-        .deferralDate(deferralDate)
-        .deferralReason(deferralReason1)
-        .deferralSubReason(deferralSubReason1)
-        .comments(List.of())
-        .build();
-
-    Errors errors = new BeanPropertyBindingResult(recordDTO, "gmcSubmissionDateValidation");
-
-    when(doctorsForDBRepository.findById(recordDTO.getGmcNumber())).thenReturn(Optional.empty());
-
-    //When
-    validatorUnderTest.validate(recordDTO, errors);
-
-    //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("gmcSubmissionDateValidation", is(errors.getObjectName()));
-    assertThat("DoctorForDB", is(errors.getAllErrors().get(0).getCode()));
-    assertThat("Doctor 6576811 does not exist!",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
-  }
-
-  @Test
-  void shouldThrowExceptionWhenDoctorsSubmissionDueDateIsNull() {
+  void shouldValidateWhenDoctorInDBNotExists() {
 
     //Given
     final var recordDTO = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcId)
         .recommendationType(DEFER.name())
-        .gmcSubmissionDate(today.plusDays(121))
         .deferralDate(deferralDate)
         .deferralReason(deferralReason1)
         .deferralSubReason(deferralSubReason1)
-        .comments(List.of())
+        .build();
+
+    when(doctorsForDBRepository.findById(gmcId)).thenReturn(Optional.empty());
+
+    Errors errors = new BeanPropertyBindingResult(recordDTO, "gmcSubmissionDateValidation");
+
+    //When
+    validatorUnderTest.validate(recordDTO, errors);
+
+    //Then
+    assertThat(errors.getErrorCount(), is(1));
+    assertThat(errors.getObjectName(), is("gmcSubmissionDateValidation"));
+
+    String expectedErrorMsg = String.format(DOCTOR_NOT_FOUND_MESSAGE, gmcId);
+    assertThat(errors.getAllErrors().get(0).getDefaultMessage(), is(expectedErrorMsg));
+  }
+
+  @Test
+  void shouldValidateWhenDoctorsSubmissionDueDateIsNull() {
+
+    //Given
+    final var recordDTO = TraineeRecommendationRecordDto.builder()
+        .gmcNumber(gmcId)
+        .recommendationType(DEFER.name())
+        .deferralDate(deferralDate)
+        .deferralReason(deferralReason1)
+        .deferralSubReason(deferralSubReason1)
         .build();
 
     Errors errors = new BeanPropertyBindingResult(recordDTO, "gmcSubmissionDateValidation");
 
-    when(doctorsForDBRepository.findById(recordDTO.getGmcNumber())).thenReturn(Optional.ofNullable(
+    when(doctorsForDBRepository.findById(gmcId)).thenReturn(Optional.ofNullable(
         DoctorsForDB.builder().submissionDate(null).build()));
 
     //When
     validatorUnderTest.validate(recordDTO, errors);
 
     //Then
-    assertThat(true, is(errors.hasErrors()));
-    assertThat("gmcSubmissionDateValidation", is(errors.getObjectName()));
-    assertThat("GmcSubmissionDate", is(errors.getAllErrors().get(0).getCode()));
-    assertThat(
-        "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null",
-        is(errors.getAllErrors().get(0).getDefaultMessage()));
+    assertThat(errors.getErrorCount(), is(1));
+    assertThat(errors.getObjectName(), is("gmcSubmissionDateValidation"));
+    assertThat(errors.getAllErrors().get(0).getDefaultMessage(), is(DEFERRAL_NOT_PERMITTED));
   }
 }

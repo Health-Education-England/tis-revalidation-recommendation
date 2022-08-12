@@ -39,6 +39,17 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
 
   public static final String INSUFFICIENT_EVIDENCE = "1";
   private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
+  private static final String GMC_NUMBER_NOT_SPECIFIED = "Gmc Number can't be empty or null";
+  private static final String RECOMMENDATION_TYPE_NOT_SPECIFIED =
+      "Recommendation type can't be empty or null";
+  private static final String DEFERRAL_DATE_NOT_SPECIFIED_OR_NOT_CORRECT =
+      "Deferral date can't be empty or in past";
+  private static final String DEFERRAL_NOT_PERMITTED =
+      "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null";
+  private static final String DEFERRAL_REASON_NOT_SPECIFIED =
+      "Deferral Reason can't be empty or null";
+  private static final String DEFERRAL_SUB_REASON_NOT_SPECIFIED =
+      "Deferral Sub Reason can't be empty or null";
 
   private DoctorsForDBRepository doctorsForDBRepository;
 
@@ -59,12 +70,11 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
       final var recordDTO = (TraineeRecommendationRecordDto) target;
 
       if (!StringUtils.hasLength(recordDTO.getGmcNumber())) {
-        errors.reject("GmcNumber", "Gmc Number can't be empty or null");
-        return;
+        errors.reject("GmcNumber", GMC_NUMBER_NOT_SPECIFIED);
       }
 
       if (!StringUtils.hasLength(recordDTO.getRecommendationType())) {
-        errors.reject("RecommendationType", "Recommendation type can't be empty or null");
+        errors.reject("RecommendationType", RECOMMENDATION_TYPE_NOT_SPECIFIED);
       } else {
         final var recommendationType = RecommendationType.valueOf(
             recordDTO.getRecommendationType());
@@ -79,14 +89,16 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
   protected void validateDefer(TraineeRecommendationRecordDto recordDto, Errors errors) {
 
     if (recordDto.getDeferralDate() == null || recordDto.getDeferralDate().isBefore(now())) {
-      errors.reject("DeferralDate", "Deferral date can't be empty or in past");
-    } else {
-      validateIfDeferAllowed(recordDto, errors);
+      errors.reject("DeferralDate", DEFERRAL_DATE_NOT_SPECIFIED_OR_NOT_CORRECT);
     }
+    validateIfDeferAllowed(recordDto, errors);
     validateDeferReasons(recordDto, errors);
   }
 
   protected void validateIfDeferAllowed(TraineeRecommendationRecordDto recordDto, Errors errors) {
+    if (!StringUtils.hasLength(recordDto.getGmcNumber())) {
+      return;
+    }
     final var doctorsForDb = doctorsForDBRepository.findById(recordDto.getGmcNumber());
     if (doctorsForDb.isEmpty()) {
       errors.reject("DoctorForDB", format(DOCTOR_NOT_FOUND_MESSAGE, recordDto.getGmcNumber()));
@@ -95,18 +107,17 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
       LocalDate gmcSubmissionDueDate = doctor.getSubmissionDate();
       if (gmcSubmissionDueDate == null
           || (ChronoUnit.DAYS.between(now(), gmcSubmissionDueDate)) > 120) {
-        errors.reject("GmcSubmissionDate",
-            "Deferral is not permitted at this time since submission due date is greater than 120 days from today or submission due date is null");
+        errors.reject("GmcSubmissionDate", DEFERRAL_NOT_PERMITTED);
       }
     }
   }
 
   protected void validateDeferReasons(TraineeRecommendationRecordDto recordDto, Errors errors) {
     if (!StringUtils.hasLength(recordDto.getDeferralReason())) {
-      errors.reject("DeferralReason", "Deferral Reason can't be empty or null");
+      errors.reject("DeferralReason", DEFERRAL_REASON_NOT_SPECIFIED);
     } else if (recordDto.getDeferralReason().equalsIgnoreCase(INSUFFICIENT_EVIDENCE)
         && !StringUtils.hasLength(recordDto.getDeferralSubReason())) {
-      errors.reject("DeferralSubReason", "Deferral Sub Reason can't be empty or null");
+      errors.reject("DeferralSubReason", DEFERRAL_SUB_REASON_NOT_SPECIFIED);
     }
   }
 }
