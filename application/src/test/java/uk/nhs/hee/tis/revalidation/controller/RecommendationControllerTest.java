@@ -40,7 +40,6 @@ import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,12 +56,9 @@ import org.springframework.validation.Errors;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
-import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
-import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
-import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.service.RecommendationService;
 import uk.nhs.hee.tis.revalidation.validator.TraineeRecommendationRecordDTOValidator;
 
@@ -80,6 +76,21 @@ class RecommendationControllerTest {
   private final LocalDate deferralDate = now();
   private final LocalDate gmcSubmissionDate = now();
   private final LocalDate actualSubmissionDate = now();
+  private final String gmcId = faker.number().digits(7);
+  private final String recommendationId = faker.number().digits(8);
+  private final String firstName = faker.name().firstName();
+  private final String lastName = faker.name().lastName();
+  private final RecommendationStatus status = faker.options().option(RecommendationStatus.class);
+  private final String programmeMembershipType = faker.lorem().characters(10);
+  private final String currentGrade = faker.lorem().characters(4);
+  private final String deferralReason1 = "1";
+  private final String deferralReason2 = "2";
+  private final String deferralSubReason1 = "1";
+  private final String deferralComments = faker.lorem().sentence(5);
+  private final String recommendationType = faker.options().option(RecommendationType.class).name();
+  private final String gmcOutcome = faker.options().option(RecommendationGmcOutcome.class).name();
+  private final String admin = faker.name().fullName();
+
   @Autowired
   private MockMvc mockMvc;
   @Autowired
@@ -87,26 +98,7 @@ class RecommendationControllerTest {
   @MockBean
   private RecommendationService service;
   @MockBean
-  private DoctorsForDBRepository doctorsForDBRepository;
-  @MockBean
   private TraineeRecommendationRecordDTOValidator traineeRecommendationRecordDTOValidator;
-  private String gmcId = faker.number().digits(7);
-  private String recommendationId = faker.number().digits(8);
-  private String firstName = faker.name().firstName();
-  private String lastName = faker.name().lastName();
-  private UnderNotice underNotice = faker.options().option(UnderNotice.class);
-  private String sanction = faker.lorem().characters(2);
-  private RecommendationStatus status = faker.options().option(RecommendationStatus.class);
-  private String programmeName = faker.lorem().sentence(3);
-  private String programmeMembershipType = faker.lorem().characters(10);
-  private String currentGrade = faker.lorem().characters(4);
-  private String deferralReason1 = "1";
-  private String deferralReason2 = "2";
-  private String deferralSubReason1 = "1";
-  private String deferralComments = faker.lorem().sentence(5);
-  private String recommendationType = faker.options().option(RecommendationType.class).name();
-  private String gmcOutcome = faker.options().option(RecommendationGmcOutcome.class).name();
-  private String admin = faker.name().fullName();
 
   private static Stream<Arguments> gmcSubmissionDateProvider() {
     return Stream.of(
@@ -171,10 +163,6 @@ class RecommendationControllerTest {
         .deferralSubReason(deferralSubReason1)
         .comments(List.of())
         .build();
-
-    when(doctorsForDBRepository.findById(any())).thenReturn(
-        Optional.ofNullable(DoctorsForDB.builder().submissionDate(
-            now()).build()));
 
     this.mockMvc.perform(post(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)
@@ -256,10 +244,6 @@ class RecommendationControllerTest {
         .comments(List.of())
         .build();
 
-    when(doctorsForDBRepository.findById(any())).thenReturn(
-        Optional.ofNullable(DoctorsForDB.builder().submissionDate(
-            now()).build()));
-
     this.mockMvc.perform(post(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)
         .accept(MediaType.APPLICATION_JSON)
@@ -278,10 +262,6 @@ class RecommendationControllerTest {
         .deferralSubReason(null)
         .comments(List.of())
         .build();
-
-    when(doctorsForDBRepository.findById(any())).thenReturn(
-        Optional.ofNullable(DoctorsForDB.builder().submissionDate(
-            now()).build()));
 
     this.mockMvc.perform(post(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)
@@ -330,10 +310,6 @@ class RecommendationControllerTest {
         .deferralSubReason(deferralSubReason1)
         .comments(List.of())
         .build();
-
-    when(doctorsForDBRepository.findById(any())).thenReturn(
-        Optional.ofNullable(DoctorsForDB.builder().submissionDate(
-            now()).build()));
 
     this.mockMvc.perform(put(RECOMMENDATION_API_URL)
         .contentType(MediaType.APPLICATION_JSON)
