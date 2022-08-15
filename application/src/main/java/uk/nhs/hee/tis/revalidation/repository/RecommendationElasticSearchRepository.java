@@ -40,7 +40,7 @@ public interface RecommendationElasticSearchRepository
       final String dbcs, final Pageable pageable);
 
   @Query(
-      "{\"query\":{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"query_string\":{\"query\":\"?0*\",\"fields\":[\"programmeName\"],\"default_operator\":\"AND\",\"phrase_slop\":0}}]}}]}},\"size\":10,\"from\":0,\"sort\":[{\"gmcReferenceNumber.keyword\":{\"unmapped_type\":\"keyword\",\"order\":\"asc\"}}]}"
+      "{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}},{\"query_string\":{\"query\":\"?0*\",\"fields\":[\"programmeName\"],\"default_operator\":\"AND\",\"phrase_slop\":0}}]}}]}}"
   )
   Page<RecommendationView> findAll(final String searchQuery,
       final String dbcs, List<String> hiddenGmcIds, final Pageable pageable);
