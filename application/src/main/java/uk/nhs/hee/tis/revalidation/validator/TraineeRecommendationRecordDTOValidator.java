@@ -86,7 +86,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
     }
   }
 
-  protected void validateDefer(TraineeRecommendationRecordDto recordDto, Errors errors) {
+  private void validateDefer(TraineeRecommendationRecordDto recordDto, Errors errors) {
 
     if (recordDto.getDeferralDate() == null || recordDto.getDeferralDate().isBefore(now())) {
       errors.reject("DeferralDate", DEFERRAL_DATE_NOT_SPECIFIED_OR_NOT_CORRECT);
@@ -95,7 +95,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
     validateDeferReasons(recordDto, errors);
   }
 
-  protected void validateIfDeferAllowed(TraineeRecommendationRecordDto recordDto, Errors errors) {
+  private void validateIfDeferAllowed(TraineeRecommendationRecordDto recordDto, Errors errors) {
     if (!StringUtils.hasLength(recordDto.getGmcNumber())) {
       return;
     }
@@ -112,7 +112,7 @@ public class TraineeRecommendationRecordDTOValidator implements Validator {
     }
   }
 
-  protected void validateDeferReasons(TraineeRecommendationRecordDto recordDto, Errors errors) {
+  private void validateDeferReasons(TraineeRecommendationRecordDto recordDto, Errors errors) {
     if (!StringUtils.hasLength(recordDto.getDeferralReason())) {
       errors.reject("DeferralReason", DEFERRAL_REASON_NOT_SPECIFIED);
     } else if (recordDto.getDeferralReason().equalsIgnoreCase(INSUFFICIENT_EVIDENCE)
