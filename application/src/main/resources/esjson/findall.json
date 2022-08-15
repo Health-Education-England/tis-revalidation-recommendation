@@ -42,10 +42,13 @@
                 }
               },
               {
-                "wildcard": {
-                  "programmeName": {
-                    "value": "?0*"
-                  }
+                "query_string": {
+                  "query": "?0*",
+                  "fields": [
+                    "programmeName"
+                  ],
+                  "default_operator": "AND",
+                  "phrase_slop": 0
                 }
               }
             ]
