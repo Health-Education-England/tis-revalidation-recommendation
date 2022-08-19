@@ -29,7 +29,7 @@
         <springfox-swagger.version>3.0.0</springfox-swagger.version>
         <shedlock.version>4.31.0</shedlock.version>
         <gmc-api.version>1.0.0</gmc-api.version>
-        <jaxb-runtime.version>2.3.3</jaxb-runtime.version>
+        <jaxb-runtime.version>4.0.0</jaxb-runtime.version>
         <sentry.version>6.4.0</sentry.version>
         <!-- Sonar cloud -->
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
