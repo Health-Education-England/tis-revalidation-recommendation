@@ -21,7 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.controller;
 
-import static java.lang.String.format;
 import static java.time.LocalDate.now;
 import static java.util.List.of;
 import static org.hamcrest.Matchers.hasItem;
@@ -37,6 +36,7 @@ import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESI
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.EMPTY_STRING;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER_VALUE;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PROGRAMME_NAME_PARAM;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SEARCH_QUERY;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SORT_COLUMN;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SORT_ORDER;
@@ -100,6 +100,7 @@ class DoctorsForDBControllerTest {
   private String designatedBody1, designatedBody2;
   private String connectionStatus1;
   private String connectionStatus2;
+  private String programmeName;
 
   @BeforeEach
   public void setup() {
@@ -124,6 +125,7 @@ class DoctorsForDBControllerTest {
     designatedBody2 = faker.lorem().characters(8);
     connectionStatus1 = faker.lorem().characters(3);
     connectionStatus2 = faker.lorem().characters(3);
+    programmeName = faker.backToTheFuture().quote();
   }
 
   @Test
@@ -131,17 +133,18 @@ class DoctorsForDBControllerTest {
     final var gmcDoctorDTO = prepareGmcDoctor();
     final var requestDTO = TraineeRequestDto.builder().sortOrder(ASC)
         .sortColumn(SUBMISSION_DATE).searchQuery(EMPTY_STRING)
-        .dbcs(List.of(designatedBody1, designatedBody2)).build();
+        .dbcs(List.of(designatedBody1, designatedBody2)).programmeName(programmeName).build();
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     this.mockMvc.perform(get("/api/v1/doctors")
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
-        .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
-        .param(SEARCH_QUERY, EMPTY_STRING)
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
+            .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
+            .param(SEARCH_QUERY, EMPTY_STRING)
+            .param(DESIGNATED_BODY_CODES, dbcString)
+            .param(PROGRAMME_NAME_PARAM, programmeName))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -155,14 +158,14 @@ class DoctorsForDBControllerTest {
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of(gmcRef1)))
         .thenReturn(gmcDoctorDTO);
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
-    final var url = format("%s/%s", UNHIDDEN_DOCTORS_API_URL, gmcRef1);
+    final var url = String.format("%s/%s", UNHIDDEN_DOCTORS_API_URL, gmcRef1);
     this.mockMvc.perform(get(url)
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
-        .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
-        .param(SEARCH_QUERY, EMPTY_STRING)
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
+            .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
+            .param(SEARCH_QUERY, EMPTY_STRING)
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(
             jsonPath("$.traineeInfo.[*].gmcReferenceNumber").value(hasItem(gmcRef2)));
@@ -178,9 +181,9 @@ class DoctorsForDBControllerTest {
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get("/api/v1/doctors")
-        .param(SORT_ORDER, "")
-        .param(SORT_COLUMN, "")
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, "")
+            .param(SORT_COLUMN, "")
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -194,10 +197,10 @@ class DoctorsForDBControllerTest {
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
-    this.mockMvc.perform(get(DOCTORS_API_URL)
-        .param(SORT_ORDER, "aa")
-        .param(SORT_COLUMN, "date")
-        .param(DESIGNATED_BODY_CODES, dbcString))
+    mockMvc.perform(get(DOCTORS_API_URL)
+            .param(SORT_ORDER, "aa")
+            .param(SORT_COLUMN, "date")
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -211,11 +214,11 @@ class DoctorsForDBControllerTest {
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
-    this.mockMvc.perform(get(DOCTORS_API_URL)
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, String.valueOf(true))
-        .param(DESIGNATED_BODY_CODES, dbcString))
+    mockMvc.perform(get(DOCTORS_API_URL)
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, String.valueOf(true))
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -228,25 +231,25 @@ class DoctorsForDBControllerTest {
         .build();
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
-    this.mockMvc.perform(get(DOCTORS_API_URL)
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, String.valueOf(true)))
+    mockMvc.perform(get(DOCTORS_API_URL)
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, String.valueOf(true)))
         .andExpect(status().isOk());
   }
 
 
   @Test
   void shouldUpdateAdminForTrainee() throws Exception {
-    final var url = format("%s/%s", DOCTORS_API_URL, UPDATE_ADMIN);
+    final var url = String.format("%s/%s", DOCTORS_API_URL, UPDATE_ADMIN);
     final var ta1 = TraineeAdminDto.builder().gmcNumber(gmcRef1).admin(admin).build();
     final var ta2 = TraineeAdminDto.builder().gmcNumber(gmcRef2).admin(admin).build();
     final var traineeAdminUpdateDto = TraineeAdminUpdateDto.builder()
         .traineeAdmins(of(ta1, ta2)).build();
-    this.mockMvc.perform(post(url)
-        .contentType(MediaType.APPLICATION_JSON)
-        .accept(MediaType.APPLICATION_JSON)
-        .content(mapper.writeValueAsString(traineeAdminUpdateDto)))
+    mockMvc.perform(post(url)
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsString(traineeAdminUpdateDto)))
         .andExpect(status().isOk());
   }
 
@@ -256,8 +259,8 @@ class DoctorsForDBControllerTest {
     final var designatedBodyDto = DesignatedBodyDto.builder().designatedBodyCode(designatedBody1)
         .build();
     when(doctorsForDBService.getDesignatedBodyCode(gmcRef1)).thenReturn(designatedBodyDto);
-    final var url = format("%s%s/%s", DOCTORS_API_URL, GET_DESIGNATED_BODY, gmcRef1);
-    this.mockMvc.perform(get(url))
+    final var url = String.format("%s%s/%s", DOCTORS_API_URL, GET_DESIGNATED_BODY, gmcRef1);
+    mockMvc.perform(get(url))
         .andExpect(content().json(mapper.writeValueAsString(designatedBodyDto)))
         .andExpect(status().isOk());
   }
@@ -266,8 +269,8 @@ class DoctorsForDBControllerTest {
   void shouldReturnDoctorsByGmcId() throws Exception {
     final var gmcDoctorDTO = prepareGmcDoctor();
     when(doctorsForDBService.getDoctorsByGmcIds(List.of(gmcRef1))).thenReturn(gmcDoctorDTO);
-    final var url = format("%s/%s", DOCTORS_API_URL_BY_GMC_ID, gmcRef1);
-    this.mockMvc.perform(get(url))
+    final var url = String.format("%s/%s", DOCTORS_API_URL_BY_GMC_ID, gmcRef1);
+    mockMvc.perform(get(url))
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)))
         .andExpect(status().isOk());
   }
@@ -277,7 +280,7 @@ class DoctorsForDBControllerTest {
     return TraineeSummaryDto.builder()
         .traineeInfo(doctorsForDB)
         .countTotal(doctorsForDB.size())
-        .countUnderNotice(1l)
+        .countUnderNotice(1L)
         .build();
   }
 

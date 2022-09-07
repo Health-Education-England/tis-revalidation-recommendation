@@ -40,15 +40,16 @@
                     "value": "?0*"
                   }
                 }
-              },
-              {
-                "match_phrase_prefix": {
-                  "programmeName": {
-                    "query": "?0"
-                  }
-                }
               }
             ]
+          }
+        },
+        {
+          "match_phrase": {
+            "programmeName": {
+              "query": "?2",
+              "zero_terms_query": "all"
+            }
           }
         }
       ]

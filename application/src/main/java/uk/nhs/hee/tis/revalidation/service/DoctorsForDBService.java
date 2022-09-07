@@ -27,7 +27,6 @@ import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.data.domain.Sort.by;
-import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.ON_HOLD;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 
@@ -63,23 +62,21 @@ public class DoctorsForDBService {
   @Value("${app.reval.pagination.pageSize}")
   private int pageSize;
 
-  private DoctorsForDBRepository doctorsRepository;
+  private final DoctorsForDBRepository doctorsRepository;
 
-  private RecommendationService recommendationService;
+  private final RecommendationService recommendationService;
 
-  private RecommendationElasticSearchService recommendationElasticSearchService;
+  private final RecommendationElasticSearchService recommendationElasticSearchService;
 
-  private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
+  private final RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
-  private RecommendationViewMapper recommendationViewMapper;
+  private final RecommendationViewMapper recommendationViewMapper;
 
-  public DoctorsForDBService(
-      DoctorsForDBRepository doctorsForDBRepository,
+  public DoctorsForDBService(DoctorsForDBRepository doctorsForDBRepository,
       RecommendationService recommendationService,
       RecommendationElasticSearchRepository recommendationElasticSearchRepository,
       RecommendationElasticSearchService recommendationElasticSearchService,
-      RecommendationViewMapper recommendationViewMapper
-  ) {
+      RecommendationViewMapper recommendationViewMapper) {
     this.doctorsRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
     this.recommendationElasticSearchRepository = recommendationElasticSearchRepository;
@@ -91,16 +88,12 @@ public class DoctorsForDBService {
       final List<String> hiddenGmcIds) {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
     final var doctorsList = paginatedDoctors.get().collect(toList());
-    final var traineeDoctors = doctorsList.stream().map(d ->
-        recommendationViewMapper.toTraineeInfoDto(d)).collect(toList());
+    final var traineeDoctors = doctorsList.stream()
+        .map(recommendationViewMapper::toTraineeInfoDto).collect(toList());
 
-    return TraineeSummaryDto.builder()
-        .traineeInfo(traineeDoctors)
-        .countTotal(getCountAll())
-        .countUnderNotice(getCountUnderNotice())
-        .totalPages(paginatedDoctors.getTotalPages())
-        .totalResults(paginatedDoctors.getTotalElements())
-        .build();
+    return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
+        .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
+        .totalResults(paginatedDoctors.getTotalElements()).build();
   }
 
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
@@ -111,10 +104,8 @@ public class DoctorsForDBService {
       if (gmcDoctor.getUnderNotice().equals(NO.value())) {
         doctorsForDB.setDoctorStatus(RecommendationStatus.COMPLETED);
       } else {
-        doctorsForDB.setDoctorStatus(
-            recommendationService.getRecommendationStatusForTrainee(
-                gmcDoctor.getGmcReferenceNumber())
-        );
+        doctorsForDB.setDoctorStatus(recommendationService.getRecommendationStatusForTrainee(
+            gmcDoctor.getGmcReferenceNumber()));
       }
     } else {
       doctorsForDB.setDoctorStatus(RecommendationStatus.NOT_STARTED);
@@ -123,7 +114,7 @@ public class DoctorsForDBService {
   }
 
   public void updateTraineeAdmin(final List<TraineeAdminDto> traineeAdmins) {
-    traineeAdmins.stream().forEach(traineeAdmin -> {
+    traineeAdmins.forEach(traineeAdmin -> {
       final var doctor = doctorsRepository.findById(traineeAdmin.getGmcNumber());
       if (doctor.isPresent()) {
         final var doctorsForDB = doctor.get();
@@ -137,7 +128,7 @@ public class DoctorsForDBService {
   public DesignatedBodyDto getDesignatedBodyCode(final String gmcId) {
     final var doctorsForDB = doctorsRepository.findById(gmcId);
     final var designatedBodyCode =
-        doctorsForDB.isPresent() ? doctorsForDB.get().getDesignatedBodyCode() : null;
+        doctorsForDB.map(DoctorsForDB::getDesignatedBodyCode).orElse(null);
     return DesignatedBodyDto.builder().designatedBodyCode(designatedBodyCode).build();
   }
 
@@ -156,14 +147,14 @@ public class DoctorsForDBService {
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {
     final Iterable<DoctorsForDB> doctorsForDb = doctorsRepository.findAllById(gmcIds);
     final var doctorsForDBS = IterableUtils.toList(doctorsForDb);
-    final var traineeInfoDtos = doctorsForDBS.stream().map(d -> convert(d)).collect(toList());
+    final var traineeInfoDtos = doctorsForDBS.stream().map(this::convert).collect(toList());
     return TraineeSummaryDto.builder().countTotal(traineeInfoDtos.size())
         .totalResults(traineeInfoDtos.size()).traineeInfo(traineeInfoDtos).build();
   }
 
   public void hideAllDoctors() {
     List<DoctorsForDB> doctors = doctorsRepository.findAll();
-    doctors.stream().forEach(doctor -> {
+    doctors.forEach(doctor -> {
       doctor.setExistsInGmc(false);
       doctorsRepository.save(doctor);
     });
@@ -175,13 +166,10 @@ public class DoctorsForDBService {
         .doctorFirstName(doctorsForDB.getDoctorFirstName())
         .doctorLastName(doctorsForDB.getDoctorLastName())
         .submissionDate(doctorsForDB.getSubmissionDate())
-        .designatedBody(doctorsForDB.getDesignatedBodyCode())
-        .dateAdded(doctorsForDB.getDateAdded())
-        .underNotice(doctorsForDB.getUnderNotice().name())
-        .sanction(doctorsForDB.getSanction())
+        .designatedBody(doctorsForDB.getDesignatedBodyCode()).dateAdded(doctorsForDB.getDateAdded())
+        .underNotice(doctorsForDB.getUnderNotice().name()).sanction(doctorsForDB.getSanction())
         .doctorStatus(doctorsForDB.getDoctorStatus().name()) //TODO update with legacy statuses
-        .lastUpdatedDate(doctorsForDB.getLastUpdatedDate())
-        .admin(doctorsForDB.getAdmin())
+        .lastUpdatedDate(doctorsForDB.getLastUpdatedDate()).admin(doctorsForDB.getAdmin())
         .connectionStatus(getConnectionStatus(doctorsForDB.getDesignatedBodyCode()));
 
     return traineeInfoDTOBuilder.build();
@@ -202,21 +190,19 @@ public class DoctorsForDBService {
       orders.add(lastNameOrder);
     }
     final var pageableAndSortable = of(requestDTO.getPageNumber(), pageSize, by(orders));
-    final var designatedBodyCodes =
-        recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
-            requestDTO.getDbcs()
-        );
+    final var designatedBodyCodes = recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        requestDTO.getDbcs());
 
+    final String programmeName = requestDTO.getProgrammeName();
     if (requestDTO.isUnderNotice()) {
 
-      return recommendationElasticSearchRepository
-          .findByUnderNotice(requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes,
-              pageableAndSortable);
+      return recommendationElasticSearchRepository.findByUnderNotice(
+          requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes, programmeName,
+          pageableAndSortable);
     }
 
-    return recommendationElasticSearchRepository
-        .findAll(requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes,
-            hiddenGmcIdsNotNull, pageableAndSortable);
+    return recommendationElasticSearchRepository.findAll(requestDTO.getSearchQuery().toLowerCase(),
+        designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, pageableAndSortable);
   }
 
   //TODO: explore to implement cache

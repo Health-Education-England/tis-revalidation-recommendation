@@ -29,10 +29,9 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.data.domain.Sort.Direction.ASC;
-import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.data.domain.Sort.by;
-import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.*;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
@@ -112,6 +111,7 @@ class DoctorsForDBServiceTest {
   private String designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5;
   private String admin1, admin2, admin3, admin4, admin5;
   private String connectionStatus1, connectionStatus2, connectionStatus3, connectionStatus4, connectionStatus5;
+  private String programmeName;
 
   @BeforeEach
   public void setup() {
@@ -121,7 +121,7 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnListOfAllDoctors() {
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
     orders.add(customOrder);
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
@@ -132,21 +132,23 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
+        .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
 
     when(page.get()).thenReturn(Stream.of(rv1, rv2, rv3, rv4, rv5));
     when(page.getTotalPages()).thenReturn(1);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
-    when(repository.count()).thenReturn(5l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
+    when(repository.count()).thenReturn(5L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
         .pageNumber(1)
         .searchQuery("")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
 
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
@@ -196,7 +198,7 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnListOfDoctorsAttachedToASpecificDbc() {
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
     orders.add(customOrder);
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
@@ -206,20 +208,22 @@ class DoctorsForDBServiceTest {
     List<String> dbcs = List.of(designatedBody1);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
+        .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable)).thenReturn(
+        page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1));
     when(page.getTotalPages()).thenReturn(1);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
-    when(repository.count()).thenReturn(5l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
+    when(repository.count()).thenReturn(5L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
         .pageNumber(1)
         .searchQuery("")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
 
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
@@ -241,7 +245,7 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldReturnListOfUnderNoticeDoctors() {
 
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
     orders.add(customOrder);
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
@@ -251,14 +255,14 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findByUnderNotice("", formattedDbcs, pageableAndSortable)).thenReturn(page);
+        .findByUnderNotice("", formattedDbcs, programmeName, pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv2));
     when(page.getTotalPages()).thenReturn(1);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
-    when(repository.count()).thenReturn(5l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
+    when(repository.count()).thenReturn(5L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
@@ -266,6 +270,7 @@ class DoctorsForDBServiceTest {
         .pageNumber(1)
         .searchQuery("")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -292,7 +297,7 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnEmptyListOfDoctorsWhenNoRecordFound() {
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
     orders.add(customOrder);
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
@@ -303,18 +308,20 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
+        .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable)).thenReturn(
+        page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of());
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(0l);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(0L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
         .pageNumber(1)
         .searchQuery("")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -326,7 +333,7 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldReturnListOfAllDoctorsWhoMatchSearchQuery() {
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
     orders.add(customOrder);
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
@@ -337,21 +344,23 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
+        .findAll("query", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
-    when(page.getTotalElements()).thenReturn(2l);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
-    when(repository.count()).thenReturn(5l);
+    when(page.getTotalElements()).thenReturn(2L);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
+    when(repository.count()).thenReturn(5L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
         .pageNumber(1)
         .searchQuery("query")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -379,7 +388,7 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldNotFailIfGmcIdNull() {
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
     orders.add(customOrder);
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
@@ -390,21 +399,22 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+        .findAll("query", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
+        .thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
-    when(page.getTotalElements()).thenReturn(2l);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
-    when(repository.count()).thenReturn(5l);
+    when(page.getTotalElements()).thenReturn(2L);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
+    when(repository.count()).thenReturn(5L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("desc")
         .sortColumn("submissionDate")
         .pageNumber(1)
         .searchQuery("query")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -432,7 +442,7 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldNotApplySecondarySortIfSortByLastName() {
-    List<Order> orders = new ArrayList<Order>();
+    List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.ASC, "doctorLastName");
     orders.add(customOrder);
 
@@ -441,21 +451,23 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), pageableAndSortable)).thenReturn(page);
+        .findAll("query", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
-    when(page.getTotalElements()).thenReturn(2l);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2l);
-    when(repository.count()).thenReturn(5l);
+    when(page.getTotalElements()).thenReturn(2L);
+    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
+    when(repository.count()).thenReturn(5L);
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder("asc")
         .sortColumn("doctorLastName")
         .pageNumber(1)
         .searchQuery("query")
         .dbcs(dbcs)
+        .programmeName(programmeName)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -693,5 +705,6 @@ class DoctorsForDBServiceTest {
     docDto2.setGmcReferenceNumber(gmcRef1);
     docDto2.setUnderNotice(NO.value());
 
+    programmeName = Faker.instance().funnyName().name();
   }
 }
