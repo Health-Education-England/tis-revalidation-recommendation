@@ -45,6 +45,9 @@ public interface RecommendationElasticSearchRepository
   Page<RecommendationView> findAll(final String searchQuery,
       final String dbcs, List<String> hiddenGmcIds, final Pageable pageable);
 
+  @Query("{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?2\"}},{\"match_phrase_prefix\":{\"?0\":{\"query\":\"?1\"}}}]}}")
+  List<RecommendationView> autocomplete(final String fieldName, final String input, final String dbcs);
+
   List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
 
 }

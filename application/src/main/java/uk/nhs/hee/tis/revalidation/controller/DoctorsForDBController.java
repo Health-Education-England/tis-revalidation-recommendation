@@ -27,6 +27,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import java.util.Objects;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeAdminUpdateDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @Slf4j
 @RestController
@@ -62,6 +64,8 @@ public class DoctorsForDBController {
   protected static final String SEARCH_QUERY = "searchQuery";
   protected static final String EMPTY_STRING = "";
   protected static final String DESIGNATED_BODY_CODES = "dbcs";
+  protected static final String AUTOCOMPLETE_FIELD = "fieldName";
+  protected static final String INPUT = "input";
 
   @Value("${app.validation.sort.fields}")
   private List<String> sortFields;
@@ -74,6 +78,9 @@ public class DoctorsForDBController {
 
   @Autowired
   private DoctorsForDBService doctorsForDBService;
+
+  @Autowired
+  private RecommendationElasticSearchService recommendationElasticSearchService;
 
   @ApiOperation(value = "All trainee doctors information", notes = "It will return all the information about trainee doctors", response = TraineeSummaryDto.class)
   @ApiResponses(value = {
@@ -165,6 +172,19 @@ public class DoctorsForDBController {
       return ResponseEntity.ok().body(doctors);
     }
     return ResponseEntity.ok().body(TraineeSummaryDto.builder().build());
+  }
+
+  @ApiOperation(value = "Get autocomplete value for field", notes = "It will return matching field values", response = ResponseEntity.class)
+  @ApiResponses(value = {
+      @ApiResponse(code = 200, message = "Suggested field values", response = ResponseEntity.class)})
+  @GetMapping(value = {"/autocomplete"})
+  public ResponseEntity getAutocompleteProgrammeName(
+      @NonNull @RequestParam(name = AUTOCOMPLETE_FIELD) final String fieldName,
+      @RequestParam(name = INPUT) final String input,
+      @RequestParam(name = DESIGNATED_BODY_CODES) final List<String> dbcs
+  ) {
+    log.info("Receive request to get autocomplete value for programme name: {}", fieldName);
+    return ResponseEntity.ok().body(recommendationElasticSearchService.getAutocompleteResults(fieldName, input, dbcs));
   }
 
   //TODO: find a better way like separate validator

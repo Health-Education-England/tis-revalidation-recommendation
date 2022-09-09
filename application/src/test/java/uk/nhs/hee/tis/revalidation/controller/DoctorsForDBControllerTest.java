@@ -32,9 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.ASC;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.AUTOCOMPLETE_FIELD;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESC;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESIGNATED_BODY_CODES;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.EMPTY_STRING;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.INPUT;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER_VALUE;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SEARCH_QUERY;
@@ -57,6 +59,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.nhs.hee.tis.revalidation.dto.AutocompleteResultDto;
 import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminUpdateDto;
@@ -66,6 +69,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest(DoctorsForDBController.class)
@@ -76,6 +80,8 @@ class DoctorsForDBControllerTest {
   private static final String DOCTORS_API_URL_BY_GMC_ID = "/api/v1/doctors/gmcIds";
   private static final String UPDATE_ADMIN = "/assign-admin";
   private static final String GET_DESIGNATED_BODY = "/designated-body";
+  private static final String GET_AUTOCOMPLETE = "/api/v1/doctors/autocomplete";
+
 
   private final Faker faker = new Faker();
 
@@ -87,6 +93,9 @@ class DoctorsForDBControllerTest {
 
   @MockBean
   private DoctorsForDBService doctorsForDBService;
+
+  @MockBean
+  private RecommendationElasticSearchService recommendationElasticSearchService;
 
   private String gmcRef1, gmcRef2;
   private String firstName1, firstName2;
@@ -136,12 +145,12 @@ class DoctorsForDBControllerTest {
         .thenReturn(gmcDoctorDTO);
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     this.mockMvc.perform(get("/api/v1/doctors")
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
-        .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
-        .param(SEARCH_QUERY, EMPTY_STRING)
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
+            .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
+            .param(SEARCH_QUERY, EMPTY_STRING)
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -157,12 +166,12 @@ class DoctorsForDBControllerTest {
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     final var url = format("%s/%s", UNHIDDEN_DOCTORS_API_URL, gmcRef1);
     this.mockMvc.perform(get(url)
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
-        .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
-        .param(SEARCH_QUERY, EMPTY_STRING)
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, UNDER_NOTICE_VALUE)
+            .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
+            .param(SEARCH_QUERY, EMPTY_STRING)
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(
             jsonPath("$.traineeInfo.[*].gmcReferenceNumber").value(hasItem(gmcRef2)));
@@ -178,9 +187,9 @@ class DoctorsForDBControllerTest {
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get("/api/v1/doctors")
-        .param(SORT_ORDER, "")
-        .param(SORT_COLUMN, "")
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, "")
+            .param(SORT_COLUMN, "")
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -195,9 +204,9 @@ class DoctorsForDBControllerTest {
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get(DOCTORS_API_URL)
-        .param(SORT_ORDER, "aa")
-        .param(SORT_COLUMN, "date")
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, "aa")
+            .param(SORT_COLUMN, "date")
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -212,10 +221,10 @@ class DoctorsForDBControllerTest {
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get(DOCTORS_API_URL)
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, String.valueOf(true))
-        .param(DESIGNATED_BODY_CODES, dbcString))
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, String.valueOf(true))
+            .param(DESIGNATED_BODY_CODES, dbcString))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
   }
@@ -229,9 +238,9 @@ class DoctorsForDBControllerTest {
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get(DOCTORS_API_URL)
-        .param(SORT_ORDER, ASC)
-        .param(SORT_COLUMN, SUBMISSION_DATE)
-        .param(UNDER_NOTICE, String.valueOf(true)))
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, SUBMISSION_DATE)
+            .param(UNDER_NOTICE, String.valueOf(true)))
         .andExpect(status().isOk());
   }
 
@@ -244,9 +253,9 @@ class DoctorsForDBControllerTest {
     final var traineeAdminUpdateDto = TraineeAdminUpdateDto.builder()
         .traineeAdmins(of(ta1, ta2)).build();
     this.mockMvc.perform(post(url)
-        .contentType(MediaType.APPLICATION_JSON)
-        .accept(MediaType.APPLICATION_JSON)
-        .content(mapper.writeValueAsString(traineeAdminUpdateDto)))
+            .contentType(MediaType.APPLICATION_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsString(traineeAdminUpdateDto)))
         .andExpect(status().isOk());
   }
 
@@ -270,6 +279,38 @@ class DoctorsForDBControllerTest {
     this.mockMvc.perform(get(url))
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldReturnAutocompleteResultsForProgrammeName() throws Exception {
+    final var fieldNameParam = "programmeName";
+    final var inputParam = "general prac";
+    final var dbcsParam = List.of("1-AIIDWI");
+    var result =
+        List.of(
+            "General Practice Salford and Trafford",
+            "General Practice York"
+        );
+
+    var returnedValue = when(recommendationElasticSearchService.getAutocompleteResults(
+        fieldNameParam,
+        inputParam,
+        dbcsParam
+    )).thenReturn(result);
+
+    this.mockMvc.perform(get(GET_AUTOCOMPLETE)
+            .param(AUTOCOMPLETE_FIELD, fieldNameParam)
+            .param(INPUT, inputParam)
+            .param(DESIGNATED_BODY_CODES, dbcsParam.toString()))
+        .andExpect(status().isOk())
+        .andExpect(content().json(mapper.writeValueAsString(result)));
+  }
+
+  @Test
+  void shouldRejectAutocompleteResultsForIvalidField() throws Exception {
+    this.mockMvc.perform(get(GET_AUTOCOMPLETE)
+            .param(AUTOCOMPLETE_FIELD, "invalidField"))
+        .andExpect(status().isBadRequest());
   }
 
   private TraineeSummaryDto prepareGmcDoctor() {

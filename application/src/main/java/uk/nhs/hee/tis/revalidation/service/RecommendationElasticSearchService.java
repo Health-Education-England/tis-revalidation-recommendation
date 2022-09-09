@@ -23,6 +23,8 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +84,15 @@ public class RecommendationElasticSearchService {
     return String.join(",", escapedCodes);
   }
 
+  public List<String> getAutocompleteResults(String fieldname, String input, List<String> dbcs) {
+    var results = recommendationElasticSearchRepository
+        .autocomplete(fieldname, input, formatDesignatedBodyCodesForElasticsearchQuery(dbcs));
+    return results.stream()
+        .filter(result -> Objects.nonNull(getAutocompleteFieldValue(fieldname, result)))
+        .map(result -> getAutocompleteFieldValue(fieldname, result))
+        .collect(Collectors.toList()).stream().distinct().collect(Collectors.toList());
+  }
+
   /**
    * update existing Recommendation to elasticsearch index.
    *
@@ -119,5 +130,15 @@ public class RecommendationElasticSearchService {
       }
     }
     return result;
+  }
+
+  private String getAutocompleteFieldValue(String fieldName, RecommendationView result) {
+    switch (fieldName) {
+      case "programmeName": {
+        return result.getProgrammeName();
+      }
+      default:
+        return null;
+    }
   }
 }
