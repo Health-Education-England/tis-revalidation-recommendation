@@ -301,7 +301,7 @@ class DoctorsForDBControllerTest {
     this.mockMvc.perform(get(GET_AUTOCOMPLETE)
             .param(AUTOCOMPLETE_FIELD, fieldNameParam)
             .param(INPUT, inputParam)
-            .param(DESIGNATED_BODY_CODES, dbcsParam.toString()))
+            .param(DESIGNATED_BODY_CODES, new String[]{"1-AIIDWI"}))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(result)));
   }
