@@ -57,7 +57,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
@@ -134,9 +136,8 @@ class DoctorsForDBServiceTest {
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable))
         .thenReturn(page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
+        .thenReturn(formattedDbcs);
 
     when(page.get()).thenReturn(Stream.of(rv1, rv2, rv3, rv4, rv5));
     when(page.getTotalPages()).thenReturn(1);
@@ -158,42 +159,20 @@ class DoctorsForDBServiceTest {
     assertThat(allDoctors.getCountUnderNotice(), is(2L));
     assertThat(allDoctors.getTotalPages(), is(1L));
     assertThat(doctorsForDB, hasSize(5));
-
-    assertThat(doctorsForDB.get(0).getGmcReferenceNumber(), is(gmcRef1));
-    assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
-    assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
-    assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-
-    assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef2));
-    assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname2));
-    assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname2));
-    assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate2));
-    assertThat(doctorsForDB.get(1).getUnderNotice(), is(un2.name()));
-    assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status2.name()));
-
-    assertThat(doctorsForDB.get(2).getGmcReferenceNumber(), is(gmcRef3));
-    assertThat(doctorsForDB.get(2).getDoctorFirstName(), is(fname3));
-    assertThat(doctorsForDB.get(2).getDoctorLastName(), is(lname3));
-    assertThat(doctorsForDB.get(2).getSubmissionDate(), is(subDate3));
-    assertThat(doctorsForDB.get(2).getUnderNotice(), is(un3.name()));
-    assertThat(doctorsForDB.get(2).getDoctorStatus(), is(status3.name()));
-
-    assertThat(doctorsForDB.get(3).getGmcReferenceNumber(), is(gmcRef4));
-    assertThat(doctorsForDB.get(3).getDoctorFirstName(), is(fname4));
-    assertThat(doctorsForDB.get(3).getDoctorLastName(), is(lname4));
-    assertThat(doctorsForDB.get(3).getSubmissionDate(), is(subDate4));
-    assertThat(doctorsForDB.get(3).getUnderNotice(), is(un4.name()));
-    assertThat(doctorsForDB.get(3).getDoctorStatus(), is(status4.name()));
-
-    assertThat(doctorsForDB.get(4).getGmcReferenceNumber(), is(gmcRef5));
-    assertThat(doctorsForDB.get(4).getDoctorFirstName(), is(fname5));
-    assertThat(doctorsForDB.get(4).getDoctorLastName(), is(lname5));
-    assertThat(doctorsForDB.get(4).getSubmissionDate(), is(subDate5));
-    assertThat(doctorsForDB.get(4).getUnderNotice(), is(un5.name()));
-    assertThat(doctorsForDB.get(4).getDoctorStatus(), is(status5.name()));
-
+    String[] refs = {gmcRef1, gmcRef2, gmcRef3, gmcRef4, gmcRef5};
+    String[] f_names = {fname1, fname2, fname3, fname4, fname5};
+    String[] l_names = {lname1, lname2, lname3, lname4, lname5};
+    LocalDate[] subDates = {subDate1, subDate2, subDate3, subDate4, subDate5};
+    UnderNotice[] underNotices = {un1, un2, un3, un4, un5};
+    RecommendationStatus[] statuses = {status1, status2, status3, status4, status5};
+    for (int i = 0; i < doctorsForDB.size(); i++) {
+      TraineeInfoDto doc = doctorsForDB.get(i);    assertThat(doc.getGmcReferenceNumber(), is(refs[i]));
+      assertThat(doc.getDoctorFirstName(), is(f_names[i]));
+      assertThat(doc.getDoctorLastName(), is(l_names[i]));
+      assertThat(doc.getSubmissionDate(), is(subDates[i]));
+      assertThat(doc.getUnderNotice(), is(underNotices[i].name()));
+      assertThat(doc.getDoctorStatus(), is(statuses[i].name()));
+    }
   }
 
   @Test
@@ -561,6 +540,35 @@ class DoctorsForDBServiceTest {
     doctorsForDBService.hideAllDoctors();
     verify(repository).save(doctorCaptor.capture());
     assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
+  }
+
+  @Test
+  void shouldGetConvertedRecordsForGmcIds() {
+    List<String> ids = List.of(gmcRef1, gmcRef2);
+    List<DoctorsForDB> iterableDocs = List.of(doc1, doc2, doc3);
+    when(repository.findAllById(ids)).thenReturn(iterableDocs);
+
+    TraineeSummaryDto actualSummary = doctorsForDBService.getDoctorsByGmcIds(ids);
+
+    assertThat(actualSummary.getTotalResults(), is(3L));
+    assertThat(actualSummary.getCountTotal(), is(3L));
+    List<TraineeInfoDto> actualDocs = actualSummary.getTraineeInfo();
+    for (int i = 0; i < iterableDocs.size(); i++) {
+      assertSubsetOfConvertedFields(actualDocs.get(i), iterableDocs.get(i));
+    }
+  }
+
+  private static void assertSubsetOfConvertedFields(TraineeInfoDto actual, DoctorsForDB expected) {
+    assertThat(actual.getGmcReferenceNumber(), is(expected.getGmcReferenceNumber()));
+    assertThat(actual.getDoctorFirstName(), is(expected.getDoctorFirstName()));
+    assertThat(actual.getDoctorLastName(), is(expected.getDoctorLastName()));
+    assertThat(actual.getSubmissionDate(), is(expected.getSubmissionDate()));
+    assertThat(actual.getDesignatedBody(), is(expected.getDesignatedBodyCode()));
+    assertThat(actual.getDateAdded(), is(expected.getDateAdded()));
+    assertThat(actual.getUnderNotice(), is(expected.getUnderNotice().name()));
+    assertThat(actual.getSanction(), is(expected.getSanction()));
+    assertThat(actual.getLastUpdatedDate(), is(expected.getLastUpdatedDate()));
+    assertThat(actual.getAdmin(), is(expected.getAdmin()));
   }
 
   private void setupData() {
