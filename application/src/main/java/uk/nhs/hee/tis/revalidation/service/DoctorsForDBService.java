@@ -27,8 +27,8 @@ import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
 import static org.springframework.data.domain.Sort.by;
-import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,9 +91,13 @@ public class DoctorsForDBService {
     final var traineeDoctors = doctorsList.stream()
         .map(recommendationViewMapper::toTraineeInfoDto).collect(toList());
 
-    return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
-        .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
-        .totalResults(paginatedDoctors.getTotalElements()).build();
+    return TraineeSummaryDto.builder()
+        .traineeInfo(traineeDoctors)
+        .countTotal(getCountAll())
+        .countUnderNotice(getCountUnderNotice())
+        .totalPages(paginatedDoctors.getTotalPages())
+        .totalResults(paginatedDoctors.getTotalElements())
+        .build();
   }
 
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
