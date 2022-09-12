@@ -76,11 +76,16 @@ public class DoctorsForDBController {
   @Value("${app.gmc.designatedBodies}")
   private List<String> designatedBodies;
 
-  @Autowired
   private DoctorsForDBService doctorsForDBService;
 
-  @Autowired
   private RecommendationElasticSearchService recommendationElasticSearchService;
+
+  public DoctorsForDBController(
+      DoctorsForDBService doctorsForDBService,
+      RecommendationElasticSearchService recommendationElasticSearchService) {
+    this.doctorsForDBService = doctorsForDBService;
+    this.recommendationElasticSearchService = recommendationElasticSearchService;
+  }
 
   @ApiOperation(value = "All trainee doctors information", notes = "It will return all the information about trainee doctors", response = TraineeSummaryDto.class)
   @ApiResponses(value = {
