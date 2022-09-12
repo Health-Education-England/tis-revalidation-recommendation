@@ -160,7 +160,8 @@ class RecommendationElasticSearchServiceTest {
     final var dbcsParam = List.of("1-AIIDWQ");
     final var escapedDbcsParam = "aiidwq";
     final var inputParam = "General prac";
-      when(recommendationElasticSearchRepository.autocomplete(fieldNameParam, inputParam, escapedDbcsParam))
+      when(recommendationElasticSearchRepository
+          .findByFieldNameParameter(fieldNameParam, inputParam, escapedDbcsParam))
           .thenReturn(generateListOfRecommendationViews());
     final var results = recommendationElasticSearchService
         .getAutocompleteResults(fieldNameParam, inputParam, dbcsParam);
@@ -175,7 +176,8 @@ class RecommendationElasticSearchServiceTest {
     final var dbcsParam = List.of("1-AIIDWQ");
     final var escapedDbcsParam = "aiidwq";
     final var inputParam = "General prac";
-    when(recommendationElasticSearchRepository.autocomplete(fieldNameParam, inputParam, escapedDbcsParam))
+    when(recommendationElasticSearchRepository
+        .findByFieldNameParameter(fieldNameParam, inputParam, escapedDbcsParam))
         .thenReturn(generateListOfRecommendationViews());
     final var results = recommendationElasticSearchService
         .getAutocompleteResults(fieldNameParam, inputParam, dbcsParam);

@@ -86,11 +86,15 @@ public class RecommendationElasticSearchService {
 
   public List<String> getAutocompleteResults(String fieldname, String input, List<String> dbcs) {
     var results = recommendationElasticSearchRepository
-        .autocomplete(fieldname, input, formatDesignatedBodyCodesForElasticsearchQuery(dbcs));
+        .findByFieldNameParameter(
+            fieldname,
+            input,
+            formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
+        );
     return results.stream()
-        .filter(result -> Objects.nonNull(getAutocompleteFieldValue(fieldname, result)))
-        .map(result -> getAutocompleteFieldValue(fieldname, result))
-        .collect(Collectors.toList()).stream().distinct().collect(Collectors.toList());
+        .map(result -> getFieldValueAsString(fieldname, result))
+        .filter(Objects::nonNull)
+        .distinct().collect(Collectors.toList());
   }
 
   /**
@@ -132,7 +136,7 @@ public class RecommendationElasticSearchService {
     return result;
   }
 
-  private String getAutocompleteFieldValue(String fieldName, RecommendationView result) {
+  private String getFieldValueAsString(String fieldName, RecommendationView result) {
     switch (fieldName) {
       case "programmeName": {
         return result.getProgrammeName();

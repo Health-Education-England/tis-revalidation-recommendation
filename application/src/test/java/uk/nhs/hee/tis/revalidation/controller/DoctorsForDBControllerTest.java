@@ -25,6 +25,7 @@ import static java.lang.String.format;
 import static java.time.LocalDate.now;
 import static java.util.List.of;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -303,13 +304,6 @@ class DoctorsForDBControllerTest {
             .param(DESIGNATED_BODY_CODES, new String[]{"1-AIIDWI"}))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(result)));
-  }
-
-  @Test
-  void shouldRejectAutocompleteResultsForIvalidField() throws Exception {
-    this.mockMvc.perform(get(GET_AUTOCOMPLETE)
-            .param(AUTOCOMPLETE_FIELD, "invalidField"))
-        .andExpect(status().isBadRequest());
   }
 
   private TraineeSummaryDto prepareGmcDoctor() {
