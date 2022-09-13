@@ -62,6 +62,7 @@ public class DoctorsForDBController {
   protected static final String SEARCH_QUERY = "searchQuery";
   protected static final String EMPTY_STRING = "";
   protected static final String DESIGNATED_BODY_CODES = "dbcs";
+  protected static final String PROGRAMME_NAME_PARAM = "programmeName";
 
   @Value("${app.validation.sort.fields}")
   private List<String> sortFields;
@@ -85,6 +86,7 @@ public class DoctorsForDBController {
       @RequestParam(name = UNDER_NOTICE, defaultValue = UNDER_NOTICE_VALUE, required = false) final boolean underNotice,
       @RequestParam(name = PAGE_NUMBER, defaultValue = PAGE_NUMBER_VALUE, required = false) final int pageNumber,
       @RequestParam(name = DESIGNATED_BODY_CODES, required = false) final List<String> dbcs,
+      @RequestParam(name = PROGRAMME_NAME_PARAM, required = false) final String programmeName,
       @RequestParam(name = SEARCH_QUERY, defaultValue = EMPTY_STRING, required = false) final String searchQuery) {
     final var traineeRequestDTO = TraineeRequestDto.builder()
         .sortColumn(sortColumn)
@@ -93,6 +95,7 @@ public class DoctorsForDBController {
         .pageNumber(pageNumber)
         .dbcs(dbcs)
         .searchQuery(searchQuery)
+        .programmeName(programmeName)
         .build();
 
     validate(traineeRequestDTO);
