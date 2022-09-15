@@ -170,9 +170,9 @@ public class DoctorsForDBController {
   @ApiResponses(value = {
       @ApiResponse(code = 200, message = "Suggested field values", response = ResponseEntity.class)})
   @GetMapping("/autocomplete")
-  public ResponseEntity<List<String>> getAutocompleteValesForField(
+  public ResponseEntity<List<String>> getAutocompleteValuesForField(
       @NonNull @RequestParam(name = AUTOCOMPLETE_FIELD) final String fieldName,
-      @RequestParam(name = INPUT) final String input,
+      @RequestParam(name = INPUT, required = false) final String input,
       @RequestParam(name = DESIGNATED_BODY_CODES) final List<String> dbcs) {
     log.info("Receive request to get autocomplete value for programme name: {}", fieldName);
     return ResponseEntity.ok()
