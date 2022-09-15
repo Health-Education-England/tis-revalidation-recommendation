@@ -24,7 +24,6 @@ package uk.nhs.hee.tis.revalidation.controller;
 import static java.time.LocalDate.now;
 import static java.util.List.of;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,12 +53,16 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminUpdateDto;
@@ -284,20 +287,27 @@ class DoctorsForDBControllerTest {
         .andExpect(status().isOk());
   }
 
-  @Test
-  void shouldReturnAutocompleteResultsForProgrammeName() throws Exception {
+  @ParameterizedTest(name = "Should Return Autocomplete Results for Input [{0}]")
+  @CsvSource({"general prac"})
+  @NullSource
+  void shouldReturnAutocompleteResultsForSpecifiedField(String inputParam) throws Exception {
     final var fieldNameParam = "programmeName";
-    final var inputParam = "general prac";
     final var dbcsParam = List.of("1-AIIDWI");
     var result = List.of("General Practice Salford and Trafford", "General Practice York");
 
-    var returnedValue = when(
-        recommendationElasticSearchService.getAutocompleteResults(fieldNameParam, inputParam,
-            dbcsParam)).thenReturn(result);
+    when(recommendationElasticSearchService.getAutocompleteResults(fieldNameParam, inputParam,
+        dbcsParam))
+        .thenReturn(result);
 
-    this.mockMvc.perform(
-            get(GET_AUTOCOMPLETE).param(AUTOCOMPLETE_FIELD, fieldNameParam).param(INPUT, inputParam)
-                .param(DESIGNATED_BODY_CODES, new String[]{"1-AIIDWI"})).andExpect(status().isOk())
+    final MockHttpServletRequestBuilder request = get(GET_AUTOCOMPLETE)
+        .param(AUTOCOMPLETE_FIELD, fieldNameParam)
+        .param(DESIGNATED_BODY_CODES, "1-AIIDWI");
+    if (inputParam != null) {
+      request.param(INPUT, inputParam);
+    }
+
+    this.mockMvc.perform(request)
+        .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(result)));
   }
 
