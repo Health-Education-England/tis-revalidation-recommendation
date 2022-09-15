@@ -37,5 +37,6 @@ public class TraineeRequestDto {
   private boolean underNotice;
   private int pageNumber;
   private List<String> dbcs;
+  private String programmeName;
   private String searchQuery;
 }
