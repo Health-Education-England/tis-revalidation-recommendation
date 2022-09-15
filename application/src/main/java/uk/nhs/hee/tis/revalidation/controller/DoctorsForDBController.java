@@ -27,6 +27,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.List;
 import java.util.Objects;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeAdminUpdateDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @Slf4j
 @RestController
@@ -62,6 +64,8 @@ public class DoctorsForDBController {
   protected static final String SEARCH_QUERY = "searchQuery";
   protected static final String EMPTY_STRING = "";
   protected static final String DESIGNATED_BODY_CODES = "dbcs";
+  protected static final String AUTOCOMPLETE_FIELD = "fieldName";
+  protected static final String INPUT = "input";
   protected static final String PROGRAMME_NAME_PARAM = "programmeName";
 
   @Value("${app.validation.sort.fields}")
@@ -73,8 +77,15 @@ public class DoctorsForDBController {
   @Value("${app.gmc.designatedBodies}")
   private List<String> designatedBodies;
 
-  @Autowired
   private DoctorsForDBService doctorsForDBService;
+
+  private RecommendationElasticSearchService recommendationElasticSearchService;
+
+  public DoctorsForDBController(DoctorsForDBService doctorsForDBService,
+      RecommendationElasticSearchService recommendationElasticSearchService) {
+    this.doctorsForDBService = doctorsForDBService;
+    this.recommendationElasticSearchService = recommendationElasticSearchService;
+  }
 
   @ApiOperation(value = "All trainee doctors information", notes = "It will return all the information about trainee doctors", response = TraineeSummaryDto.class)
   @ApiResponses(value = {
@@ -88,20 +99,14 @@ public class DoctorsForDBController {
       @RequestParam(name = DESIGNATED_BODY_CODES, required = false) final List<String> dbcs,
       @RequestParam(name = PROGRAMME_NAME_PARAM, required = false) final String programmeName,
       @RequestParam(name = SEARCH_QUERY, defaultValue = EMPTY_STRING, required = false) final String searchQuery) {
-    final var traineeRequestDTO = TraineeRequestDto.builder()
-        .sortColumn(sortColumn)
-        .sortOrder(sortOrder)
-        .underNotice(underNotice)
-        .pageNumber(pageNumber)
-        .dbcs(dbcs)
-        .searchQuery(searchQuery)
-        .programmeName(programmeName)
-        .build();
+    final var traineeRequestDTO = TraineeRequestDto.builder().sortColumn(sortColumn)
+        .sortOrder(sortOrder).underNotice(underNotice).pageNumber(pageNumber).dbcs(dbcs)
+        .searchQuery(searchQuery).programmeName(programmeName).build();
 
     validate(traineeRequestDTO);
 
-    final var allTraineeDoctorDetails = doctorsForDBService
-        .getAllTraineeDoctorDetails(traineeRequestDTO, List.of());
+    final var allTraineeDoctorDetails = doctorsForDBService.getAllTraineeDoctorDetails(
+        traineeRequestDTO, List.of());
     return ResponseEntity.ok().body(allTraineeDoctorDetails);
   }
 
@@ -117,19 +122,14 @@ public class DoctorsForDBController {
       @RequestParam(name = PAGE_NUMBER, defaultValue = PAGE_NUMBER_VALUE, required = false) final int pageNumber,
       @RequestParam(name = DESIGNATED_BODY_CODES, required = false) final List<String> dbcs,
       @RequestParam(name = SEARCH_QUERY, defaultValue = EMPTY_STRING, required = false) final String searchQuery) {
-    final var traineeRequestDTO = TraineeRequestDto.builder()
-        .sortColumn(sortColumn)
-        .sortOrder(sortOrder)
-        .underNotice(underNotice)
-        .pageNumber(pageNumber)
-        .dbcs(dbcs)
-        .searchQuery(searchQuery)
-        .build();
+    final var traineeRequestDTO = TraineeRequestDto.builder().sortColumn(sortColumn)
+        .sortOrder(sortOrder).underNotice(underNotice).pageNumber(pageNumber).dbcs(dbcs)
+        .searchQuery(searchQuery).build();
 
     validate(traineeRequestDTO);
 
-    final var allTraineeDoctorDetails = doctorsForDBService
-        .getAllTraineeDoctorDetails(traineeRequestDTO, gmcIds);
+    final var allTraineeDoctorDetails = doctorsForDBService.getAllTraineeDoctorDetails(
+        traineeRequestDTO, gmcIds);
     return ResponseEntity.ok().body(allTraineeDoctorDetails);
   }
 
@@ -150,8 +150,7 @@ public class DoctorsForDBController {
   public ResponseEntity<DesignatedBodyDto> getDesignatedBodyCode(
       @PathVariable("gmcId") final String gmcId) {
     log.info("Receive request to get designatedBodyCode for user: {}", gmcId);
-    final var designatedBody = doctorsForDBService
-        .getDesignatedBodyCode(gmcId);
+    final var designatedBody = doctorsForDBService.getDesignatedBodyCode(gmcId);
     return ResponseEntity.ok().body(designatedBody);
   }
 
@@ -163,11 +162,23 @@ public class DoctorsForDBController {
       @PathVariable(required = false) final List<String> gmcIds) {
     log.info("Receive request to get designatedBodyCode for user: {}", gmcIds);
     if (Objects.nonNull(gmcIds)) {
-      final var doctors = doctorsForDBService
-          .getDoctorsByGmcIds(gmcIds);
+      final var doctors = doctorsForDBService.getDoctorsByGmcIds(gmcIds);
       return ResponseEntity.ok().body(doctors);
     }
     return ResponseEntity.ok().body(TraineeSummaryDto.builder().build());
+  }
+
+  @ApiOperation(value = "Get autocomplete value for field", notes = "It will return matching field values", response = ResponseEntity.class)
+  @ApiResponses(value = {
+      @ApiResponse(code = 200, message = "Suggested field values", response = ResponseEntity.class)})
+  @GetMapping("/autocomplete")
+  public ResponseEntity<List<String>> getAutocompleteValuesForField(
+      @NonNull @RequestParam(name = AUTOCOMPLETE_FIELD) final String fieldName,
+      @RequestParam(name = INPUT, required = false) final String input,
+      @RequestParam(name = DESIGNATED_BODY_CODES) final List<String> dbcs) {
+    log.info("Receive request to get autocomplete value for programme name: {}", fieldName);
+    return ResponseEntity.ok()
+        .body(recommendationElasticSearchService.getAutocompleteResults(fieldName, input, dbcs));
   }
 
   //TODO: find a better way like separate validator

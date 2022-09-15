@@ -36,10 +36,14 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest(DoctorsForDBController.class)
 class JsonSerializationTest {
+
+  @MockBean
+  private RecommendationElasticSearchService recommendationElasticSearchService;
 
   @MockBean
   private DoctorsForDBService mDoctorsForDbService;
@@ -51,14 +55,9 @@ class JsonSerializationTest {
   void testDateSerialization() throws JsonProcessingException {
     assertThat(mapper, is(notNullValue()));
 
-    final var doctor = DoctorsForDbDto.builder()
-        .doctorFirstName("first")
-        .doctorLastName("last")
-        .gmcReferenceNumber("gmtRef")
-        .sanction("sanction")
-        .underNotice("under notice")
-        .dateAdded("04/07/2017")
-        .submissionDate("04/07/2017").build();
+    final var doctor = DoctorsForDbDto.builder().doctorFirstName("first").doctorLastName("last")
+        .gmcReferenceNumber("gmtRef").sanction("sanction").underNotice("under notice")
+        .dateAdded("04/07/2017").submissionDate("04/07/2017").build();
 
     final var json = mapper.writeValueAsString(doctor);
 

@@ -30,30 +30,30 @@ import org.springframework.stereotype.Repository;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 
 @Repository
-public interface RecommendationElasticSearchRepository
-    extends ElasticsearchRepository<RecommendationView, String> {
+public interface RecommendationElasticSearchRepository extends
+    ElasticsearchRepository<RecommendationView, String> {
 
-  @Query(
-      "{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":"
-          + "{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":"
-          + "{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
-          + "{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":"
-          + "{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":{\"query\":\"?2\","
-          + "\"zero_terms_query\":\"all\"}}}]}}"
-  )
-  Page<RecommendationView> findByUnderNotice(final String searchQuery,
-      final String dbcs, String programmeName, final Pageable pageable);
+  @Query("{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":"
+      + "{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":"
+      + "{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
+      + "{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":"
+      + "{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":{\"query\":\"?2\","
+      + "\"zero_terms_query\":\"all\"}}}]}}")
+  Page<RecommendationView> findByUnderNotice(final String searchQuery, final String dbcs,
+      String programmeName, final Pageable pageable);
 
-  @Query(
-      "{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":"
-          + "[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},"
-          + "{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},"
-          + "{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
-          + "{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
-          + "{\"query\":\"?3\",\"zero_terms_query\":\"all\"}}}]}}"
-  )
-  Page<RecommendationView> findAll(final String searchQuery,
-      final String dbcs, List<String> hiddenGmcIds, String programmeName, final Pageable pageable);
+  @Query("{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":"
+      + "[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},"
+      + "{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},"
+      + "{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
+      + "{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
+      + "{\"query\":\"?3\",\"zero_terms_query\":\"all\"}}}]}}")
+  Page<RecommendationView> findAll(final String searchQuery, final String dbcs,
+      List<String> hiddenGmcIds, String programmeName, final Pageable pageable);
+
+  @Query("{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?2\"}},{\"match_phrase_prefix\":{\"?0\":{\"query\":\"?1\"}}}]}}")
+  List<RecommendationView> findByFieldNameParameter(final String fieldName, final String input,
+      final String dbcs);
 
   List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
 

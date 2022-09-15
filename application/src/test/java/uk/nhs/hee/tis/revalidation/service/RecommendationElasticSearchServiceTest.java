@@ -77,18 +77,10 @@ class RecommendationElasticSearchServiceTest {
     admin = faker.lorem().characters(20);
     underNotice = faker.lorem().characters(20);
 
-    recommendationView = RecommendationView.builder()
-        .id("1a2a")
-        .tcsPersonId((long) 111)
-        .gmcReferenceNumber(gmcRef1)
-        .doctorFirstName(firstName1)
-        .doctorLastName(lastName1)
-        .submissionDate(submissionDate1)
-        .programmeName(programmeName1)
-        .designatedBody(designatedBody1)
-        .admin(admin)
-        .underNotice(underNotice)
-        .build();
+    recommendationView = RecommendationView.builder().id("1a2a").tcsPersonId((long) 111)
+        .gmcReferenceNumber(gmcRef1).doctorFirstName(firstName1).doctorLastName(lastName1)
+        .submissionDate(submissionDate1).programmeName(programmeName1)
+        .designatedBody(designatedBody1).admin(admin).underNotice(underNotice).build();
     recommendationViews.add(recommendationView);
   }
 
@@ -100,8 +92,7 @@ class RecommendationElasticSearchServiceTest {
 
   @Test
   void shouldThrowExceptionWhenSavingNull() {
-    doThrow(new NullPointerException()).when(recommendationElasticSearchRepository)
-        .save(null);
+    doThrow(new NullPointerException()).when(recommendationElasticSearchRepository).save(null);
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.addRecommendationViews(null);
     });
@@ -109,8 +100,8 @@ class RecommendationElasticSearchServiceTest {
 
   @Test
   void shouldSaveRecommendationViewsWhenTheRecordIsAlreadyThereInTheESRepository() {
-    when(recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcRef1))
-        .thenReturn(recommendationViews);
+    when(recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcRef1)).thenReturn(
+        recommendationViews);
     recommendationElasticSearchService.saveRecommendationViews(recommendationView);
     verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
   }
@@ -123,18 +114,10 @@ class RecommendationElasticSearchServiceTest {
 
   @Test
   void shouldThrowExceptionIfGmcReferenceNumberNull() {
-    recommendationView = RecommendationView.builder()
-        .id("1a2a")
-        .tcsPersonId((long) 111)
-        .gmcReferenceNumber(null)
-        .doctorFirstName(firstName1)
-        .doctorLastName(lastName1)
-        .submissionDate(submissionDate1)
-        .programmeName(programmeName1)
-        .designatedBody(designatedBody1)
-        .admin(admin)
-        .underNotice(underNotice)
-        .build();
+    recommendationView = RecommendationView.builder().id("1a2a").tcsPersonId((long) 111)
+        .gmcReferenceNumber(null).doctorFirstName(firstName1).doctorLastName(lastName1)
+        .submissionDate(submissionDate1).programmeName(programmeName1)
+        .designatedBody(designatedBody1).admin(admin).underNotice(underNotice).build();
 
     assertThrows(Exception.class, () -> {
       recommendationElasticSearchService.saveRecommendationViews(recommendationView);
@@ -148,9 +131,54 @@ class RecommendationElasticSearchServiceTest {
     final String dbcformatted = "aiidhj,aiidmq";
     List<String> dbcs = List.of(dbc1, dbc2);
 
-    final var result =
-        recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs);
+    final var result = recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs);
 
     assertThat(result, is(dbcformatted));
+  }
+
+  @Test
+  void shouldReturnDistinctAutocompleteValuesForProgrammeName() {
+    final var fieldNameParam = "programmeName";
+    final var dbcsParam = List.of("1-AIIDWQ");
+    final var escapedDbcsParam = "aiidwq";
+    final var inputParam = "General prac";
+    when(recommendationElasticSearchRepository.findByFieldNameParameter(fieldNameParam, inputParam,
+        escapedDbcsParam)).thenReturn(generateListOfRecommendationViews());
+    final var results = recommendationElasticSearchService.getAutocompleteResults(fieldNameParam,
+        inputParam, dbcsParam);
+
+    assertThat(results, is(List.of("General Practice 1", "General Practice 2")));
+    assertThat(results.size(), is(2));
+  }
+
+  @Test
+  void shouldNotReturnUnsupportedAutocompleteFields() {
+    final var fieldNameParam = "unsupportedField";
+    final var dbcsParam = List.of("1-AIIDWQ");
+    final var escapedDbcsParam = "aiidwq";
+    final var inputParam = "General prac";
+    when(recommendationElasticSearchRepository.findByFieldNameParameter(fieldNameParam, inputParam,
+        escapedDbcsParam)).thenReturn(generateListOfRecommendationViews());
+    final var results = recommendationElasticSearchService.getAutocompleteResults(fieldNameParam,
+        inputParam, dbcsParam);
+
+    assertThat(results.size(), is(0));
+  }
+
+  private List<RecommendationView> generateListOfRecommendationViews() {
+    return List.of(
+        recommendationView = RecommendationView.builder().id("1a2a").tcsPersonId((long) 111)
+            .gmcReferenceNumber(null).doctorFirstName(firstName1).doctorLastName(lastName1)
+            .submissionDate(submissionDate1).programmeName("General Practice 1")
+            .designatedBody(designatedBody1).admin(admin).underNotice(underNotice).build(),
+        RecommendationView.builder().id("1a2a").tcsPersonId((long) 111).gmcReferenceNumber(null)
+            .doctorFirstName(firstName1).doctorLastName(lastName1).submissionDate(submissionDate1)
+            .programmeName("General Practice 1").designatedBody(designatedBody1).admin(admin)
+            .underNotice(underNotice).build(),
+        RecommendationView.builder().id("1a2a").tcsPersonId((long) 111).gmcReferenceNumber(null)
+            .doctorFirstName(firstName1).doctorLastName(lastName1).submissionDate(submissionDate1)
+            .programmeName("General Practice 2").designatedBody(designatedBody1).admin(admin)
+            .underNotice(underNotice).build());
   }
 }

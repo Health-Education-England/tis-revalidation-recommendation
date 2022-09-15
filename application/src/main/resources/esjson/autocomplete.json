@@ -1,0 +1,25 @@
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "match": {
+            "underNotice": "YES"
+          }
+        },
+        {
+          "match": {
+            "designatedBody": "?2"
+          }
+        },
+        {
+          "match_phrase_prefix": {
+            "?0": {
+              "query": "?1"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -23,6 +23,8 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +36,8 @@ import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchReposit
 @Service
 public class RecommendationElasticSearchService {
 
-  private static final Logger LOG = LoggerFactory
-      .getLogger(RecommendationElasticSearchService.class);
+  private static final Logger LOG = LoggerFactory.getLogger(
+      RecommendationElasticSearchService.class);
 
   @Autowired
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
@@ -73,13 +75,19 @@ public class RecommendationElasticSearchService {
     }
   }
 
-  public String formatDesignatedBodyCodesForElasticsearchQuery(
-      List<String> designatedBodyCodes) {
+  public String formatDesignatedBodyCodesForElasticsearchQuery(List<String> designatedBodyCodes) {
     List<String> escapedCodes = new ArrayList<>();
     designatedBodyCodes.forEach(code -> {
       escapedCodes.add(code.toLowerCase().replace("1-", ""));
     });
     return String.join(",", escapedCodes);
+  }
+
+  public List<String> getAutocompleteResults(String fieldname, String input, List<String> dbcs) {
+    var results = recommendationElasticSearchRepository.findByFieldNameParameter(fieldname, input,
+        formatDesignatedBodyCodesForElasticsearchQuery(dbcs));
+    return results.stream().map(result -> getFieldValueAsString(fieldname, result))
+        .filter(Objects::nonNull).distinct().collect(Collectors.toList());
   }
 
   /**
@@ -119,5 +127,15 @@ public class RecommendationElasticSearchService {
       }
     }
     return result;
+  }
+
+  private String getFieldValueAsString(String fieldName, RecommendationView result) {
+    switch (fieldName) {
+      case "programmeName": {
+        return result.getProgrammeName();
+      }
+      default:
+        return null;
+    }
   }
 }

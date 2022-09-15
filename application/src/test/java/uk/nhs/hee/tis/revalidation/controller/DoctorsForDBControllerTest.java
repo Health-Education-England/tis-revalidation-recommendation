@@ -24,6 +24,7 @@ package uk.nhs.hee.tis.revalidation.controller;
 import static java.time.LocalDate.now;
 import static java.util.List.of;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -31,9 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.ASC;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.AUTOCOMPLETE_FIELD;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESC;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESIGNATED_BODY_CODES;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.EMPTY_STRING;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.INPUT;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER_VALUE;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PROGRAMME_NAME_PARAM;
@@ -66,6 +69,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
+import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @ExtendWith(MockitoExtension.class)
 @WebMvcTest(DoctorsForDBController.class)
@@ -76,6 +80,8 @@ class DoctorsForDBControllerTest {
   private static final String DOCTORS_API_URL_BY_GMC_ID = "/api/v1/doctors/gmcIds";
   private static final String UPDATE_ADMIN = "/assign-admin";
   private static final String GET_DESIGNATED_BODY = "/designated-body";
+  private static final String GET_AUTOCOMPLETE = "/api/v1/doctors/autocomplete";
+
 
   private final Faker faker = new Faker();
 
@@ -87,6 +93,9 @@ class DoctorsForDBControllerTest {
 
   @MockBean
   private DoctorsForDBService doctorsForDBService;
+
+  @MockBean
+  private RecommendationElasticSearchService recommendationElasticSearchService;
 
   private String gmcRef1, gmcRef2;
   private String firstName1, firstName2;
@@ -273,6 +282,23 @@ class DoctorsForDBControllerTest {
     mockMvc.perform(get(url))
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldReturnAutocompleteResultsForProgrammeName() throws Exception {
+    final var fieldNameParam = "programmeName";
+    final var inputParam = "general prac";
+    final var dbcsParam = List.of("1-AIIDWI");
+    var result = List.of("General Practice Salford and Trafford", "General Practice York");
+
+    var returnedValue = when(
+        recommendationElasticSearchService.getAutocompleteResults(fieldNameParam, inputParam,
+            dbcsParam)).thenReturn(result);
+
+    this.mockMvc.perform(
+            get(GET_AUTOCOMPLETE).param(AUTOCOMPLETE_FIELD, fieldNameParam).param(INPUT, inputParam)
+                .param(DESIGNATED_BODY_CODES, new String[]{"1-AIIDWI"})).andExpect(status().isOk())
+        .andExpect(content().json(mapper.writeValueAsString(result)));
   }
 
   private TraineeSummaryDto prepareGmcDoctor() {
