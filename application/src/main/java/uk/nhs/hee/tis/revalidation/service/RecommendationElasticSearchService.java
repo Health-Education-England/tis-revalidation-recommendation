@@ -36,8 +36,8 @@ import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchReposit
 @Service
 public class RecommendationElasticSearchService {
 
-  private static final Logger LOG = LoggerFactory
-      .getLogger(RecommendationElasticSearchService.class);
+  private static final Logger LOG = LoggerFactory.getLogger(
+      RecommendationElasticSearchService.class);
 
   @Autowired
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
@@ -75,8 +75,7 @@ public class RecommendationElasticSearchService {
     }
   }
 
-  public String formatDesignatedBodyCodesForElasticsearchQuery(
-      List<String> designatedBodyCodes) {
+  public String formatDesignatedBodyCodesForElasticsearchQuery(List<String> designatedBodyCodes) {
     List<String> escapedCodes = new ArrayList<>();
     designatedBodyCodes.forEach(code -> {
       escapedCodes.add(code.toLowerCase().replace("1-", ""));
@@ -85,16 +84,10 @@ public class RecommendationElasticSearchService {
   }
 
   public List<String> getAutocompleteResults(String fieldname, String input, List<String> dbcs) {
-    var results = recommendationElasticSearchRepository
-        .findByFieldNameParameter(
-            fieldname,
-            input,
-            formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-        );
-    return results.stream()
-        .map(result -> getFieldValueAsString(fieldname, result))
-        .filter(Objects::nonNull)
-        .distinct().collect(Collectors.toList());
+    var results = recommendationElasticSearchRepository.findByFieldNameParameter(fieldname, input,
+        formatDesignatedBodyCodesForElasticsearchQuery(dbcs));
+    return results.stream().map(result -> getFieldValueAsString(fieldname, result))
+        .filter(Objects::nonNull).distinct().collect(Collectors.toList());
   }
 
   /**

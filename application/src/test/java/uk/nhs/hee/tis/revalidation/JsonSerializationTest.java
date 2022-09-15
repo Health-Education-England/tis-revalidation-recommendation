@@ -55,14 +55,9 @@ class JsonSerializationTest {
   void testDateSerialization() throws JsonProcessingException {
     assertThat(mapper, is(notNullValue()));
 
-    final var doctor = DoctorsForDbDto.builder()
-        .doctorFirstName("first")
-        .doctorLastName("last")
-        .gmcReferenceNumber("gmtRef")
-        .sanction("sanction")
-        .underNotice("under notice")
-        .dateAdded("04/07/2017")
-        .submissionDate("04/07/2017").build();
+    final var doctor = DoctorsForDbDto.builder().doctorFirstName("first").doctorLastName("last")
+        .gmcReferenceNumber("gmtRef").sanction("sanction").underNotice("under notice")
+        .dateAdded("04/07/2017").submissionDate("04/07/2017").build();
 
     final var json = mapper.writeValueAsString(doctor);
 
