@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
-import uk.nhs.hee.tis.revalidation.repository.SnapshotRepository;
 
 @ExtendWith(MockitoExtension.class)
 class RemoveOrphanedDraftFor7523122ChangeLogTest {
