@@ -4,9 +4,7 @@ import com.github.cloudyrock.mongock.ChangeLog;
 import com.github.cloudyrock.mongock.ChangeSet;
 import java.util.Optional;
 import uk.nhs.hee.tis.revalidation.entity.Recommendation;
-import uk.nhs.hee.tis.revalidation.entity.Snapshot;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
-import uk.nhs.hee.tis.revalidation.repository.SnapshotRepository;
 
 @ChangeLog(order = "005")
 public class RemoveOrphanedDraftFor7523122 {
