@@ -25,9 +25,6 @@ class RemoveOrphanedDraftFor7523122ChangeLogTest {
   @Mock
   RecommendationRepository recommendationRepository;
 
-  @Mock
-  SnapshotRepository snapshotRepository;
-
   private static final String RECOMMENDATION_ID = "62d150a28492f85d3fca8dba";
 
   @BeforeEach
