@@ -51,6 +51,14 @@
               "zero_terms_query": "all"
             }
           }
+        },
+        {
+          "match_phrase": {
+            "gmcStatus": {
+              "query": "?4",
+              "zero_terms_query": "all"
+            }
+          }
         }
       ]
     }

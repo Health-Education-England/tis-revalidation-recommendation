@@ -61,6 +61,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
@@ -114,6 +115,7 @@ class DoctorsForDBServiceTest {
   private String admin1, admin2, admin3, admin4, admin5;
   private String connectionStatus1, connectionStatus2, connectionStatus3, connectionStatus4, connectionStatus5;
   private String programmeName;
+  private String outcome1;
 
   @BeforeEach
   public void setup() {
@@ -134,7 +136,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
         .thenReturn(formattedDbcs);
@@ -150,6 +152,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
 
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
@@ -187,7 +190,7 @@ class DoctorsForDBServiceTest {
     List<String> dbcs = List.of(designatedBody1);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable)).thenReturn(
+        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, pageableAndSortable)).thenReturn(
         page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -203,6 +206,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
 
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
@@ -234,7 +238,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findByUnderNotice("", formattedDbcs, programmeName, pageableAndSortable)).thenReturn(page);
+        .findByUnderNotice("", formattedDbcs, programmeName, outcome1, pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
@@ -250,6 +254,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -287,7 +292,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, pageableAndSortable)).thenReturn(
+        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, pageableAndSortable)).thenReturn(
         page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -301,6 +306,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -323,7 +329,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -340,6 +346,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("query")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -378,7 +385,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
         .thenReturn(formattedDbcs);
@@ -394,6 +401,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("query")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -430,7 +438,7 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(",", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, pageableAndSortable))
+        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -447,6 +455,7 @@ class DoctorsForDBServiceTest {
         .searchQuery("query")
         .dbcs(dbcs)
         .programmeName(programmeName)
+        .gmcStatus(outcome1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -637,6 +646,8 @@ class DoctorsForDBServiceTest {
     connectionStatus3 = "Yes";
     connectionStatus4 = "Yes";
     connectionStatus5 = "Yes";
+
+    outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
         now(), designatedBody1, admin1, true);

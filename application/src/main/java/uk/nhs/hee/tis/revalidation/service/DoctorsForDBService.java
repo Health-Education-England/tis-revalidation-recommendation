@@ -88,16 +88,12 @@ public class DoctorsForDBService {
       final List<String> hiddenGmcIds) {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
     final var doctorsList = paginatedDoctors.get().collect(toList());
-    final var traineeDoctors = doctorsList.stream()
-        .map(recommendationViewMapper::toTraineeInfoDto).collect(toList());
+    final var traineeDoctors = doctorsList.stream().map(recommendationViewMapper::toTraineeInfoDto)
+        .collect(toList());
 
-    return TraineeSummaryDto.builder()
-        .traineeInfo(traineeDoctors)
-        .countTotal(getCountAll())
-        .countUnderNotice(getCountUnderNotice())
-        .totalPages(paginatedDoctors.getTotalPages())
-        .totalResults(paginatedDoctors.getTotalElements())
-        .build();
+    return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
+        .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
+        .totalResults(paginatedDoctors.getTotalElements()).build();
   }
 
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
@@ -131,8 +127,8 @@ public class DoctorsForDBService {
 
   public DesignatedBodyDto getDesignatedBodyCode(final String gmcId) {
     final var doctorsForDB = doctorsRepository.findById(gmcId);
-    final var designatedBodyCode =
-        doctorsForDB.map(DoctorsForDB::getDesignatedBodyCode).orElse(null);
+    final var designatedBodyCode = doctorsForDB.map(DoctorsForDB::getDesignatedBodyCode)
+        .orElse(null);
     return DesignatedBodyDto.builder().designatedBodyCode(designatedBodyCode).build();
   }
 
@@ -198,15 +194,16 @@ public class DoctorsForDBService {
         requestDTO.getDbcs());
 
     final String programmeName = requestDTO.getProgrammeName();
+    final String gmcStatus = requestDTO.getGmcStatus();
     if (requestDTO.isUnderNotice()) {
 
       return recommendationElasticSearchRepository.findByUnderNotice(
-          requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes, programmeName,
+          requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes, programmeName, gmcStatus,
           pageableAndSortable);
     }
 
     return recommendationElasticSearchRepository.findAll(requestDTO.getSearchQuery().toLowerCase(),
-        designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, pageableAndSortable);
+        designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, gmcStatus, pageableAndSortable);
   }
 
   //TODO: explore to implement cache
