@@ -33,9 +33,9 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 public interface RecommendationElasticSearchRepository extends
     ElasticsearchRepository<RecommendationView, String> {
 
-  @Query("{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{"
-      + "\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":{"
-      + "\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
+  @Query("{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":"
+      + "{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},{\"bool\":"
+      + "{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
       + "{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":{\"gmcReferenceNumber\":"
       + "{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
       + "{\"query\":\"?2\",\"zero_terms_query\":\"all\"}}},{\"match_phrase\":"
