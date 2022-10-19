@@ -35,6 +35,7 @@ import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.AUTO
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESC;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.DESIGNATED_BODY_CODES;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.EMPTY_STRING;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.GMC_STATUS_PARAM;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.INPUT;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.PAGE_NUMBER_VALUE;
@@ -145,7 +146,8 @@ class DoctorsForDBControllerTest {
     final var gmcDoctorDTO = prepareGmcDoctor();
     final var requestDTO = TraineeRequestDto.builder().sortOrder(ASC)
         .sortColumn(SUBMISSION_DATE).searchQuery(EMPTY_STRING)
-        .dbcs(List.of(designatedBody1, designatedBody2)).programmeName(programmeName).build();
+        .dbcs(List.of(designatedBody1, designatedBody2)).programmeName(programmeName)
+        .gmcStatus(doctorStatus1.name()).build();
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
@@ -156,6 +158,7 @@ class DoctorsForDBControllerTest {
             .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
             .param(SEARCH_QUERY, EMPTY_STRING)
             .param(DESIGNATED_BODY_CODES, dbcString)
+            .param(GMC_STATUS_PARAM, String.valueOf(doctorStatus1))
             .param(PROGRAMME_NAME_PARAM, programmeName))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
@@ -188,9 +191,11 @@ class DoctorsForDBControllerTest {
     final var gmcDoctorDTO = prepareGmcDoctor();
     final var requestDTO = TraineeRequestDto.builder().sortOrder(ASC)
         .sortColumn(SUBMISSION_DATE)
-        .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2)).build();
+        .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2))
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
-    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO,
+          List.of()))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get("/api/v1/doctors")
             .param(SORT_ORDER, "")
@@ -205,7 +210,8 @@ class DoctorsForDBControllerTest {
     final var gmcDoctorDTO = prepareGmcDoctor();
     final var requestDTO = TraineeRequestDto.builder().sortOrder(DESC)
         .sortColumn(SUBMISSION_DATE)
-        .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2)).build();
+        .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2))
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
@@ -222,7 +228,8 @@ class DoctorsForDBControllerTest {
     final var gmcDoctorDTO = prepareGmcDoctor();
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder(ASC).sortColumn(SUBMISSION_DATE).underNotice(true).searchQuery(EMPTY_STRING)
-        .dbcs(List.of(designatedBody1, designatedBody2)).build();
+        .dbcs(List.of(designatedBody1, designatedBody2))
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);

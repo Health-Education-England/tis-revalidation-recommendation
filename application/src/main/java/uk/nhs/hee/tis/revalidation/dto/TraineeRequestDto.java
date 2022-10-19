@@ -39,4 +39,5 @@ public class TraineeRequestDto {
   private List<String> dbcs;
   private String programmeName;
   private String searchQuery;
+  private String gmcStatus;
 }
