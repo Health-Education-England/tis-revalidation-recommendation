@@ -69,7 +69,6 @@ public class DoctorsForDBController {
   protected static final String PROGRAMME_NAME_PARAM = "programmeName";
   protected static final String GMC_STATUS_PARAM = "gmcStatus";
 
-
   @Value("${app.validation.sort.fields}")
   private List<String> sortFields;
 
