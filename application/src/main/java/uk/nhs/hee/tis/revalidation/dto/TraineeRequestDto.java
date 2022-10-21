@@ -26,6 +26,7 @@ import io.swagger.annotations.ApiModel;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 
 @Data
 @Builder
@@ -40,4 +41,5 @@ public class TraineeRequestDto {
   private String programmeName;
   private String searchQuery;
   private String gmcStatus;
+  private String tisStatus;
 }

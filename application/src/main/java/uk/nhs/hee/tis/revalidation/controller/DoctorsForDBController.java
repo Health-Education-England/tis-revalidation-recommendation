@@ -43,6 +43,7 @@ import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminUpdateDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
@@ -68,6 +69,7 @@ public class DoctorsForDBController {
   protected static final String INPUT = "input";
   protected static final String PROGRAMME_NAME_PARAM = "programmeName";
   protected static final String GMC_STATUS_PARAM = "gmcStatus";
+  protected static final String TIS_STATUS_PARAM = "tisStatus";
 
   @Value("${app.validation.sort.fields}")
   private List<String> sortFields;
@@ -100,11 +102,12 @@ public class DoctorsForDBController {
       @RequestParam(name = DESIGNATED_BODY_CODES, defaultValue = EMPTY_STRING) final List<String> dbcs,
       @RequestParam(name = PROGRAMME_NAME_PARAM, defaultValue = EMPTY_STRING) final String programmeName,
       @RequestParam(name = GMC_STATUS_PARAM, defaultValue = EMPTY_STRING) final String gmcStatus,
+      @RequestParam(name = TIS_STATUS_PARAM, defaultValue = EMPTY_STRING) final String tisStatus,
       @RequestParam(name = SEARCH_QUERY, defaultValue = EMPTY_STRING) final String searchQuery) {
     final var traineeRequestDTO = TraineeRequestDto.builder().sortColumn(sortColumn)
         .sortOrder(sortOrder).underNotice(underNotice).pageNumber(pageNumber).dbcs(dbcs)
-        .searchQuery(searchQuery).programmeName(programmeName).gmcStatus(gmcStatus).build();
-
+        .searchQuery(searchQuery).programmeName(programmeName).gmcStatus(gmcStatus)
+        .tisStatus(tisStatus).build();
     validate(traineeRequestDTO);
 
     final var allTraineeDoctorDetails = doctorsForDBService.getAllTraineeDoctorDetails(
