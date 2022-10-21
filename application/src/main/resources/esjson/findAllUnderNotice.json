@@ -59,6 +59,14 @@
               "zero_terms_query": "all"
             }
           }
+        },
+        {
+          "match": {
+            "tisStatus": {
+              "query": "?4",
+              "zero_terms_query": "all"
+            }
+          }
         }
       ]
     }
