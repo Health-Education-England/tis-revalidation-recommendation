@@ -44,6 +44,7 @@ import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SEAR
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SORT_COLUMN;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SORT_ORDER;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.SUBMISSION_DATE;
+import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.TIS_STATUS_PARAM;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.UNDER_NOTICE;
 import static uk.nhs.hee.tis.revalidation.controller.DoctorsForDBController.UNDER_NOTICE_VALUE;
 
@@ -70,6 +71,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeAdminUpdateDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
@@ -109,6 +111,7 @@ class DoctorsForDBControllerTest {
   private UnderNotice underNotice1, underNotice2;
   private String sanction1, sanction2;
   private RecommendationStatus doctorStatus1, doctorStatus2;
+  private RecommendationGmcOutcome outcome1;
   private String admin;
   private String designatedBody1, designatedBody2;
   private String connectionStatus1;
@@ -133,6 +136,7 @@ class DoctorsForDBControllerTest {
     sanction2 = faker.lorem().characters(2);
     doctorStatus1 = RecommendationStatus.STARTED;
     doctorStatus2 = RecommendationStatus.SUBMITTED_TO_GMC;
+    outcome1 = RecommendationGmcOutcome.UNDER_REVIEW;
     admin = faker.internet().emailAddress();
     designatedBody1 = faker.lorem().characters(8);
     designatedBody2 = faker.lorem().characters(8);
@@ -147,7 +151,7 @@ class DoctorsForDBControllerTest {
     final var requestDTO = TraineeRequestDto.builder().sortOrder(ASC)
         .sortColumn(SUBMISSION_DATE).searchQuery(EMPTY_STRING)
         .dbcs(List.of(designatedBody1, designatedBody2)).programmeName(programmeName)
-        .gmcStatus(doctorStatus1.name()).build();
+        .gmcStatus(outcome1.getOutcome()).tisStatus(doctorStatus1.name()).build();
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
@@ -158,7 +162,8 @@ class DoctorsForDBControllerTest {
             .param(PAGE_NUMBER, PAGE_NUMBER_VALUE)
             .param(SEARCH_QUERY, EMPTY_STRING)
             .param(DESIGNATED_BODY_CODES, dbcString)
-            .param(GMC_STATUS_PARAM, String.valueOf(doctorStatus1))
+            .param(GMC_STATUS_PARAM, outcome1.getOutcome())
+            .param(TIS_STATUS_PARAM, doctorStatus1.name())
             .param(PROGRAMME_NAME_PARAM, programmeName))
         .andExpect(status().isOk())
         .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
@@ -192,7 +197,7 @@ class DoctorsForDBControllerTest {
     final var requestDTO = TraineeRequestDto.builder().sortOrder(ASC)
         .sortColumn(SUBMISSION_DATE)
         .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2))
-        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).build();
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO,
           List.of()))
@@ -211,7 +216,7 @@ class DoctorsForDBControllerTest {
     final var requestDTO = TraineeRequestDto.builder().sortOrder(DESC)
         .sortColumn(SUBMISSION_DATE)
         .searchQuery(EMPTY_STRING).dbcs(List.of(designatedBody1, designatedBody2))
-        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).build();
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
@@ -229,7 +234,7 @@ class DoctorsForDBControllerTest {
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder(ASC).sortColumn(SUBMISSION_DATE).underNotice(true).searchQuery(EMPTY_STRING)
         .dbcs(List.of(designatedBody1, designatedBody2))
-        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).build();
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
         .thenReturn(gmcDoctorDTO);
