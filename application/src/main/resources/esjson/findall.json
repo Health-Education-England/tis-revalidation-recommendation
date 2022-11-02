@@ -67,6 +67,14 @@
               "zero_terms_query": "all"
             }
           }
+        },
+        {
+          "match": {
+            "admin": {
+              "query": "?6",
+              "zero_terms_query": "all"
+            }
+          }
         }
       ]
     }

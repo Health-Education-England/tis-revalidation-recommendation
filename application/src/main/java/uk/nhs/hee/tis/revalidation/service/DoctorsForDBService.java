@@ -196,15 +196,16 @@ public class DoctorsForDBService {
     final String programmeName = requestDTO.getProgrammeName();
     final String gmcStatus = requestDTO.getGmcStatus();
     final String tisStatus = requestDTO.getTisStatus();
+    final String admin = requestDTO.getAdmin();
     if (requestDTO.isUnderNotice()) {
 
       return recommendationElasticSearchRepository.findByUnderNotice(
           requestDTO.getSearchQuery().toLowerCase(), designatedBodyCodes, programmeName, gmcStatus,
-          tisStatus, pageableAndSortable);
+          tisStatus, admin, pageableAndSortable);
     }
 
     return recommendationElasticSearchRepository.findAll(requestDTO.getSearchQuery().toLowerCase(),
-        designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, gmcStatus, tisStatus,
+        designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, gmcStatus, tisStatus, admin,
         pageableAndSortable);
   }
 
