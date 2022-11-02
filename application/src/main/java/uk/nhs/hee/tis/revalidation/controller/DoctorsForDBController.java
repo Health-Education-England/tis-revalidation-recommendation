@@ -68,6 +68,7 @@ public class DoctorsForDBController {
   protected static final String PROGRAMME_NAME_PARAM = "programmeName";
   protected static final String GMC_STATUS_PARAM = "gmcStatus";
   protected static final String TIS_STATUS_PARAM = "tisStatus";
+  protected static final String ADMIN_PARAM = "admin";
 
   @Value("${app.validation.sort.fields}")
   private List<String> sortFields;
@@ -101,11 +102,12 @@ public class DoctorsForDBController {
       @RequestParam(name = PROGRAMME_NAME_PARAM, defaultValue = EMPTY_STRING) final String programmeName,
       @RequestParam(name = GMC_STATUS_PARAM, defaultValue = EMPTY_STRING) final String gmcStatus,
       @RequestParam(name = TIS_STATUS_PARAM, defaultValue = EMPTY_STRING) final String tisStatus,
+      @RequestParam(name = ADMIN_PARAM, defaultValue = EMPTY_STRING) final String admin,
       @RequestParam(name = SEARCH_QUERY, defaultValue = EMPTY_STRING) final String searchQuery) {
     final var traineeRequestDTO = TraineeRequestDto.builder().sortColumn(sortColumn)
         .sortOrder(sortOrder).underNotice(underNotice).pageNumber(pageNumber).dbcs(dbcs)
         .searchQuery(searchQuery).programmeName(programmeName).gmcStatus(gmcStatus)
-        .tisStatus(tisStatus).build();
+        .tisStatus(tisStatus).admin(admin).build();
     validate(traineeRequestDTO);
 
     final var allTraineeDoctorDetails = doctorsForDBService.getAllTraineeDoctorDetails(

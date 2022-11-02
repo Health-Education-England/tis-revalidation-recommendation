@@ -40,22 +40,24 @@ public interface RecommendationElasticSearchRepository extends
       + "{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
       + "{\"query\":\"?2\",\"zero_terms_query\":\"all\"}}},{\"match\":"
       + "{\"gmcStatus\":{\"query\":\"?3\",\"zero_terms_query\":\"all\"}}},{\"match\":"
-      + "{\"tisStatus\":{\"query\":\"?4\",\"zero_terms_query\":\"all\"}}}]}}")
+      + "{\"tisStatus\":{\"query\":\"?4\",\"zero_terms_query\":\"all\"}}},{\"match\":"
+      + "{\"admin\":{\"query\":\"?5\",\"zero_terms_query\":\"all\"}}}]}}")
   Page<RecommendationView> findByUnderNotice(final String searchQuery, final String dbcs,
-      String programmeName, String gmcStatus, String tisStatus,
+      String programmeName, String gmcStatus, String tisStatus, String admin,
       final Pageable pageable);
 
   @Query("{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":"
-      + "[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},"
+      + "{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},"
       + "{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},"
       + "{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
       + "{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
       + "{\"query\":\"?3\",\"zero_terms_query\":\"all\"}}},{\"match\":{\"gmcStatus\":"
       + "{\"query\":\"?4\",\"zero_terms_query\":\"all\"}}},{\"match\":{\"tisStatus\":"
-      + "{\"query\":\"?5\",\"zero_terms_query\":\"all\"}}}]}}")
+      + "{\"query\":\"?5\",\"zero_terms_query\":\"all\"}}},{\"match\":{\"admin\":"
+      + "{\"query\":\"?6\",\"zero_terms_query\":\"all\"}}}]}}")
   Page<RecommendationView> findAll(final String searchQuery, final String dbcs,
       List<String> hiddenGmcIds, String programmeName, String gmcStatus,
-      String tisStatus, final Pageable pageable);
+      String tisStatus, String admin, final Pageable pageable);
 
   @Query("{\"bool\":{\"filter\":[{\"match\":{\"underNotice\":\"YES\"}},{\"match\":{\"designatedBody\":\"?2\"}},{\"match_phrase_prefix\":{\"?0\":{\"query\":\"?1\"}}}]}}")
   List<RecommendationView> findByFieldNameParameter(final String fieldName, final String input,

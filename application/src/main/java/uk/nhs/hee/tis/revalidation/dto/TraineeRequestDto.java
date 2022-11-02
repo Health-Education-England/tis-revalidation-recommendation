@@ -41,4 +41,5 @@ public class TraineeRequestDto {
   private String searchQuery;
   private String gmcStatus;
   private String tisStatus;
+  private String admin;
 }
