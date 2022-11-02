@@ -47,7 +47,7 @@ public interface RecommendationElasticSearchRepository extends
       final Pageable pageable);
 
   @Query("{\"bool\":{\"must_not\":{\"match\":{\"gmcReferenceNumber\":\"?2\"}},\"filter\":"
-      + "{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},"
+      + "[{\"match\":{\"designatedBody\":\"?1\"}},{\"match\":{\"existsInGmc\":\"true\"}},"
       + "{\"bool\":{\"should\":[{\"wildcard\":{\"doctorFirstName\":{\"value\":\"?0*\"}}},"
       + "{\"wildcard\":{\"doctorLastName\":{\"value\":\"?0*\"}}},{\"wildcard\":"
       + "{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
