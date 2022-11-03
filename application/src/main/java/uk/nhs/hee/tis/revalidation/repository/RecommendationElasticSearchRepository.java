@@ -40,7 +40,7 @@ public interface RecommendationElasticSearchRepository extends
       + "{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
       + "{\"query\":\"?2\",\"zero_terms_query\":\"all\"}}},{\"match\":"
       + "{\"gmcStatus\":{\"query\":\"?3\",\"zero_terms_query\":\"all\"}}},{\"match\":"
-      + "{\"tisStatus\":{\"query\":\"?4\",\"zero_terms_query\":\"all\"}}},{\"match\":"
+      + "{\"tisStatus\":{\"query\":\"?4\",\"zero_terms_query\":\"all\"}}},{\"match_phrase\":"
       + "{\"admin\":{\"query\":\"?5\",\"zero_terms_query\":\"all\"}}}]}}")
   Page<RecommendationView> findByUnderNotice(final String searchQuery, final String dbcs,
       String programmeName, String gmcStatus, String tisStatus, String admin,
@@ -53,7 +53,7 @@ public interface RecommendationElasticSearchRepository extends
       + "{\"gmcReferenceNumber\":{\"value\":\"?0*\"}}}]}},{\"match_phrase\":{\"programmeName\":"
       + "{\"query\":\"?3\",\"zero_terms_query\":\"all\"}}},{\"match\":{\"gmcStatus\":"
       + "{\"query\":\"?4\",\"zero_terms_query\":\"all\"}}},{\"match\":{\"tisStatus\":"
-      + "{\"query\":\"?5\",\"zero_terms_query\":\"all\"}}},{\"match\":{\"admin\":"
+      + "{\"query\":\"?5\",\"zero_terms_query\":\"all\"}}},{\"match_phrase\":{\"admin\":"
       + "{\"query\":\"?6\",\"zero_terms_query\":\"all\"}}}]}}")
   Page<RecommendationView> findAll(final String searchQuery, final String dbcs,
       List<String> hiddenGmcIds, String programmeName, String gmcStatus,

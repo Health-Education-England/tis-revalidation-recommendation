@@ -69,7 +69,7 @@
           }
         },
         {
-          "match": {
+          "match_phrase": {
             "admin": {
               "query": "?5",
               "zero_terms_query": "all"
