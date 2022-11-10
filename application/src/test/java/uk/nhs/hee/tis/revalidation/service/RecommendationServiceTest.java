@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.DOCTOR_DEFERRAL_ON_EARLY_DATE;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INVALID_RECOMMENDATION;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.SUCCESS;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
@@ -581,6 +582,22 @@ class RecommendationServiceTest {
         .thenReturn(recommendation);
     when(gmcClientService.submitToGmc(doctorsForDB, recommendation, userProfileDto))
         .thenReturn(buildRecommendationV2Response(INVALID_RECOMMENDATION.getCode()));
+
+    assertThrows(RecommendationException.class, () -> recommendationService
+        .submitRecommendation(recommendationId, gmcNumber1, userProfileDto));
+    verify(recommendationRepository, times(0)).save(recommendation);
+  }
+
+  @Test
+  void shouldNotUpdateRecommendationWhenSubmitAttemptOnEarlyDeferral() {
+    final var recommendation = buildRecommendation(gmcNumber1, recommendationId, status,
+        UNDER_REVIEW);
+    final var userProfileDto = buildRoUserProfileDto(gmcNumber1);
+    when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB));
+    when(recommendationRepository.findByIdAndGmcNumber(recommendationId, gmcNumber1))
+        .thenReturn(recommendation);
+    when(gmcClientService.submitToGmc(doctorsForDB, recommendation, userProfileDto))
+        .thenReturn(buildRecommendationV2Response(DOCTOR_DEFERRAL_ON_EARLY_DATE.getCode()));
 
     assertThrows(RecommendationException.class, () -> recommendationService
         .submitRecommendation(recommendationId, gmcNumber1, userProfileDto));
