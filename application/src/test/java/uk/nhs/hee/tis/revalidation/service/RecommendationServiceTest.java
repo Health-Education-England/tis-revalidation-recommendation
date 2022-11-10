@@ -21,6 +21,7 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -599,8 +600,10 @@ class RecommendationServiceTest {
     when(gmcClientService.submitToGmc(doctorsForDB, recommendation, userProfileDto))
         .thenReturn(buildRecommendationV2Response(DOCTOR_DEFERRAL_ON_EARLY_DATE.getCode()));
 
-    assertThrows(RecommendationException.class, () -> recommendationService
-        .submitRecommendation(recommendationId, gmcNumber1, userProfileDto));
+    String message = assertThrows(RecommendationException.class, () -> recommendationService
+        .submitRecommendation(recommendationId, gmcNumber1, userProfileDto)).getMessage();
+    assertThat(message, containsString("Deferral cannot be submitted before Revalidation Date - 120 days"));
+
     verify(recommendationRepository, times(0)).save(recommendation);
   }
 
