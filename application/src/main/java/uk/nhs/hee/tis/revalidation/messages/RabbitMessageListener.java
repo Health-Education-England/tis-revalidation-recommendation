@@ -60,7 +60,7 @@ public class RabbitMessageListener {
   @RabbitListener(queues = "${app.rabbit.queue}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
     try {
-      log.debug("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);
+      log.info("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);
       doctorsForDBService.updateTrainee(gmcDoctor);
     } catch (Exception exception) {
       log.warn("Rejecting message for failed doctor update", exception);
