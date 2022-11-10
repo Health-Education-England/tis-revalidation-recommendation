@@ -41,7 +41,9 @@ public enum GmcResponseCode {
   MISSING_INTERNAL_USER("110", "Missing Internal User"),
   MISSING_OR_INVALID_REASON_CODE("120", "Missing / Invalid Change Code (Reason)"),
   DOCTOR_NOT_ASSOCIATED_WITH_DESIGNATED_BODY("140",
-      "Doctor not associated with your Designated Body");
+      "Doctor not associated with your Designated Body"),
+  DOCTOR_DEFERRAL_ON_EARLY_DATE("161",
+      "Deferral cannot be submitted before Revalidation Date - 120 days");
 
   final String code;
   final String message;
