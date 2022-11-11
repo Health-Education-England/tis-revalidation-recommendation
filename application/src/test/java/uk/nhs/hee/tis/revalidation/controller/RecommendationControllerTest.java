@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.NON_ENGAGEMENT;
@@ -59,6 +60,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
+import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.service.RecommendationService;
 import uk.nhs.hee.tis.revalidation.validator.TraineeRecommendationRecordDTOValidator;
 
@@ -280,6 +282,22 @@ class RecommendationControllerTest {
         .accept(MediaType.APPLICATION_JSON)
         .content(mapper.writeValueAsString(userProfileDto)))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldThrowExceptionWhenRecommendationIsDeferralAndSubmitEarly() throws Exception {
+    final var url = format("%s/%s", RECOMMENDATION_API_URL,
+        RECOMMENDATION_API_SUBMIT_PATH_VARIABLE);
+    when(service.submitRecommendation(any(), any(), any())).thenThrow(new RecommendationException(
+        "Fail to submit recommendation: Deferral cannot be submitted before Revalidation Date - 120 days"));
+    final var userProfileDto = RoUserProfileDto.builder().build();
+    this.mockMvc.perform(post(url, gmcId, recommendationId)
+        .contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON)
+        .content(mapper.writeValueAsString(userProfileDto)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value(
+            "Fail to submit recommendation: Deferral cannot be submitted before Revalidation Date - 120 days"));
   }
 
   @Test

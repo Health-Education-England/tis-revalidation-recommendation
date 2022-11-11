@@ -45,8 +45,8 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.SUBMITTED_
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.DEFER;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.NON_ENGAGEMENT;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationType.REVALIDATE;
-import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDate;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDateTime;
 
@@ -167,16 +167,16 @@ class RecommendationServiceTest {
 
   private DoctorsForDB doctorsForDB1, doctorsForDB2, doctorsForDB3;
 
-  private LocalDate actualsSubmissionDate1 = LocalDate.now();
-  private LocalDate actualsSubmissionDate2 = LocalDate.now().minusMonths(1);
-  private LocalDate actualsSubmissionDate3 = LocalDate.now().minusYears(1);
+  private final LocalDate actualsSubmissionDate1 = LocalDate.now();
+  private final LocalDate actualsSubmissionDate2 = LocalDate.now().minusMonths(1);
+  private final LocalDate actualsSubmissionDate3 = LocalDate.now().minusYears(1);
 
-  private LocalDate gmcSubmissionLocalDate1 = LocalDate.now();
-  private LocalDate gmcSubmissionLocalDate2 = LocalDate.now().plusDays(1);
+  private final LocalDate gmcSubmissionLocalDate1 = LocalDate.now();
+  private final LocalDate gmcSubmissionLocalDate2 = LocalDate.now().plusDays(1);
 
-  private String password = faker.lorem().characters(10);
-  private String exchange = faker.lorem().characters(10);
-  private String routingKey = faker.lorem().characters(10);
+  private final String password = faker.lorem().characters(10);
+  private final String exchange = faker.lorem().characters(10);
+  private final String routingKey = faker.lorem().characters(10);
 
   private RecommendationStatusCheckDto recommendationStatus;
   private List<RecommendationStatusCheckDto> recommendationStatusCheckDtos;
@@ -184,7 +184,8 @@ class RecommendationServiceTest {
   @BeforeEach
   public void setup() {
     ReflectionTestUtils.setField(recommendationService, "revalExchange", exchange);
-    ReflectionTestUtils.setField(recommendationService, "revalRoutingKeyRecommendationStatus", routingKey);
+    ReflectionTestUtils
+        .setField(recommendationService, "revalRoutingKeyRecommendationStatus", routingKey);
     firstName = faker.name().firstName();
     lastName = faker.name().lastName();
     status = NOT_STARTED;
@@ -283,7 +284,8 @@ class RecommendationServiceTest {
     doctorsForDB3.setUnderNotice(NO);
 
     recommendationStatus =
-        buildRecommendationStatusCheckDto(designatedBodyCode, gmcNumber1, gmcRecommendationId1, recommendationId);
+        buildRecommendationStatusCheckDto(designatedBodyCode, gmcNumber1, gmcRecommendationId1,
+            recommendationId);
     recommendationStatusCheckDtos = List.of(recommendationStatus);
   }
 
@@ -602,7 +604,8 @@ class RecommendationServiceTest {
 
     String message = assertThrows(RecommendationException.class, () -> recommendationService
         .submitRecommendation(recommendationId, gmcNumber1, userProfileDto)).getMessage();
-    assertThat(message, containsString("Deferral cannot be submitted before Revalidation Date - 120 days"));
+    assertThat(message,
+        containsString("Deferral cannot be submitted before Revalidation Date - 120 days"));
 
     verify(recommendationRepository, times(0)).save(recommendation);
   }
@@ -845,10 +848,13 @@ class RecommendationServiceTest {
     final var recommendation = buildRecommendation(gmcId, recommendationId, SUBMITTED_TO_GMC,
         UNDER_REVIEW);
 
-    when(recommendationRepository.findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC))
+    when(recommendationRepository
+        .findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC))
         .thenReturn(Arrays.asList(recommendation));
-    when(doctorsForDBRepository.findById(recommendation.getGmcNumber())).thenReturn(Optional.of(doctorsForDB));
-    List<RecommendationStatusCheckDto> result = recommendationService.getRecommendationStatusCheckDtos();
+    when(doctorsForDBRepository.findById(recommendation.getGmcNumber()))
+        .thenReturn(Optional.of(doctorsForDB));
+    List<RecommendationStatusCheckDto> result = recommendationService
+        .getRecommendationStatusCheckDtos();
     assertThat(result.size(), is(1));
     assertThat(result.get(0).getDesignatedBodyId(), is(designatedBodyCode));
     assertThat(result.get(0).getGmcReferenceNumber(), is(gmcId));
@@ -863,10 +869,13 @@ class RecommendationServiceTest {
     final var recommendation = buildRecommendation(gmcId, recommendationId, SUBMITTED_TO_GMC,
         UNDER_REVIEW);
 
-    when(recommendationRepository.findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC))
+    when(recommendationRepository
+        .findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC))
         .thenReturn(Arrays.asList(recommendation));
-    when(doctorsForDBRepository.findById(recommendation.getGmcNumber())).thenReturn(Optional.empty());
-    List<RecommendationStatusCheckDto> result = recommendationService.getRecommendationStatusCheckDtos();
+    when(doctorsForDBRepository.findById(recommendation.getGmcNumber()))
+        .thenReturn(Optional.empty());
+    List<RecommendationStatusCheckDto> result = recommendationService
+        .getRecommendationStatusCheckDtos();
     assertThat(result.size(), is(0));
   }
 
@@ -876,7 +885,8 @@ class RecommendationServiceTest {
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation6));
 
-    TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
+    TraineeRecommendationRecordDto result = recommendationService
+        .getLatestRecommendation(gmcNumber1);
     assertThat(result.getGmcOutcome(), is(nullValue()));
   }
 
@@ -886,7 +896,8 @@ class RecommendationServiceTest {
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation7));
 
-    TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
+    TraineeRecommendationRecordDto result = recommendationService
+        .getLatestRecommendation(gmcNumber1);
     assertThat(result.getGmcOutcome(), is(APPROVED.getOutcome()));
   }
 
@@ -896,63 +907,72 @@ class RecommendationServiceTest {
     when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcNumber1))
         .thenReturn(Optional.of(recommendation6));
 
-    TraineeRecommendationRecordDto result = recommendationService.getLatestRecommendation(gmcNumber1);
+    TraineeRecommendationRecordDto result = recommendationService
+        .getLatestRecommendation(gmcNumber1);
     assertThat(result.getGmcOutcome(), is(APPROVED.getOutcome()));
   }
 
   @Test
-  void shouldThrowExceptionIfDoctorNotFoundWhenGettingLatestRecommendation()
-  {
+  void shouldThrowExceptionIfDoctorNotFoundWhenGettingLatestRecommendation() {
     when(doctorsForDBRepository.findById(any())).thenReturn(Optional.empty());
 
-    assertThrows(RecommendationException.class, () -> {recommendationService.getLatestRecommendation(gmcNumber1);});
+    assertThrows(RecommendationException.class, () -> {
+      recommendationService.getLatestRecommendation(gmcNumber1);
+    });
   }
 
   @Test
   void shouldSortTraineeRecommendationsInDescendingActualSubmissionDateOrder() {
     when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB1));
-    when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation6, recommendation7));
+    when(recommendationRepository.findByGmcNumber(gmcNumber1))
+        .thenReturn(List.of(recommendation6, recommendation7));
     when(snapshotService.getSnapshotRecommendations(doctorsForDB1))
-    .thenReturn(
-        List.of(TraineeRecommendationRecordDto.builder()
-            .gmcNumber(gmcNumber1)
-            .actualSubmissionDate(actualsSubmissionDate2)
-            .gmcSubmissionDate(LocalDate.now().minusMonths(1))
-            .build()
-        )
-    );
+        .thenReturn(
+            List.of(TraineeRecommendationRecordDto.builder()
+                .gmcNumber(gmcNumber1)
+                .actualSubmissionDate(actualsSubmissionDate2)
+                .gmcSubmissionDate(LocalDate.now().minusMonths(1))
+                .build()
+            )
+        );
 
     final var result = recommendationService.getTraineeInfo(gmcNumber1);
 
-    assertThat(result.getRevalidations().get(0).getActualSubmissionDate(), is(actualsSubmissionDate1));
-    assertThat(result.getRevalidations().get(1).getActualSubmissionDate(), is(actualsSubmissionDate2));
-    assertThat(result.getRevalidations().get(2).getActualSubmissionDate(), is(actualsSubmissionDate3));
+    assertThat(result.getRevalidations().get(0).getActualSubmissionDate(),
+        is(actualsSubmissionDate1));
+    assertThat(result.getRevalidations().get(1).getActualSubmissionDate(),
+        is(actualsSubmissionDate2));
+    assertThat(result.getRevalidations().get(2).getActualSubmissionDate(),
+        is(actualsSubmissionDate3));
 
   }
 
   @Test
   void shouldSortTraineeRecommendationsAndPlaceNullsAtStart() {
     when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(Optional.of(doctorsForDB1));
-    when(recommendationRepository.findByGmcNumber(gmcNumber1)).thenReturn(List.of(recommendation8, recommendation9));
+    when(recommendationRepository.findByGmcNumber(gmcNumber1))
+        .thenReturn(List.of(recommendation8, recommendation9));
     when(snapshotService.getSnapshotRecommendations(doctorsForDB1)).thenReturn(
-    List.of(TraineeRecommendationRecordDto.builder()
-            .gmcNumber(gmcNumber1)
-            .actualSubmissionDate(actualsSubmissionDate1)
-            .gmcSubmissionDate(LocalDate.now().minusMonths(1))
-            .build(),
-        TraineeRecommendationRecordDto.builder()
-            .gmcNumber(gmcNumber1)
-            .actualSubmissionDate(actualsSubmissionDate3)
-            .gmcSubmissionDate(LocalDate.now())
-            .build()
-    ));
+        List.of(TraineeRecommendationRecordDto.builder()
+                .gmcNumber(gmcNumber1)
+                .actualSubmissionDate(actualsSubmissionDate1)
+                .gmcSubmissionDate(LocalDate.now().minusMonths(1))
+                .build(),
+            TraineeRecommendationRecordDto.builder()
+                .gmcNumber(gmcNumber1)
+                .actualSubmissionDate(actualsSubmissionDate3)
+                .gmcSubmissionDate(LocalDate.now())
+                .build()
+        ));
 
     final var result = recommendationService.getTraineeInfo(gmcNumber1);
 
     assertNull(result.getRevalidations().get(0).getActualSubmissionDate());
     assertNull(result.getRevalidations().get(1).getActualSubmissionDate());
-    assertThat(result.getRevalidations().get(2).getActualSubmissionDate(), is(actualsSubmissionDate1));
-    assertThat(result.getRevalidations().get(3).getActualSubmissionDate(), is(actualsSubmissionDate3));
+    assertThat(result.getRevalidations().get(2).getActualSubmissionDate(),
+        is(actualsSubmissionDate1));
+    assertThat(result.getRevalidations().get(3).getActualSubmissionDate(),
+        is(actualsSubmissionDate3));
 
   }
 
@@ -968,10 +988,10 @@ class RecommendationServiceTest {
 //          .recommendationId(rec.getId())
 //          .build();
     final Recommendation recommendationCheck = Recommendation.builder()
-            .id(recommendationId)
-            .gmcNumber(gmcNumber1)
-            .gmcRevalidationId(gmcRecommendationId1)
-            .build();
+        .id(recommendationId)
+        .gmcNumber(gmcNumber1)
+        .gmcRevalidationId(gmcRecommendationId1)
+        .build();
     final DoctorsForDB doctorCheck = DoctorsForDB.builder()
         .designatedBodyCode(designatedBodyCode)
         .build();
@@ -979,9 +999,8 @@ class RecommendationServiceTest {
     when(recommendationRepository.findAllByRecommendationStatus(any()))
         .thenReturn(List.of(recommendationCheck));
     when(doctorsForDBRepository.findById(gmcNumber1)).thenReturn(
-      Optional.of(doctorCheck)
+        Optional.of(doctorCheck)
     );
-
 
     recommendationService.sendRecommendationStatusRequestToRabbit();
     verify(rabbitTemplate).convertAndSend(exchange, routingKey, recommendationStatus);
@@ -1061,7 +1080,8 @@ class RecommendationServiceTest {
         .build();
   }
 
-  private RecommendationStatusCheckDto buildRecommendationStatusCheckDto(final String designatedBodyId, final String gmcReferenceNumber,
+  private RecommendationStatusCheckDto buildRecommendationStatusCheckDto(
+      final String designatedBodyId, final String gmcReferenceNumber,
       final String gmcRecommendationId, final String recommendationId) {
     return RecommendationStatusCheckDto.builder()
         .designatedBodyId(designatedBodyId)
