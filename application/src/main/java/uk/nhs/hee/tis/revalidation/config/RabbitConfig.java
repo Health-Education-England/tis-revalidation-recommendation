@@ -41,9 +41,6 @@ public class RabbitConfig {
   @Value("${app.rabbit.queue}")
   private String queueName;
 
-  @Value("${app.rabbit.connection.queue}")
-  private String connectionQueue;
-
   @Value("${app.rabbit.exchange}")
   private String exchange;
 
@@ -65,11 +62,6 @@ public class RabbitConfig {
   @Bean
   public Queue queue() {
     return new Queue(queueName, false);
-  }
-
-  @Bean
-  public Queue connectionQueue() {
-    return new Queue(connectionQueue, false);
   }
 
   @Bean
@@ -98,12 +90,6 @@ public class RabbitConfig {
   @Bean
   public Binding binding(final Queue queue, final DirectExchange exchange) {
     return BindingBuilder.bind(queue).to(exchange).with(routingKey);
-  }
-
-  @Bean
-  public Binding connectionbinding(final Queue connectionQueue,
-      final DirectExchange revalExchange) {
-    return BindingBuilder.bind(connectionQueue).to(revalExchange).with(removeDbcRoutingKey);
   }
 
   @Bean
