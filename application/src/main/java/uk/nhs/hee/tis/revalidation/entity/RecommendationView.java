@@ -36,12 +36,14 @@ import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.Mapping;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Data
-@Document(indexName = "recommendationindex")
+@Document(indexName = "recommendationindex", createIndex = false)
+@Mapping(mappingPath = "/esjson/index_settings/recommendationindex.json")
 public class RecommendationView {
 
   @Id

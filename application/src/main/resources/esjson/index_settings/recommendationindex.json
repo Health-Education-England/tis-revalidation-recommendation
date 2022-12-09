@@ -1,0 +1,106 @@
+{
+  "properties": {
+    "_class": {
+      "type": "keyword",
+      "index": false,
+      "doc_values": false
+    },
+    "admin": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "curriculumEndDate": {
+      "type": "date",
+      "format": "uuuu-MM-dd"
+    },
+    "designatedBody": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "doctorFirstName": {
+      "type": "text",
+      "fielddata": true
+    },
+    "doctorLastName": {
+      "type": "text",
+      "fielddata": true
+    },
+    "existsInGmc": {
+      "type": "boolean"
+    },
+    "gmcReferenceNumber": {
+      "type": "text",
+      "fielddata": true
+    },
+    "gmcStatus": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "id": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "lastUpdatedDate": {
+      "type": "date",
+      "format": "uuuu-MM-dd"
+    },
+    "membershipType": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "programmeName": {
+      "type": "text",
+      "fielddata": true
+    },
+    "submissionDate": {
+      "type": "date",
+      "format": "uuuu-MM-dd"
+    },
+    "tcsPersonId": {
+      "type": "long"
+    },
+    "tisStatus": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    },
+    "underNotice": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    }
+  }
+}
