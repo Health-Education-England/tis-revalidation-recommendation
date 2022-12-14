@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -283,26 +284,43 @@ public class RecommendationServiceImpl implements RecommendationService {
   public TraineeRecommendationRecordDto getLatestRecommendation(String gmcId) {
     log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
     final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
-    final var optionalRecommendation = recommendationRepository
-        .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
-    if (!optionalDoctorsForDB.isPresent()) {
-      throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcId));
-    }
-
-    if (optionalRecommendation.isPresent()) {
-      final Recommendation recommendation = optionalRecommendation.get();
-
-      final boolean isPastCompletedRecommendation = checkIfPastCompletedRecommendation(
-          recommendation,
-          optionalDoctorsForDB.get()
-      );
-
-      if (!isPastCompletedRecommendation) {
-        return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
-            recommendation.getGmcSubmissionDate(), recommendation);
+    final var recommendations = recommendationRepository.findByGmcNumber(gmcId);
+    final var draftRecommendations = recommendations.stream().filter(
+        recommendation -> recommendation.getRecommendationStatus().name().equals("READY_TO_REVIEW"))
+        .collect(Collectors.toList());
+    //Check draft recommendation: if yes return draft else normal original flow
+    if (draftRecommendations.size() > 0) {
+      final var draftRecommendation = draftRecommendations.get(0);
+      //Edge case: check if the Recommendation is submitted by other means, i.e., GMC Connect
+      //if GMC submission date is past and ignore it, i.e. return empty TraineeRecommendationRecordDto
+      if (draftRecommendation.getGmcSubmissionDate().isBefore(LocalDate.now())) {
+        return new TraineeRecommendationRecordDto();
       }
+      draftRecommendation.setRecommendationStatus(RecommendationStatus.DRAFT);
+      return buildTraineeRecommendationRecordDto(draftRecommendation.getGmcNumber(),
+          draftRecommendation.getGmcSubmissionDate(), draftRecommendation);
+    } else {
+      final var optionalRecommendation = recommendationRepository
+          .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
+      if (!optionalDoctorsForDB.isPresent()) {
+        throw new RecommendationException(format(DOCTOR_NOT_FOUND_MESSAGE, gmcId));
+      }
+
+      if (optionalRecommendation.isPresent()) {
+        final Recommendation recommendation = optionalRecommendation.get();
+
+        final boolean isPastCompletedRecommendation = checkIfPastCompletedRecommendation(
+            recommendation,
+            optionalDoctorsForDB.get()
+        );
+
+        if (!isPastCompletedRecommendation) {
+          return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
+              recommendation.getGmcSubmissionDate(), recommendation);
+        }
+      }
+      return new TraineeRecommendationRecordDto();
     }
-    return new TraineeRecommendationRecordDto();
   }
 
   /**

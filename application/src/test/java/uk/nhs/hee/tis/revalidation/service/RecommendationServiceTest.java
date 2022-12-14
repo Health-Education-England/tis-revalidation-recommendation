@@ -136,6 +136,8 @@ class RecommendationServiceTest {
   private String sanction;
   private String designatedBodyCode;
   private RecommendationStatus status;
+  private RecommendationStatus draftRecommendationInitialStatus;
+  private RecommendationStatus draftRecommendationStatus;
 
   private String deferralComment1, deferralComment2;
   private LocalDate deferralDate1, deferralDate2;
@@ -167,6 +169,7 @@ class RecommendationServiceTest {
 
   private DoctorsForDB doctorsForDB1, doctorsForDB2, doctorsForDB3;
 
+  private LocalDate gmcSubmissionDate;
   private final LocalDate actualsSubmissionDate1 = LocalDate.now();
   private final LocalDate actualsSubmissionDate2 = LocalDate.now().minusMonths(1);
   private final LocalDate actualsSubmissionDate3 = LocalDate.now().minusYears(1);
@@ -189,6 +192,9 @@ class RecommendationServiceTest {
     firstName = faker.name().firstName();
     lastName = faker.name().lastName();
     status = NOT_STARTED;
+    draftRecommendationInitialStatus = READY_TO_REVIEW;
+    draftRecommendationStatus = DRAFT;
+    gmcSubmissionDate = LocalDate.now().minusDays(10);
     submissionDate = LocalDate.now();
     actualSubmissionDate = LocalDate.now();
     dateAdded = LocalDate.now();
@@ -786,6 +792,78 @@ class RecommendationServiceTest {
 
     traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumberX);
     assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(nullValue()));
+  }
+
+  @Test
+  void shouldCheckDraftRecommendations() {
+    final var gmcNumber2 = faker.number().digits(7);
+    final var gmcNumberX = faker.number().digits(7);
+    final var recommendation = buildRecommendation(gmcNumber1, recommendationId,
+        draftRecommendationInitialStatus,
+        UNDER_REVIEW);
+    final var draftRecommendations = List.of(recommendation);
+
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
+    when(recommendationRepository.findByGmcNumber(gmcNumber1))
+        .thenReturn(draftRecommendations);
+    final var actualRecommendationMap = recommendationService
+        .getLatestRecommendations(List.of(gmcNumber1, gmcNumberX, gmcNumber2));
+
+    assertThat(actualRecommendationMap.size(), is(3));
+
+    var traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumber1);
+    assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(gmcNumber1));
+    assertThat(traineeRecommendationRecordDto.getGmcSubmissionDate(), is(submissionDate));
+    assertThat(traineeRecommendationRecordDto.getActualSubmissionDate(), is(actualSubmissionDate));
+    assertThat(traineeRecommendationRecordDto.getComments(), is(comments));
+    assertThat(traineeRecommendationRecordDto.getAdmin(), is(admin1));
+    assertThat(traineeRecommendationRecordDto.getRecommendationStatus(),
+        is(draftRecommendationStatus.name()));
+
+    traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumberX);
+    assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(nullValue()));
+  }
+
+  //This test is for to check if the Recommendation is submitted by other means, i.e., GMC Connect
+  @Test
+  void shouldCheckDraftRecommendationIsAlreadySubmitted() {
+    final var gmcNumber2 = faker.number().digits(7);
+    final var gmcNumberX = faker.number().digits(7);
+
+    final var recommendation = Recommendation.builder()
+        .id(recommendationId)
+        .gmcNumber(gmcNumber1)
+        .recommendationStatus(draftRecommendationInitialStatus)
+        .recommendationType(RecommendationType.REVALIDATE)
+        .admin(admin1)
+        .gmcRevalidationId(gmcRecommendationId2)
+        .gmcSubmissionDate(gmcSubmissionDate)
+        .actualSubmissionDate(actualSubmissionDate)
+        //.outcome(outcome)
+        .comments(comments)
+        .build();
+    final var draftRecommendations = List.of(recommendation);
+
+    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
+    when(recommendationRepository.findByGmcNumber(gmcNumber1))
+        .thenReturn(draftRecommendations);
+
+    final var actualRecommendationMap = recommendationService
+        .getLatestRecommendations(List.of(gmcNumber1, gmcNumberX, gmcNumber2));
+
+    assertThat(actualRecommendationMap.size(), is(3));
+
+    var traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumber1);
+    assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(nullValue()));
+    assertThat(traineeRecommendationRecordDto.getGmcSubmissionDate(), is(nullValue()));
+    assertThat(traineeRecommendationRecordDto.getActualSubmissionDate(), is(nullValue()));
+    assertThat(traineeRecommendationRecordDto.getComments(), is(nullValue()));
+    assertThat(traineeRecommendationRecordDto.getAdmin(), is(nullValue()));
+    assertThat(traineeRecommendationRecordDto.getRecommendationStatus(), is(nullValue()));
+
+    traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumberX);
+    assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(nullValue()));
+
   }
 
   @Test
