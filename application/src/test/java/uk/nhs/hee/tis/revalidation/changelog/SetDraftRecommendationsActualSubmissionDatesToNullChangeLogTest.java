@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.READY_TO_REVIEW;
 
 @ExtendWith(MockitoExtension.class)
-public class SetDraftRecommendationsActualSubmissionDatesToNullChangeLogTest {
+class SetDraftRecommendationsActualSubmissionDatesToNullChangeLogTest {
 
   @InjectMocks
   SetDraftRecommendationsActualSubmissionDatesToNullChangeLog changeLog;
