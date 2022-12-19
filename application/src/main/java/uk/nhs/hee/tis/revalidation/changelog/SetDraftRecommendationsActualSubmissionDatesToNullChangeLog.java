@@ -7,7 +7,7 @@ import com.github.cloudyrock.mongock.ChangeSet;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @ChangeLog(order = "006")
-public class SetDraftRecommendationsActualSubmissionDatesToNull {
+public class SetDraftRecommendationsActualSubmissionDatesToNullChangeLog {
 
   @ChangeSet(order = "001", id = "setDraftRecommendationsActualSubmissionDatesToNull", author = "")
   public void setActualSubmissionDatesToNull(
