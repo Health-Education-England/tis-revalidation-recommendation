@@ -291,12 +291,6 @@ public class RecommendationServiceImpl implements RecommendationService {
     //Check draft recommendation: if yes return draft else normal original flow
     if (draftRecommendations.size() > 0) {
       final var draftRecommendation = draftRecommendations.get(0);
-      //Edge case: check if the Recommendation is submitted by other means, i.e., GMC Connect
-      //if GMC submission date is past and ignore it, i.e. return empty TraineeRecommendationRecordDto
-      if (draftRecommendation.getGmcSubmissionDate().isBefore(LocalDate.now())) {
-        return new TraineeRecommendationRecordDto();
-      }
-      draftRecommendation.setRecommendationStatus(RecommendationStatus.DRAFT);
       return buildTraineeRecommendationRecordDto(draftRecommendation.getGmcNumber(),
           draftRecommendation.getGmcSubmissionDate(), draftRecommendation);
     } else {
