@@ -21,9 +21,7 @@
 
 package uk.nhs.hee.tis.revalidation.messages;
 
-import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +32,6 @@ import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
-import uk.nhs.hee.tis.revalidation.messages.receiver.EsRebuildMessageReceiver;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
@@ -47,9 +44,6 @@ public class RabbitMessageListener {
 
   @Autowired
   private RecommendationStatusCheckUpdatedMessageHandler recommendationStatusCheckUpdatedMessageHandler;
-
-  @Autowired
-  private EsRebuildMessageReceiver esRebuildMessageReceiver;
 
   @Autowired
   private RecommendationViewMapper recommendationViewMapper;
@@ -93,17 +87,6 @@ public class RabbitMessageListener {
       log.warn("Rejecting message for failed recommendation status update", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
     }
-  }
-
-  /**
-   * get trainee from Master index then update recommendation indexes.
-   */
-  @RabbitListener(queues = "${app.rabbit.reval.queue.indexrebuildgetmastercommand.requested}",
-      ackMode = "NONE")
-  @SchedulerLock(name = "IndexRebuildGetMasterJob")
-  public void receiveMessageGetMaster(final String getMaster) throws IOException {
-    log.info("Message received to get trainee record from Master index.");
-    esRebuildMessageReceiver.handleMessage(getMaster);
   }
 
   /**
