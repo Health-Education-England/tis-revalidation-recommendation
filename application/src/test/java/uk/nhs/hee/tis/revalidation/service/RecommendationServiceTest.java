@@ -38,6 +38,7 @@ import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.SUCCESS;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.REJECTED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.UNDER_REVIEW;
+import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.COMPLETED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.DRAFT;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.NOT_STARTED;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.READY_TO_REVIEW;
@@ -137,7 +138,6 @@ class RecommendationServiceTest {
   private String designatedBodyCode;
   private RecommendationStatus status;
   private RecommendationStatus draftRecommendationInitialStatus;
-  private RecommendationStatus draftRecommendationStatus;
 
   private String deferralComment1, deferralComment2;
   private LocalDate deferralDate1, deferralDate2;
@@ -169,7 +169,6 @@ class RecommendationServiceTest {
 
   private DoctorsForDB doctorsForDB1, doctorsForDB2, doctorsForDB3;
 
-  private LocalDate gmcSubmissionDate;
   private final LocalDate actualsSubmissionDate1 = LocalDate.now();
   private final LocalDate actualsSubmissionDate2 = LocalDate.now().minusMonths(1);
   private final LocalDate actualsSubmissionDate3 = LocalDate.now().minusYears(1);
@@ -193,8 +192,6 @@ class RecommendationServiceTest {
     lastName = faker.name().lastName();
     status = NOT_STARTED;
     draftRecommendationInitialStatus = READY_TO_REVIEW;
-    draftRecommendationStatus = DRAFT;
-    gmcSubmissionDate = LocalDate.now().minusDays(10);
     submissionDate = LocalDate.now();
     actualSubmissionDate = LocalDate.now();
     dateAdded = LocalDate.now();
@@ -795,23 +792,22 @@ class RecommendationServiceTest {
   }
 
   @Test
-  void shouldCheckDraftRecommendations() {
-    final var gmcNumber2 = faker.number().digits(7);
-    final var gmcNumberX = faker.number().digits(7);
+  void shouldCheckDraftRecommendation() {
+    //Test case for one draft recommendation and one Completed recommendation
     final var recommendation = buildRecommendation(gmcNumber1, recommendationId,
         draftRecommendationInitialStatus,
         UNDER_REVIEW);
-    final var draftRecommendations = List.of(recommendation);
+    final var recommendation1 = buildRecommendation(gmcNumber1, gmcRecommendationId1,
+        COMPLETED,
+        APPROVED);
+    final var recommendations = List.of(recommendation, recommendation1);
 
-    when(doctorsForDBRepository.findById(any())).thenReturn(Optional.of(doctorsForDB1));
     when(recommendationRepository.findByGmcNumber(gmcNumber1))
-        .thenReturn(draftRecommendations);
-    final var actualRecommendationMap = recommendationService
-        .getLatestRecommendations(List.of(gmcNumber1, gmcNumberX, gmcNumber2));
+        .thenReturn(recommendations);
 
-    assertThat(actualRecommendationMap.size(), is(3));
+    final var traineeRecommendationRecordDto = recommendationService
+        .getLatestRecommendation(gmcNumber1);
 
-    var traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumber1);
     assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(gmcNumber1));
     assertThat(traineeRecommendationRecordDto.getGmcSubmissionDate(), is(submissionDate));
     assertThat(traineeRecommendationRecordDto.getActualSubmissionDate(), is(actualSubmissionDate));
@@ -819,9 +815,6 @@ class RecommendationServiceTest {
     assertThat(traineeRecommendationRecordDto.getAdmin(), is(admin1));
     assertThat(traineeRecommendationRecordDto.getRecommendationStatus(),
         is(draftRecommendationInitialStatus.name()));
-
-    traineeRecommendationRecordDto = actualRecommendationMap.get(gmcNumberX);
-    assertThat(traineeRecommendationRecordDto.getGmcNumber(), is(nullValue()));
   }
 
   @Test
@@ -1014,15 +1007,6 @@ class RecommendationServiceTest {
 
   @Test
   void shouldSendRecommendationStatusRequestToRabbit() {
-
-//    final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
-//    if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
-//      final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
-//          .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
-//          .gmcReferenceNumber(rec.getGmcNumber())
-//          .gmcRecommendationId(rec.getGmcRevalidationId())
-//          .recommendationId(rec.getId())
-//          .build();
     final Recommendation recommendationCheck = Recommendation.builder()
         .id(recommendationId)
         .gmcNumber(gmcNumber1)

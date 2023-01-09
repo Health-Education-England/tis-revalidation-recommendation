@@ -283,7 +283,6 @@ public class RecommendationServiceImpl implements RecommendationService {
    */
   public TraineeRecommendationRecordDto getLatestRecommendation(String gmcId) {
     log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
-    final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
     final var recommendations = recommendationRepository.findByGmcNumber(gmcId);
     final var draftRecommendations = recommendations.stream().filter(
         recommendation -> recommendation.getRecommendationStatus().name().equals("READY_TO_REVIEW"))
@@ -294,6 +293,7 @@ public class RecommendationServiceImpl implements RecommendationService {
       return buildTraineeRecommendationRecordDto(draftRecommendation.getGmcNumber(),
           draftRecommendation.getGmcSubmissionDate(), draftRecommendation);
     } else {
+      final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
       final var optionalRecommendation = recommendationRepository
           .findFirstByGmcNumberOrderByActualSubmissionDateDesc(gmcId);
       if (!optionalDoctorsForDB.isPresent()) {
