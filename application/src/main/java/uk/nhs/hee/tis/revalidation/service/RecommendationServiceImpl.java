@@ -288,7 +288,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         recommendation -> recommendation.getRecommendationStatus().name().equals("READY_TO_REVIEW"))
         .collect(Collectors.toList());
     //Check draft recommendation: if yes return draft else normal original flow
-    if (draftRecommendations.size() > 0) {
+    if (!draftRecommendations.isEmpty()) {
       final var draftRecommendation = draftRecommendations.get(0);
       return buildTraineeRecommendationRecordDto(draftRecommendation.getGmcNumber(),
           draftRecommendation.getGmcSubmissionDate(), draftRecommendation);
