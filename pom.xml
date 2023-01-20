@@ -25,7 +25,7 @@
         <spring-boot.version>2.6.7</spring-boot.version>
         <lombok.version>1.18.22</lombok.version>
         <javafaker.version>1.0.2</javafaker.version>
-        <jackson-datatype.version>2.13.0</jackson-datatype.version>
+        <jackson-datatype.version>2.14.1</jackson-datatype.version>
         <springfox-swagger.version>3.0.0</springfox-swagger.version>
         <shedlock.version>4.41.0</shedlock.version>
         <gmc-api.version>1.0.0</gmc-api.version>
