@@ -104,7 +104,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un4.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction4));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status4.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus1));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus1));
 
     assertThat(traineeInfo.get(1).getGmcReferenceNumber(), is(gmcRef2));
     assertThat(traineeInfo.get(1).getDoctorFirstName(), is(fName2));
@@ -114,7 +114,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(1).getUnderNotice(), is(un2.name()));
     assertThat(traineeInfo.get(1).getSanction(), is(sanction2));
     assertThat(traineeInfo.get(1).getDoctorStatus(), is(status2.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus2));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus2));
 
     assertThat(traineeInfo.get(2).getGmcReferenceNumber(), is(gmcRef5));
     assertThat(traineeInfo.get(2).getDoctorFirstName(), is(fName5));
@@ -124,7 +124,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(2).getUnderNotice(), is(un5.name()));
     assertThat(traineeInfo.get(2).getSanction(), is(sanction5));
     assertThat(traineeInfo.get(2).getDoctorStatus(), is(status5.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus5));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus5));
 
     assertThat(traineeInfo.get(3).getGmcReferenceNumber(), is(this.gmcRef1));
     assertThat(traineeInfo.get(3).getDoctorFirstName(), is(fName1));
@@ -134,7 +134,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(3).getUnderNotice(), is(un1.name()));
     assertThat(traineeInfo.get(3).getSanction(), is(sanction1));
     assertThat(traineeInfo.get(3).getDoctorStatus(), is(status1.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus1));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus1));
 
     assertThat(traineeInfo.get(4).getGmcReferenceNumber(), is(gmcRef3));
     assertThat(traineeInfo.get(4).getDoctorFirstName(), is(fName3));
@@ -144,7 +144,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(4).getUnderNotice(), is(un3.name()));
     assertThat(traineeInfo.get(4).getSanction(), is(sanction3));
     assertThat(traineeInfo.get(4).getDoctorStatus(), is(status3.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus3));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus3));
   }
 
   @DisplayName("Trainee doctors information should be sorted by first name in asc order")
@@ -330,7 +330,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un4.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction4));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status4.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus4));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus4));
 
     assertThat(traineeInfo.get(1).getGmcReferenceNumber(), is(gmcRef2));
     assertThat(traineeInfo.get(1).getDoctorFirstName(), is(fName2));
@@ -340,7 +340,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(1).getUnderNotice(), is(un2.name()));
     assertThat(traineeInfo.get(1).getSanction(), is(sanction2));
     assertThat(traineeInfo.get(1).getDoctorStatus(), is(status2.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus2));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus2));
 
     assertThat(traineeInfo.get(2).getGmcReferenceNumber(), is(gmcRef5));
     assertThat(traineeInfo.get(2).getDoctorFirstName(), is(fName5));
@@ -350,7 +350,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(2).getUnderNotice(), is(un5.name()));
     assertThat(traineeInfo.get(2).getSanction(), is(sanction5));
     assertThat(traineeInfo.get(2).getDoctorStatus(), is(status5.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus5));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus5));
 
     assertThat(traineeInfo.get(3).getGmcReferenceNumber(), is(gmcRef1));
     assertThat(traineeInfo.get(3).getDoctorFirstName(), is(fName1));
@@ -360,7 +360,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(3).getUnderNotice(), is(un1.name()));
     assertThat(traineeInfo.get(3).getSanction(), is(sanction1));
     assertThat(traineeInfo.get(3).getDoctorStatus(), is(status1.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus1));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus1));
   }
 
   @Test
@@ -414,7 +414,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un2.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction2));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status2.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus2));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus2));
 
     assertThat(traineeInfo.get(1).getGmcReferenceNumber(), is(gmcRef1));
     assertThat(traineeInfo.get(1).getDoctorFirstName(), is(fName1));
@@ -424,7 +424,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(1).getUnderNotice(), is(un1.name()));
     assertThat(traineeInfo.get(1).getSanction(), is(sanction1));
     assertThat(traineeInfo.get(1).getDoctorStatus(), is(status1.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus1));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus1));
   }
 
   @DisplayName("Trainee doctors information should be paginated and sorted by submission date in desc order")
@@ -467,7 +467,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un4.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction4));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status4.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus4));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus4));
 
     assertThat(traineeInfo.get(1).getGmcReferenceNumber(), is(gmcRef2));
     assertThat(traineeInfo.get(1).getDoctorFirstName(), is(fName2));
@@ -477,7 +477,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(1).getUnderNotice(), is(un2.name()));
     assertThat(traineeInfo.get(1).getSanction(), is(sanction2));
     assertThat(traineeInfo.get(1).getDoctorStatus(), is(status2.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus4));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus4));
 
     requestDTO = TraineeRequestDto.builder()
         .sortColumn("submissionDate")
@@ -501,7 +501,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un5.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction5));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status5.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus5));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus5));
 
     assertThat(traineeInfo.get(1).getGmcReferenceNumber(), is(gmcRef1));
     assertThat(traineeInfo.get(1).getDoctorFirstName(), is(fName1));
@@ -511,7 +511,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(1).getUnderNotice(), is(un1.name()));
     assertThat(traineeInfo.get(1).getSanction(), is(sanction1));
     assertThat(traineeInfo.get(1).getDoctorStatus(), is(status1.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus1));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus1));
 
     requestDTO = TraineeRequestDto.builder()
         .sortColumn("submissionDate")
@@ -536,7 +536,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un3.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction3));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status3.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus3));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus3));
   }
 
   @DisplayName("Trainee doctors information should be not return any data if page number is not correct")
@@ -665,7 +665,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(0).getUnderNotice(), is(un2.name()));
     assertThat(traineeInfo.get(0).getSanction(), is(sanction2));
     assertThat(traineeInfo.get(0).getDoctorStatus(), is(status2.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus2));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus2));
 
     assertThat(traineeInfo.get(1).getGmcReferenceNumber(), is(this.gmcRef1));
     assertThat(traineeInfo.get(1).getDoctorFirstName(), is(fName1));
@@ -675,7 +675,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(1).getUnderNotice(), is(un1.name()));
     assertThat(traineeInfo.get(1).getSanction(), is(sanction1));
     assertThat(traineeInfo.get(1).getDoctorStatus(), is(status1.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus1));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus1));
 
     assertThat(traineeInfo.get(2).getGmcReferenceNumber(), is(gmcRef3));
     assertThat(traineeInfo.get(2).getDoctorFirstName(), is(fName3));
@@ -685,7 +685,7 @@ class DoctorsForDBServiceIT extends BaseIT {
     assertThat(traineeInfo.get(2).getUnderNotice(), is(un3.name()));
     assertThat(traineeInfo.get(2).getSanction(), is(sanction3));
     assertThat(traineeInfo.get(2).getDoctorStatus(), is(status3.name()));
-    assertThat(traineeInfo.get(0).getConnectionStatus(), is(connectionStatus3));
+    assertThat(traineeInfo.get(0).getTisConnectionStatus(), is(tisConnectionStatus3));
   }
 
 }

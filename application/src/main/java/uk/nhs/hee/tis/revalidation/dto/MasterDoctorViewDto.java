@@ -46,7 +46,7 @@ public class MasterDoctorViewDto {
   String designatedBody;
   String tcsDesignatedBody;
   String programmeOwner;
-  String connectionStatus;
+  String tisConnectionStatus;
   String dataSource;
   LocalDate membershipStartDate;
   LocalDate membershipEndDate;

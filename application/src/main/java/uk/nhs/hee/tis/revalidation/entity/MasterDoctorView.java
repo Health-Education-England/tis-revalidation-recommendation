@@ -79,7 +79,7 @@ public class MasterDoctorView {
 
   private String programmeOwner;
 
-  private String connectionStatus;
+  private String tisConnectionStatus;
 
   @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonSerialize(using = LocalDateSerializer.class)

@@ -49,7 +49,7 @@ public class TraineeInfoDto {
   private String admin;
   private LocalDate lastUpdatedDate;
   private String designatedBody;
-  private String connectionStatus;
+  private String tisConnectionStatus;
   private String programmeName;
   private String programmeMembershipType;
   private LocalDate curriculumEndDate;

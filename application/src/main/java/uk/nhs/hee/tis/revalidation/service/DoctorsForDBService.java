@@ -170,7 +170,7 @@ public class DoctorsForDBService {
         .underNotice(doctorsForDB.getUnderNotice().name()).sanction(doctorsForDB.getSanction())
         .doctorStatus(doctorsForDB.getDoctorStatus().name()) //TODO update with legacy statuses
         .lastUpdatedDate(doctorsForDB.getLastUpdatedDate()).admin(doctorsForDB.getAdmin())
-        .connectionStatus(getConnectionStatus(doctorsForDB.getDesignatedBodyCode()));
+        .tisConnectionStatus(getConnectionStatus(doctorsForDB.getDesignatedBodyCode()));
 
     return traineeInfoDTOBuilder.build();
 

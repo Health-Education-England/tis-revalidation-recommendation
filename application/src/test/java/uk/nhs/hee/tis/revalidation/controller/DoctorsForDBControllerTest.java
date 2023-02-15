@@ -115,8 +115,8 @@ class DoctorsForDBControllerTest {
   private RecommendationGmcOutcome outcome1;
   private String admin;
   private String designatedBody1, designatedBody2;
-  private String connectionStatus1;
-  private String connectionStatus2;
+  private String tisConnectionStatus1;
+  private String tisConnectionStatus2;
   private String programmeName;
 
   @BeforeEach
@@ -141,8 +141,8 @@ class DoctorsForDBControllerTest {
     admin = faker.internet().emailAddress();
     designatedBody1 = faker.lorem().characters(8);
     designatedBody2 = faker.lorem().characters(8);
-    connectionStatus1 = faker.lorem().characters(3);
-    connectionStatus2 = faker.lorem().characters(3);
+    tisConnectionStatus1 = faker.lorem().characters(3);
+    tisConnectionStatus2 = faker.lorem().characters(3);
     programmeName = faker.backToTheFuture().quote();
   }
 
@@ -349,7 +349,7 @@ class DoctorsForDBControllerTest {
         .underNotice(underNotice1.value())
         .sanction(sanction1)
         .doctorStatus(doctorStatus1.name())
-        .connectionStatus(connectionStatus1)
+        .tisConnectionStatus(tisConnectionStatus1)
         .admin(admin)
         .build();
 
@@ -362,7 +362,7 @@ class DoctorsForDBControllerTest {
         .underNotice(underNotice2.value())
         .sanction(sanction2)
         .doctorStatus(doctorStatus2.name())
-        .connectionStatus(connectionStatus2)
+        .tisConnectionStatus(tisConnectionStatus2)
         .admin(admin)
         .build();
     return of(doctor1, doctor2);
