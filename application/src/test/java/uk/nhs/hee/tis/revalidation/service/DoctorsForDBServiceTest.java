@@ -134,7 +134,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -190,7 +190,7 @@ class DoctorsForDBServiceTest {
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List.of(designatedBody1);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(
         page);
@@ -240,7 +240,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findByUnderNotice("", formattedDbcs, programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
@@ -296,7 +296,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(
         page);
@@ -335,7 +335,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -393,7 +393,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -448,7 +448,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
