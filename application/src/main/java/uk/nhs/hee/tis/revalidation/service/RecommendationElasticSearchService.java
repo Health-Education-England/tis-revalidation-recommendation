@@ -80,7 +80,7 @@ public class RecommendationElasticSearchService {
     designatedBodyCodes.forEach(code -> {
       escapedCodes.add(code.toLowerCase().replace("1-", ""));
     });
-    return String.join(",", escapedCodes);
+    return String.join(" ", escapedCodes);
   }
 
   public List<String> getAutocompleteResults(String fieldname, String input, List<String> dbcs) {
