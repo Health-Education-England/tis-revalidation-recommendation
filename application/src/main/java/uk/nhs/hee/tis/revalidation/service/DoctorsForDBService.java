@@ -136,8 +136,10 @@ public class DoctorsForDBService {
     final var doctorsForDBOptional = doctorsRepository.findById(message.getGmcId());
     if (doctorsForDBOptional.isPresent()) {
       log.info("Updating designated body code from doctors for DB");
+      final var dbc = message.getDesignatedBodyCode();
       final var doctorsForDB = doctorsForDBOptional.get();
-      doctorsForDB.setDesignatedBodyCode(message.getDesignatedBodyCode());
+      doctorsForDB.setDesignatedBodyCode(dbc);
+      if(dbc == null) doctorsForDB.setExistsInGmc(false);
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");
