@@ -520,7 +520,7 @@ class DoctorsForDBServiceTest {
   void shouldUpdateDesignatedBodyCode() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.removeDesignatedBodyCode(message);
+    doctorsForDBService.updateDesignatedBodyCode(message);
 
     verify(repository).save(doc1);
   }
@@ -529,7 +529,7 @@ class DoctorsForDBServiceTest {
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.removeDesignatedBodyCode(message);
+    doctorsForDBService.updateDesignatedBodyCode(message);
 
     verify(repository, times(0)).save(doc1);
   }

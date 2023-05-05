@@ -132,7 +132,7 @@ public class DoctorsForDBService {
     return DesignatedBodyDto.builder().designatedBodyCode(designatedBodyCode).build();
   }
 
-  public void removeDesignatedBodyCode(final ConnectionMessageDto message) {
+  public void updateDesignatedBodyCode(final ConnectionMessageDto message) {
     final var doctorsForDBOptional = doctorsRepository.findById(message.getGmcId());
     if (doctorsForDBOptional.isPresent()) {
       log.info("Updating designated body code from doctors for DB");
