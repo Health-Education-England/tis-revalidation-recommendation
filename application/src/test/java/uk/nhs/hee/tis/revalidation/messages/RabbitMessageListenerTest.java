@@ -124,7 +124,7 @@ class RabbitMessageListenerTest {
     doThrow(new NullPointerException()).when(doctorsForDBService).updateDesignatedBodyCode(any());
 
     assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveRemoveDoctorDesignatedBodyCodeMessage(null);
+      rabbitMessageListener.receiveUpdateDoctorDesignatedBodyCodeMessage(null);
     });
   }
 

@@ -63,7 +63,7 @@ public class RabbitMessageListener {
   }
 
   @RabbitListener(queues = "${app.rabbit.connection.queue}")
-  public void receiveRemoveDoctorDesignatedBodyCodeMessage(final ConnectionMessageDto message) {
+  public void receiveUpdateDoctorDesignatedBodyCodeMessage(final ConnectionMessageDto message) {
     try {
       log.info("Message received to update designated body code from rabbit, Message: {}", message);
       doctorsForDBService.updateDesignatedBodyCode(message);
