@@ -544,6 +544,20 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldSetExistsInGmcToTrueIfDesignatedBodyCodeReceivedForDisconnectedDoctor() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(docNullDbc));
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody1)
+        .build();
+    doctorsForDBService.updateDesignatedBodyCode(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody1));
+    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
+  }
+
+  @Test
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
