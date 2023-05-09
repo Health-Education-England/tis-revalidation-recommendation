@@ -25,6 +25,7 @@ import static java.time.LocalDate.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
@@ -538,7 +539,7 @@ class DoctorsForDBServiceTest {
     doctorsForDBService.updateDesignatedBodyCode(message);
 
     verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), isNull());
+    assertNull(doctorCaptor.getValue().getDesignatedBodyCode());
     assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
   }
 
