@@ -519,10 +519,14 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldUpdateDesignatedBodyCode() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
-    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2)
+        .build();
     doctorsForDBService.updateDesignatedBodyCode(message);
 
     verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody2));
     assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
   }
 
@@ -533,6 +537,7 @@ class DoctorsForDBServiceTest {
     doctorsForDBService.updateDesignatedBodyCode(message);
 
     verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(null));
     assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
   }
 
