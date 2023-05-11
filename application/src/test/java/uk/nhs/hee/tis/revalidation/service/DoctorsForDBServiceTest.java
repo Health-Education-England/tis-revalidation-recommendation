@@ -25,6 +25,7 @@ import static java.time.LocalDate.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -558,11 +559,13 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
-  void shouldHideAllDoctorsBySettingFlagToFalse() {
+  void shouldHideAllDoctorsBySettingFlagToFalseAndDBCToNull() {
     when(repository.findAll()).thenReturn(List.of(doc1));
     doctorsForDBService.hideAllDoctors();
     verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
+    DoctorsForDB doctor = doctorCaptor.getValue();
+    assertThat(doctor.getExistsInGmc(), is(false));
+    assertThat(doctor.getGmcReferenceNumber(), nullValue());
   }
 
   @Test
