@@ -162,6 +162,7 @@ public class DoctorsForDBService {
     List<DoctorsForDB> doctors = doctorsRepository.findAll();
     doctors.forEach(doctor -> {
       doctor.setExistsInGmc(false);
+      doctor.setDesignatedBodyCode(null);
       doctorsRepository.save(doctor);
     });
   }

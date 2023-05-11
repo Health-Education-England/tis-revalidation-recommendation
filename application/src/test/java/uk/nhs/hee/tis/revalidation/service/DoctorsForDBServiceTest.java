@@ -25,6 +25,7 @@ import static java.time.LocalDate.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
@@ -135,7 +136,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -191,7 +192,7 @@ class DoctorsForDBServiceTest {
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List.of(designatedBody1);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(
         page);
@@ -241,7 +242,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findByUnderNotice("", formattedDbcs, programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
@@ -297,7 +298,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(
         page);
@@ -336,7 +337,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -394,7 +395,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -449,7 +450,7 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
-    String formattedDbcs = String.join(",", dbcs);
+    String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
         .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
         .thenReturn(page);
@@ -589,11 +590,13 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
-  void shouldHideAllDoctorsBySettingFlagToFalse() {
+  void shouldHideAllDoctorsBySettingFlagToFalseAndDBCToNull() {
     when(repository.findAll()).thenReturn(List.of(doc1));
     doctorsForDBService.hideAllDoctors();
     verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
+    DoctorsForDB doctor = doctorCaptor.getValue();
+    assertThat(doctor.getExistsInGmc(), is(false));
+    assertThat(doctor.getDesignatedBodyCode(), nullValue());
   }
 
   @Test

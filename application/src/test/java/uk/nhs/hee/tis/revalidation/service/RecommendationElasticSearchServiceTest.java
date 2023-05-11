@@ -128,7 +128,7 @@ class RecommendationElasticSearchServiceTest {
   void shouldFormatDesignatedBodyCodesForElasticsearchQuery() {
     final String dbc1 = "1-AIIDHJ";
     final String dbc2 = "AIIDMQ";
-    final String dbcformatted = "aiidhj,aiidmq";
+    final String dbcformatted = "aiidhj aiidmq";
     List<String> dbcs = List.of(dbc1, dbc2);
 
     final var result = recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
