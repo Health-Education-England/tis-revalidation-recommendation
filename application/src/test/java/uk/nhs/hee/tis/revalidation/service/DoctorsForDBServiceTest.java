@@ -565,7 +565,7 @@ class DoctorsForDBServiceTest {
     verify(repository).save(doctorCaptor.capture());
     DoctorsForDB doctor = doctorCaptor.getValue();
     assertThat(doctor.getExistsInGmc(), is(false));
-    assertThat(doctor.getGmcReferenceNumber(), nullValue());
+    assertThat(doctor.getDesignatedBodyCode(), nullValue());
   }
 
   @Test
