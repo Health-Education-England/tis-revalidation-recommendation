@@ -25,7 +25,9 @@ import static java.time.LocalDate.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -164,6 +166,14 @@ class RecommendationElasticSearchServiceTest {
         inputParam, dbcsParam);
 
     assertThat(results.size(), is(0));
+  }
+
+  @Test
+  void shouldNotUpdateUnknownDoctorsByGmcReferenceNumber() {
+    recommendationElasticSearchService.saveRecommendationViews(
+        RecommendationView.builder().id("123").gmcReferenceNumber("UNKNOWN").build());
+
+    verify(recommendationElasticSearchRepository, never()).findByGmcReferenceNumber(any());
   }
 
   private List<RecommendationView> generateListOfRecommendationViews() {

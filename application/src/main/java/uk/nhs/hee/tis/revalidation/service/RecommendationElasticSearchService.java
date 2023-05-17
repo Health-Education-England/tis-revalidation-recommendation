@@ -119,7 +119,7 @@ public class RecommendationElasticSearchService {
     Iterable<RecommendationView> result = new ArrayList<>();
     if (gmcReferenceNumber == null) {
       throw new NullPointerException("gmcReferenceNumber is null");
-    } else if (gmcReferenceNumber.toLowerCase().equals("unknown")){
+    } else if (gmcReferenceNumber.equalsIgnoreCase("unknown")){
       LOG.debug("CDC Skipped for doctor with GMC reference number: UNKNOWN");
     }
     else {
