@@ -26,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -101,7 +102,7 @@ class DoctorsForDBServiceTest {
   @Mock
   private Page page;
 
-  private DoctorsForDB doc1, doc2, doc3, doc4, doc5;
+  private DoctorsForDB doc1, doc2, doc3, doc4, doc5, docNullDbc;
   private RecommendationView rv1, rv2, rv3, rv4, rv5;
   private DoctorsForDbDto docDto1, docDto2;
   private String gmcRef1, gmcRef2, gmcRef3, gmcRef4, gmcRef5;
@@ -520,17 +521,47 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldUpdateDesignatedBodyCode() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
-    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.removeDesignatedBodyCode(message);
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2)
+        .build();
+    doctorsForDBService.updateDesignatedBodyCode(message);
 
-    verify(repository).save(doc1);
+    verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody2));
+    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
+  }
+
+  @Test
+  void shouldSetExistsInGmcToFalseIfNullDesignatedBodyCodeReceived() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
+    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
+    doctorsForDBService.updateDesignatedBodyCode(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    assertNull(doctorCaptor.getValue().getDesignatedBodyCode());
+    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(false));
+  }
+
+  @Test
+  void shouldSetExistsInGmcToTrueIfDesignatedBodyCodeReceivedForDisconnectedDoctor() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(docNullDbc));
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody1)
+        .build();
+    doctorsForDBService.updateDesignatedBodyCode(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody1));
+    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
   }
 
   @Test
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.removeDesignatedBodyCode(message);
+    doctorsForDBService.updateDesignatedBodyCode(message);
 
     verify(repository, times(0)).save(doc1);
   }
@@ -676,6 +707,8 @@ class DoctorsForDBServiceTest {
         now(), designatedBody4, admin4, true);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
         now(), designatedBody5, admin5, true);
+    docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
+        now(), null, admin1, true);
 
     rv1 = RecommendationView.builder()
         .gmcReferenceNumber(gmcRef1)

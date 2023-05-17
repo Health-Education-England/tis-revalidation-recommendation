@@ -63,10 +63,10 @@ public class RabbitMessageListener {
   }
 
   @RabbitListener(queues = "${app.rabbit.connection.queue}")
-  public void receiveRemoveDoctorDesignatedBodyCodeMessage(final ConnectionMessageDto message) {
+  public void receiveUpdateDoctorDesignatedBodyCodeMessage(final ConnectionMessageDto message) {
     try {
       log.info("Message received to update designated body code from rabbit, Message: {}", message);
-      doctorsForDBService.removeDesignatedBodyCode(message);
+      doctorsForDBService.updateDesignatedBodyCode(message);
     } catch (Exception exception) {
       log.warn("Rejecting message for failed connection removal", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
