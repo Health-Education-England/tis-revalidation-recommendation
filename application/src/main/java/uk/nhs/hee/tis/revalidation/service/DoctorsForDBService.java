@@ -139,7 +139,7 @@ public class DoctorsForDBService {
       final var dbc = message.getDesignatedBodyCode();
       final var doctorsForDB = doctorsForDBOptional.get();
       doctorsForDB.setDesignatedBodyCode(dbc);
-      doctorsForDB.setExistsInGmc(dbc == null);
+      doctorsForDB.setExistsInGmc(dbc != null);
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");
