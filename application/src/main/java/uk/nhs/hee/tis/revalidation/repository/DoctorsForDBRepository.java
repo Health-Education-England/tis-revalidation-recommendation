@@ -51,4 +51,6 @@ public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, St
   Page<DoctorsForDB> findAll(final Pageable pageable, final String searchQuery,
       final List<String> dbcs, final List<String> hiddenGmcIds);
 
+  List<DoctorsForDB> findByExistsInGmcIsFalse();
+
 }
