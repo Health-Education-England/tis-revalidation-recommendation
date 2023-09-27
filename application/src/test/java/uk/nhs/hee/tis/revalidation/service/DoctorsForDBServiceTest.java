@@ -544,6 +544,17 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldSetUnderNoticeToNullIfNullDesignatedBodyCodeReceived() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
+    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
+    doctorsForDBService.updateDesignatedBodyCode(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    assertNull(doctorCaptor.getValue().getDesignatedBodyCode());
+    assertThat(doctorCaptor.getValue().getUnderNotice(), is(NO));
+  }
+
+  @Test
   void shouldSetExistsInGmcToTrueIfDesignatedBodyCodeReceivedForDisconnectedDoctor() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(docNullDbc));
     final var message = ConnectionMessageDto.builder()
