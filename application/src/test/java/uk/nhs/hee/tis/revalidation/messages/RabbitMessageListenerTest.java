@@ -29,6 +29,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 import com.github.javafaker.Faker;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -37,6 +38,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
@@ -63,6 +65,8 @@ class RabbitMessageListenerTest {
 
   @Captor
   ArgumentCaptor<RecommendationStatusCheckDto> recommendationStatusCheckDtoCaptor;
+  @Captor
+  ArgumentCaptor<ConnectionMessageDto> connectionMessageDtoArgumentCaptor;
   @Mock
   RecommendationElasticSearchService recommendationElasticSearchService;
   @Mock
@@ -72,6 +76,7 @@ class RabbitMessageListenerTest {
   private final String gmcRecommendationId = faker.number().digits(3);
   private final String recommendationId = faker.number().digits(3);
   private final String designatedBody = faker.lorem().characters(5);
+  private final LocalDate submissionDate = LocalDate.now();
   private final RecommendationGmcOutcome outcome = RecommendationGmcOutcome.APPROVED;
 
   private final RecommendationStatusCheckDto recommendationStatusCheckDto =
@@ -117,6 +122,25 @@ class RabbitMessageListenerTest {
     assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
       rabbitMessageListener.receivedMessage(null);
     });
+  }
+
+  @Test
+  void shouldHandleDoctorConnectionMessage() {
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcNumber)
+        .submissionDate(submissionDate)
+        .designatedBodyCode(designatedBody)
+        .build();
+
+    rabbitMessageListener.receiveUpdateDoctorConnectionMessage(message);
+
+    verify(doctorsForDBService).updateDoctorConnection(
+        connectionMessageDtoArgumentCaptor.capture());
+
+    final var capture = connectionMessageDtoArgumentCaptor.getValue();
+    assertThat(capture.getGmcId(), is(gmcNumber));
+    assertThat(capture.getSubmissionDate(), is(submissionDate));
+    assertThat(capture.getDesignatedBodyCode(), is(designatedBody));
   }
 
   @Test
