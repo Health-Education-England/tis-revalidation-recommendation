@@ -121,10 +121,10 @@ class RabbitMessageListenerTest {
 
   @Test
   void shouldNotRequeueDBCStatusUpdateMessageOnException() {
-    doThrow(new NullPointerException()).when(doctorsForDBService).updateDesignatedBodyCode(any());
+    doThrow(new NullPointerException()).when(doctorsForDBService).updateDoctorConnection(any());
 
     assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateDoctorDesignatedBodyCodeMessage(null);
+      rabbitMessageListener.receiveUpdateDoctorConnectionMessage(null);
     });
   }
 
