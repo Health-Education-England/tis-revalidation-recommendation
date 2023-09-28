@@ -132,7 +132,7 @@ public class DoctorsForDBService {
     return DesignatedBodyDto.builder().designatedBodyCode(designatedBodyCode).build();
   }
 
-  public void updateDesignatedBodyCode(final ConnectionMessageDto message) {
+  public void updateDoctorConnection(final ConnectionMessageDto message) {
     final var doctorsForDBOptional = doctorsRepository.findById(message.getGmcId());
     if (doctorsForDBOptional.isPresent()) {
       log.info("Updating designated body code from doctors for DB");
@@ -140,6 +140,7 @@ public class DoctorsForDBService {
       final var doctorsForDB = doctorsForDBOptional.get();
       doctorsForDB.setDesignatedBodyCode(dbc);
       doctorsForDB.setExistsInGmc(dbc != null);
+      doctorsForDB.setSubmissionDate(message.getSubmissionDate());
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");

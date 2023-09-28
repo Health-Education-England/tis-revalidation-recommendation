@@ -525,7 +525,7 @@ class DoctorsForDBServiceTest {
         .gmcId(gmcRef1)
         .designatedBodyCode(designatedBody2)
         .build();
-    doctorsForDBService.updateDesignatedBodyCode(message);
+    doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
     assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody2));
@@ -533,10 +533,26 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldUpdateSubmissionDateOnConnectionChange() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2)
+        .submissionDate(subDate2)
+        .build();
+    doctorsForDBService.updateDoctorConnection(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody2));
+    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
+    assertThat(doctorCaptor.getValue().getSubmissionDate(), is(subDate2));
+  }
+
+  @Test
   void shouldSetExistsInGmcToFalseIfNullDesignatedBodyCodeReceived() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.updateDesignatedBodyCode(message);
+    doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
     assertNull(doctorCaptor.getValue().getDesignatedBodyCode());
@@ -550,7 +566,7 @@ class DoctorsForDBServiceTest {
         .gmcId(gmcRef1)
         .designatedBodyCode(designatedBody1)
         .build();
-    doctorsForDBService.updateDesignatedBodyCode(message);
+    doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
     assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody1));
@@ -561,7 +577,7 @@ class DoctorsForDBServiceTest {
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.updateDesignatedBodyCode(message);
+    doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository, times(0)).save(doc1);
   }
