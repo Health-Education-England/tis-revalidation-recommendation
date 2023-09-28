@@ -50,7 +50,6 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
-import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
@@ -138,10 +137,11 @@ public class DoctorsForDBService {
     if (doctorsForDBOptional.isPresent()) {
       log.info("Updating designated body code from doctors for DB");
       final var dbc = message.getDesignatedBodyCode();
+      final var disconnection = dbc == null;
       final var doctorsForDB = doctorsForDBOptional.get();
       doctorsForDB.setDesignatedBodyCode(dbc);
-      doctorsForDB.setExistsInGmc(dbc != null);
-      if(dbc == null) doctorsForDB.setUnderNotice(NO);
+      doctorsForDB.setExistsInGmc(!disconnection);
+      if(disconnection) doctorsForDB.setUnderNotice(NO);
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");
