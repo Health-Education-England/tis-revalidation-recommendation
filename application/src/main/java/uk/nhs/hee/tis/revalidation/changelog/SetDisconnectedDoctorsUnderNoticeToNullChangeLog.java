@@ -23,26 +23,22 @@ package uk.nhs.hee.tis.revalidation.changelog;
 
 import com.github.cloudyrock.mongock.ChangeLog;
 import com.github.cloudyrock.mongock.ChangeSet;
-import java.time.LocalDate;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
-import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
-import uk.nhs.hee.tis.revalidation.service.RecommendationService;
-import uk.nhs.hee.tis.revalidation.util.DateUtil;
 
 @ChangeLog(order = "007")
 @Slf4j
-public class SetDisconnectedDoctorsUnderNoticeToNoChangeLog {
+public class SetDisconnectedDoctorsUnderNoticeToNullChangeLog {
 
     @ChangeSet(order = "001", id = "setDisconnectedDoctorsUnderNoticeToNo", author = "")
-    public void setDisconnectedDoctorsUnderNoticeToNo(
+    public void setDisconnectedDoctorsUnderNoticeToNull(
             DoctorsForDBRepository doctorsForDBRepository
     ) {
         List<DoctorsForDB> doctors = doctorsForDBRepository.findByExistsInGmcIsFalse();
         doctors.forEach(doctor -> {
-            doctor.setUnderNotice(UnderNotice.NO);
+            doctor.setUnderNotice(null);
             doctorsForDBRepository.save(doctor);
         });
     }

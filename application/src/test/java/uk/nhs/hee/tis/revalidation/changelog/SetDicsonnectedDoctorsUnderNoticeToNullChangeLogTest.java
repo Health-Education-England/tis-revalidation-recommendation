@@ -2,6 +2,7 @@ package uk.nhs.hee.tis.revalidation.changelog;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
@@ -15,13 +16,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
-import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @ExtendWith(MockitoExtension.class)
-class SetDicsonnectedDoctorsUnderNoticeToNoChangeLogTest {
+class SetDicsonnectedDoctorsUnderNoticeToNullChangeLogTest {
 
-    SetDisconnectedDoctorsUnderNoticeToNoChangeLog changeLog;
+    SetDisconnectedDoctorsUnderNoticeToNullChangeLog changeLog;
 
     @Mock
     DoctorsForDBRepository doctorsForDBRepository;
@@ -37,7 +37,7 @@ class SetDicsonnectedDoctorsUnderNoticeToNoChangeLogTest {
 
     @BeforeEach
     public void setup() {
-        changeLog = new SetDisconnectedDoctorsUnderNoticeToNoChangeLog();
+        changeLog = new SetDisconnectedDoctorsUnderNoticeToNullChangeLog();
         setupTestData();
     }
 
@@ -47,11 +47,11 @@ class SetDicsonnectedDoctorsUnderNoticeToNoChangeLogTest {
         assert (doctor1.getDoctorStatus()).equals(RecommendationStatus.NOT_STARTED);
         when(doctorsForDBRepository.findByExistsInGmcIsFalse()).thenReturn(doctors);
 
-        changeLog.setDisconnectedDoctorsUnderNoticeToNo(
+        changeLog.setDisconnectedDoctorsUnderNoticeToNull(
             doctorsForDBRepository
         );
         verify(doctorsForDBRepository).save(doctorCaptor.capture());
-        assert (doctorCaptor.getValue().getUnderNotice().equals(UnderNotice.NO));
+        assert (doctorCaptor.getValue().getUnderNotice().equals(null));
     }
 
     private void setupTestData() {
@@ -61,7 +61,7 @@ class SetDicsonnectedDoctorsUnderNoticeToNoChangeLogTest {
             .doctorLastName(faker.name().lastName())
             .submissionDate(LocalDate.now())
             .dateAdded(LocalDate.now())
-            .underNotice(UnderNotice.YES)
+            .underNotice(YES)
             .sanction(faker.lorem().fixedString(5))
             .doctorStatus(RecommendationStatus.NOT_STARTED)
             .lastUpdatedDate(LocalDate.now())
