@@ -141,7 +141,7 @@ public class DoctorsForDBService {
       final var doctorsForDB = doctorsForDBOptional.get();
       doctorsForDB.setDesignatedBodyCode(dbc);
       doctorsForDB.setExistsInGmc(!disconnection);
-      if(disconnection) doctorsForDB.setUnderNotice(NO);
+      if(disconnection) doctorsForDB.setUnderNotice(null);
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");
