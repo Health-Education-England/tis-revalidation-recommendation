@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +74,29 @@ public class RecommendationElasticSearchService {
     else {
       addRecommendationViews(dataToSave);
     }
+  }
+
+  public boolean removeTisInfo(RecommendationView recommendationView) {
+    final Long tcsPersonId = recommendationView.getTcsPersonId();
+    final String gmcNumber = recommendationView.getGmcReferenceNumber();
+    if (tcsPersonId != null && gmcNumber == null) {
+      final var optionalViewToRemove = recommendationElasticSearchRepository.findByTcsPersonId(tcsPersonId).stream().findFirst();
+
+      if (optionalViewToRemove.isPresent()) {
+        RecommendationView viewToRemove = optionalViewToRemove.get();
+        if (StringUtils.isEmpty(viewToRemove.getDesignatedBody())) {
+          recommendationElasticSearchRepository.deleteById(viewToRemove.getId());
+        } else {
+          viewToRemove.setTcsPersonId(null);
+          viewToRemove.setProgrammeName(null);
+          viewToRemove.setCurriculumEndDate(null);
+          viewToRemove.setMembershipType(null);
+          recommendationElasticSearchRepository.save(viewToRemove);
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   public String formatDesignatedBodyCodesForElasticsearchQuery(List<String> designatedBodyCodes) {

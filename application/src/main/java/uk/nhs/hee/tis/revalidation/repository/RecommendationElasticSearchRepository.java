@@ -65,4 +65,5 @@ public interface RecommendationElasticSearchRepository extends
 
   List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
 
+  List<RecommendationView> findByTcsPersonId(Long tcsPersonId);
 }

@@ -30,6 +30,7 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
@@ -97,15 +98,22 @@ public class RabbitMessageListener {
   public void receiveUpdateMessageFromMasterDoctorView(
       final MasterDoctorViewDto masterDoctorViewDto) {
     try {
-      if (masterDoctorViewDto.getGmcReferenceNumber() == null) {
+      if (masterDoctorViewDto.getGmcReferenceNumber() == null &&
+          masterDoctorViewDto.getTcsPersonId() == null) {
         throw new RecommendationException(
-            "Received update message MasterDoctorView with null gmc reference number"
+            "Received update message MasterDoctorView with "
+                + "null tis personId and null gmc reference number"
         );
       }
-      log.info("Message received from Master index to update doctor record. gmcRefNo: {}",
-          masterDoctorViewDto.getGmcReferenceNumber());
-      recommendationElasticSearchService.saveRecommendationViews(
-          recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
+
+      RecommendationView recommendationView =
+          recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto);
+
+      if (!recommendationElasticSearchService.removeTisInfo(recommendationView)) {
+        log.info("Message received from Master index to update doctor record. gmcRefNo: {}",
+            masterDoctorViewDto.getGmcReferenceNumber());
+        recommendationElasticSearchService.saveRecommendationViews(recommendationView);
+      }
     } catch (Exception exception) {
       log.warn("Rejecting message for failed recommendation status update", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
