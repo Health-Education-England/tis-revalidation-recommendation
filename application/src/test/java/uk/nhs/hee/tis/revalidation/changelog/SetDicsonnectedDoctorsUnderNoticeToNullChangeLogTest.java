@@ -1,6 +1,10 @@
 package uk.nhs.hee.tis.revalidation.changelog;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
@@ -43,9 +47,8 @@ class SetDicsonnectedDoctorsUnderNoticeToNullChangeLogTest {
     }
 
     @Test
-    void shouldSetCorrectTisStatusForEachDoctor() {
+    void shouldSetUnderNoticeToNullForDisconnectedDoctors() {
 
-        assert (doctor1.getDoctorStatus()).equals(RecommendationStatus.NOT_STARTED);
         when(doctorsForDBRepository.findByExistsInGmcIsFalse()).thenReturn(doctors);
 
         changeLog.setDisconnectedDoctorsUnderNoticeToNull(
