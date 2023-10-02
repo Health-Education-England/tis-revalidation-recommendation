@@ -1,5 +1,6 @@
 package uk.nhs.hee.tis.revalidation.changelog;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
@@ -51,7 +52,7 @@ class SetDicsonnectedDoctorsUnderNoticeToNullChangeLogTest {
             doctorsForDBRepository
         );
         verify(doctorsForDBRepository).save(doctorCaptor.capture());
-        assert (doctorCaptor.getValue().getUnderNotice().equals(null));
+        assertNull (doctorCaptor.getValue().getUnderNotice());
     }
 
     private void setupTestData() {
