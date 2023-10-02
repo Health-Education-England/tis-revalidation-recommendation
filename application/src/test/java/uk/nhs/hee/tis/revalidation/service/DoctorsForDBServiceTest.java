@@ -519,6 +519,19 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldSetLastUpdatedDate() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2)
+        .build();
+    doctorsForDBService.updateDoctorConnection(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    assertThat(doctorCaptor.getValue().getLastUpdatedDate(), is(LocalDate.now()));
+  }
+
+  @Test
   void shouldUpdateDesignatedBodyCode() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     final var message = ConnectionMessageDto.builder()
@@ -714,7 +727,7 @@ class DoctorsForDBServiceTest {
     outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now(), designatedBody1, admin1, true);
+        now().minusDays(1), designatedBody1, admin1, true);
     doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
         now(), designatedBody2, admin2, true);
     doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,
