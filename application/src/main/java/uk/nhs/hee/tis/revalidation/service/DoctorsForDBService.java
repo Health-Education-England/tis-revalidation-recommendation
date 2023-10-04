@@ -30,6 +30,7 @@ import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -141,6 +142,7 @@ public class DoctorsForDBService {
       doctorsForDB.setDesignatedBodyCode(dbc);
       doctorsForDB.setExistsInGmc(dbc != null);
       doctorsForDB.setSubmissionDate(message.getSubmissionDate());
+      doctorsForDB.setLastUpdatedDate(LocalDate.now());
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");
