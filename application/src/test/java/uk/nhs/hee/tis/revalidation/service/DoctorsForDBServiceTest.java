@@ -580,7 +580,7 @@ class DoctorsForDBServiceTest {
 
     verify(repository).save(doctorCaptor.capture());
     assertNull(doctorCaptor.getValue().getDesignatedBodyCode());
-    assertThat(doctorCaptor.getValue().getUnderNotice(), is(null));
+    assertNull(doctorCaptor.getValue().getUnderNotice());
   }
 
   @Test
