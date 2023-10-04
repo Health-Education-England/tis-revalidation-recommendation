@@ -30,6 +30,7 @@ import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -132,7 +133,7 @@ public class DoctorsForDBService {
     return DesignatedBodyDto.builder().designatedBodyCode(designatedBodyCode).build();
   }
 
-  public void updateDesignatedBodyCode(final ConnectionMessageDto message) {
+  public void updateDoctorConnection(final ConnectionMessageDto message) {
     final var doctorsForDBOptional = doctorsRepository.findById(message.getGmcId());
     if (doctorsForDBOptional.isPresent()) {
       log.info("Updating designated body code from doctors for DB");
@@ -142,6 +143,8 @@ public class DoctorsForDBService {
       doctorsForDB.setDesignatedBodyCode(dbc);
       doctorsForDB.setExistsInGmc(!disconnection);
       if(disconnection) doctorsForDB.setUnderNotice(null);
+      doctorsForDB.setSubmissionDate(message.getSubmissionDate());
+      doctorsForDB.setLastUpdatedDate(LocalDate.now());
       doctorsRepository.save(doctorsForDB);
     } else {
       log.info("No doctor found to update designated body code");
