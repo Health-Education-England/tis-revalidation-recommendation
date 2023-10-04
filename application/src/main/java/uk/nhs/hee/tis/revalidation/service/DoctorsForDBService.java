@@ -138,9 +138,11 @@ public class DoctorsForDBService {
     if (doctorsForDBOptional.isPresent()) {
       log.info("Updating designated body code from doctors for DB");
       final var dbc = message.getDesignatedBodyCode();
+      final var disconnection = dbc == null;
       final var doctorsForDB = doctorsForDBOptional.get();
       doctorsForDB.setDesignatedBodyCode(dbc);
-      doctorsForDB.setExistsInGmc(dbc != null);
+      doctorsForDB.setExistsInGmc(!disconnection);
+      if(disconnection) doctorsForDB.setUnderNotice(null);
       doctorsForDB.setSubmissionDate(message.getSubmissionDate());
       doctorsForDB.setLastUpdatedDate(LocalDate.now());
       doctorsRepository.save(doctorsForDB);
