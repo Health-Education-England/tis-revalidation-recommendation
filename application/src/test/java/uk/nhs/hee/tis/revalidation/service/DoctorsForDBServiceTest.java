@@ -576,7 +576,7 @@ class DoctorsForDBServiceTest {
   void shouldSetUnderNoticeToNullIfNullDesignatedBodyCodeReceived() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.updateDesignatedBodyCode(message);
+    doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
     assertNull(doctorCaptor.getValue().getDesignatedBodyCode());
