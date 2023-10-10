@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.common.util.iterable.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,59 +42,17 @@ public class RecommendationElasticSearchService {
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
   /**
-   * add Recommendation data to elasticsearch Recommendation index.
+   * add or update Recommendation data to elasticsearch Recommendation index.
    *
    * @param dataToSave Recommendation data to go in elasticsearch
    */
-  public void addRecommendationViews(RecommendationView dataToSave) {
+  public void saveRecommendationView(RecommendationView dataToSave) {
     try {
       recommendationElasticSearchRepository.save(dataToSave);
     } catch (Exception ex) {
-      LOG.info("Exception in `addRecommendationViews` (GmcId: {}; PersonId: {}): {}",
+      LOG.error("Exception in `saveRecommendationViews` (GmcId: {}; PersonId: {}): {}",
           dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
     }
-  }
-
-  /**
-   * add new Recommendation trainee to elasticsearch index.
-   *
-   * @param dataToSave Recommendation trainee to go in elasticsearch
-   */
-  public void saveRecommendationViews(RecommendationView dataToSave) {
-    Iterable<RecommendationView> existingRecords = findRecommendationViewsByGmcNumber(
-        dataToSave.getGmcReferenceNumber());
-
-    // if doctor already exists in ES index, then update the existing record
-    if (Iterables.size(existingRecords) > 0) {
-      updateRecommendationViews(existingRecords, dataToSave);
-    }
-    // otherwise, add a new record
-    else {
-      addRecommendationViews(dataToSave);
-    }
-  }
-
-  public boolean removeTisInfo(RecommendationView recommendationView) {
-    final Long tcsPersonId = recommendationView.getTcsPersonId();
-    final String gmcNumber = recommendationView.getGmcReferenceNumber();
-    if (tcsPersonId != null && gmcNumber == null) {
-      final var optionalViewToRemove = recommendationElasticSearchRepository.findByTcsPersonId(tcsPersonId).stream().findFirst();
-
-      if (optionalViewToRemove.isPresent()) {
-        RecommendationView viewToRemove = optionalViewToRemove.get();
-        if (StringUtils.isEmpty(viewToRemove.getDesignatedBody())) {
-          recommendationElasticSearchRepository.deleteById(viewToRemove.getId());
-        } else {
-          viewToRemove.setTcsPersonId(null);
-          viewToRemove.setProgrammeName(null);
-          viewToRemove.setCurriculumEndDate(null);
-          viewToRemove.setMembershipType(null);
-          recommendationElasticSearchRepository.save(viewToRemove);
-        }
-      }
-      return true;
-    }
-    return false;
   }
 
   public String formatDesignatedBodyCodesForElasticsearchQuery(List<String> designatedBodyCodes) {
@@ -114,52 +70,10 @@ public class RecommendationElasticSearchService {
         .filter(Objects::nonNull).distinct().collect(Collectors.toList());
   }
 
-  /**
-   * update existing Recommendation to elasticsearch index.
-   *
-   * @param existingRecords existing Recommendation to be updated in elasticsearch
-   * @param dataToSave      new Recommendation details to be saved in elasticsearch
-   */
-  private void updateRecommendationViews(Iterable<RecommendationView> existingRecords,
-      RecommendationView dataToSave) {
-    existingRecords.forEach(recommendationView -> {
-      dataToSave.setId(recommendationView.getId());
-      try {
-        recommendationElasticSearchRepository.save(dataToSave);
-      } catch (Exception ex) {
-        LOG.info("Exception in `updateRecommendationViews` (GmcId: {}; PersonId: {}): {}",
-            dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
-      }
-    });
-  }
-
-  /**
-   * find iterable of RecommendationView from elasticsearch index.
-   *
-   * @param gmcReferenceNumber String to go in elasticsearch
-   */
-  private Iterable<RecommendationView> findRecommendationViewsByGmcNumber(
-      String gmcReferenceNumber) {
-    Iterable<RecommendationView> result = new ArrayList<>();
-    if (gmcReferenceNumber == null) {
-      throw new NullPointerException("gmcReferenceNumber is null");
-    } else {
-      try {
-        result = recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcReferenceNumber);
-      } catch (Exception ex) {
-        LOG.info("Exception in `findByGmcReferenceNumber` (GmcId: {}): {}", gmcReferenceNumber, ex);
-      }
-    }
-    return result;
-  }
-
   private String getFieldValueAsString(String fieldName, RecommendationView result) {
-    switch (fieldName) {
-      case "programmeName": {
-        return result.getProgrammeName();
-      }
-      default:
-        return null;
+    if (fieldName.equals("programmeName")) {
+      return result.getProgrammeName();
     }
+    return null;
   }
 }

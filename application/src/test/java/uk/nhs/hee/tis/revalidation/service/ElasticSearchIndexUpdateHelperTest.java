@@ -117,7 +117,7 @@ class ElasticSearchIndexUpdateHelperTest {
   @Test
   void shouldUpdateElasticSearchIndex() {
     elasticSearchIndexUpdateHelper.updateElasticSearchIndex(masterDoctorViewDto);
-    verify(recommendationElasticSearchService).addRecommendationViews(
+    verify(recommendationElasticSearchService).saveRecommendationView(
         elasticSearchIndexUpdateHelper.buildRecommendationView(masterDoctorViewDto));
   }
 }

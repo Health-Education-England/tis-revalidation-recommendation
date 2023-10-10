@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
+import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +39,8 @@ class RecommendationViewMapperTest {
 
   @Test
   void shouldMapMasterDoctorViewDtoToRecommendationView() {
-    MasterDoctorViewDto dataToSave = new MasterDoctorViewDto();
+    MasterDoctorView dataToSave = new MasterDoctorView();
+    dataToSave.setId("1");
     dataToSave.setTcsPersonId(1000l);
     LocalDate submissionDate_new = LocalDate.now();
     dataToSave.setSubmissionDate(submissionDate_new);
@@ -48,15 +49,15 @@ class RecommendationViewMapperTest {
     dataToSave.setDesignatedBody("designatedBody_new");
     dataToSave.setUnderNotice("underNotice_new");
 
-    RecommendationView result = recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
+    RecommendationView result = recommendationViewMapper.mapMasterDoctorViewToRecommendationView(
         dataToSave);
 
+    assertThat(result.getId(), is("1"));
     assertThat(result.getTcsPersonId(), is(1000l));
     assertThat(result.getSubmissionDate(), is(submissionDate_new));
     assertThat(result.getProgrammeName(), is("programmeName_new"));
     assertThat(result.getMembershipType(), is("membershipType_new"));
     assertThat(result.getDesignatedBody(), is("designatedBody_new"));
     assertThat(result.getUnderNotice(), is("underNotice_new"));
-
   }
 }

@@ -28,10 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
-import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
-import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
-import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
+import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -96,27 +94,18 @@ public class RabbitMessageListener {
   @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
       ackMode = "NONE")
   public void receiveUpdateMessageFromMasterDoctorView(
-      final MasterDoctorViewDto masterDoctorViewDto) {
-    try {
-      if (masterDoctorViewDto.getGmcReferenceNumber() == null &&
-          masterDoctorViewDto.getTcsPersonId() == null) {
-        throw new RecommendationException(
-            "Received update message MasterDoctorView with "
-                + "null tis personId and null gmc reference number"
-        );
-      }
+      final MasterDoctorView masterDoctorView) {
 
-      RecommendationView recommendationView =
-          recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto);
-
-      if (!recommendationElasticSearchService.removeTisInfo(recommendationView)) {
-        log.info("Message received from Master index to update doctor record. gmcRefNo: {}",
-            masterDoctorViewDto.getGmcReferenceNumber());
-        recommendationElasticSearchService.saveRecommendationViews(recommendationView);
-      }
-    } catch (Exception exception) {
-      log.warn("Rejecting message for failed recommendation status update", exception);
-      throw new AmqpRejectAndDontRequeueException(exception);
+    if (masterDoctorView == null) {
+      throw new AmqpRejectAndDontRequeueException(
+          "Received update message MasterDoctorView is null.");
     }
+    if (masterDoctorView.getId() == null) {
+      throw new AmqpRejectAndDontRequeueException(
+          "Received update message MasterDoctorView with null id.");
+    }
+    recommendationElasticSearchService.saveRecommendationView(
+        recommendationViewMapper.mapMasterDoctorViewToRecommendationView(
+        masterDoctorView));
   }
 }
