@@ -40,7 +40,8 @@ class RecommendationViewMapperTest {
   @Test
   void shouldMapMasterDoctorViewDtoToRecommendationView() {
     MasterDoctorViewDto dataToSave = new MasterDoctorViewDto();
-    dataToSave.setTcsPersonId(1000l);
+    dataToSave.setId("1");
+    dataToSave.setTcsPersonId(1000L);
     LocalDate submissionDate_new = LocalDate.now();
     dataToSave.setSubmissionDate(submissionDate_new);
     dataToSave.setProgrammeName("programmeName_new");
@@ -51,12 +52,12 @@ class RecommendationViewMapperTest {
     RecommendationView result = recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
         dataToSave);
 
-    assertThat(result.getTcsPersonId(), is(1000l));
+    assertThat(result.getId(), is("1"));
+    assertThat(result.getTcsPersonId(), is(1000L));
     assertThat(result.getSubmissionDate(), is(submissionDate_new));
     assertThat(result.getProgrammeName(), is("programmeName_new"));
     assertThat(result.getMembershipType(), is("membershipType_new"));
     assertThat(result.getDesignatedBody(), is("designatedBody_new"));
     assertThat(result.getUnderNotice(), is("underNotice_new"));
-
   }
 }

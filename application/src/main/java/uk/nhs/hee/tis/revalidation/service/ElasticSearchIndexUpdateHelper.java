@@ -52,7 +52,7 @@ public class ElasticSearchIndexUpdateHelper {
    */
   public void updateElasticSearchIndex(final MasterDoctorViewDto masterDoctorViewDto) {
 
-    recommendationElasticSearchService.addRecommendationViews(
+    recommendationElasticSearchService.saveRecommendationView(
         buildRecommendationView(masterDoctorViewDto));
   }
 

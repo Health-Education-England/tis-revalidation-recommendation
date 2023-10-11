@@ -30,7 +30,7 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
-import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
+import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -96,19 +96,17 @@ public class RabbitMessageListener {
       ackMode = "NONE")
   public void receiveUpdateMessageFromMasterDoctorView(
       final MasterDoctorViewDto masterDoctorViewDto) {
-    try {
-      if (masterDoctorViewDto.getGmcReferenceNumber() == null) {
-        throw new RecommendationException(
-            "Received update message MasterDoctorView with null gmc reference number"
-        );
-      }
-      log.info("Message received from Master index to update doctor record. gmcRefNo: {}",
-          masterDoctorViewDto.getGmcReferenceNumber());
-      recommendationElasticSearchService.saveRecommendationViews(
-          recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
-    } catch (Exception exception) {
-      log.warn("Rejecting message for failed recommendation status update", exception);
-      throw new AmqpRejectAndDontRequeueException(exception);
+
+    if (masterDoctorViewDto == null) {
+      throw new AmqpRejectAndDontRequeueException(
+          "Received update message MasterDoctorView is null.");
     }
+    if (masterDoctorViewDto.getId() == null) {
+      throw new AmqpRejectAndDontRequeueException(
+          "Received update message MasterDoctorView with null id.");
+    }
+    recommendationElasticSearchService.saveRecommendationView(
+        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
+            masterDoctorViewDto));
   }
 }

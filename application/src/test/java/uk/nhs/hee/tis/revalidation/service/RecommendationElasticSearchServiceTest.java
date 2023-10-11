@@ -85,46 +85,6 @@ class RecommendationElasticSearchServiceTest {
   }
 
   @Test
-  void shouldAddRecommendationViews() {
-    recommendationElasticSearchService.addRecommendationViews(recommendationView);
-    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
-  }
-
-  @Test
-  void shouldThrowExceptionWhenSavingNull() {
-    doThrow(new NullPointerException()).when(recommendationElasticSearchRepository).save(null);
-    assertThrows(Exception.class, () -> {
-      recommendationElasticSearchService.addRecommendationViews(null);
-    });
-  }
-
-  @Test
-  void shouldSaveRecommendationViewsWhenTheRecordIsAlreadyThereInTheESRepository() {
-    when(recommendationElasticSearchRepository.findByGmcReferenceNumber(gmcRef1)).thenReturn(
-        recommendationViews);
-    recommendationElasticSearchService.saveRecommendationViews(recommendationView);
-    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
-  }
-
-  @Test
-  void shouldSaveRecommendationViewsWhenTheRecordIsNotThereInTheESRepository() {
-    recommendationElasticSearchService.saveRecommendationViews(recommendationView);
-    verify(recommendationElasticSearchRepository, times(1)).save(recommendationView);
-  }
-
-  @Test
-  void shouldThrowExceptionIfGmcReferenceNumberNull() {
-    recommendationView = RecommendationView.builder().id("1a2a").tcsPersonId((long) 111)
-        .gmcReferenceNumber(null).doctorFirstName(firstName1).doctorLastName(lastName1)
-        .submissionDate(submissionDate1).programmeName(programmeName1)
-        .designatedBody(designatedBody1).admin(admin).underNotice(underNotice).build();
-
-    assertThrows(Exception.class, () -> {
-      recommendationElasticSearchService.saveRecommendationViews(recommendationView);
-    });
-  }
-
-  @Test
   void shouldFormatDesignatedBodyCodesForElasticsearchQuery() {
     final String dbc1 = "1-AIIDHJ";
     final String dbc2 = "AIIDMQ";
