@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
@@ -30,8 +31,8 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 @Mapper(componentModel = "spring")
 public interface RecommendationViewMapper {
 
-  RecommendationView mapMasterDoctorViewToRecommendationView(
-      MasterDoctorView masterDoctorView);
+  RecommendationView mapMasterDoctorViewDtoToRecommendationView(
+      MasterDoctorViewDto masterDoctorViewDto);
 
   @Mapping(source = "tisStatus", target = "doctorStatus")
   @Mapping(source = "gmcStatus", target = "gmcOutcome")

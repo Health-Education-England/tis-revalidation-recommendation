@@ -41,8 +41,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
+import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
-import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
@@ -90,8 +90,8 @@ class RabbitMessageListenerTest {
           .outcome(RecommendationGmcOutcome.APPROVED)
           .build();
 
-  private MasterDoctorView getMasterDoctorView() {
-    return MasterDoctorView.builder()
+  private MasterDoctorViewDto getMasterDoctorViewDto() {
+    return MasterDoctorViewDto.builder()
         .id(id)
         .gmcReferenceNumber(gmcNumber)
         .designatedBody(designatedBody)
@@ -166,8 +166,8 @@ class RabbitMessageListenerTest {
 
   @Test
   void shouldDiscardUpdateMessagesFromMasterDoctorViewIfGmcReferenceNumberNull() {
-    MasterDoctorView testView =
-        MasterDoctorView.builder()
+    MasterDoctorViewDto testDto =
+        MasterDoctorViewDto.builder()
             .gmcReferenceNumber(null)
             .tcsPersonId(1L)
             .designatedBody(designatedBody)
@@ -175,7 +175,7 @@ class RabbitMessageListenerTest {
             .build();
 
     assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testView);
+      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto);
     });
   }
 
@@ -188,25 +188,25 @@ class RabbitMessageListenerTest {
 
   @Test
   void shouldThrowExceptionWhenIdNullInReceivedMsgFromMasterDoctorView() {
-    MasterDoctorView masterDoctorView = getMasterDoctorView();
-    masterDoctorView.setId(null);
+    MasterDoctorViewDto masterDoctorViewDto = getMasterDoctorViewDto();
+    masterDoctorViewDto.setId(null);
     assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorView);
+      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto);
     });
   }
 
   @Test
   void shouldReceiveUpdateMessageFromMasterDoctorView() {
-    MasterDoctorView masterDoctorView = getMasterDoctorView();
+    MasterDoctorViewDto masterDoctorViewDto = getMasterDoctorViewDto();
     RecommendationView recommendationView = RecommendationView.builder()
         .id(id)
         .gmcReferenceNumber(gmcNumber)
         .designatedBody(designatedBody)
         .underNotice("Yes")
         .build();
-    when(recommendationViewMapper.mapMasterDoctorViewToRecommendationView(masterDoctorView))
+    when(recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto))
         .thenReturn(recommendationView);
-    rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorView);
+    rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto);
 
     verify(recommendationElasticSearchService)
         .saveRecommendationView(recommendationViewArgCaptor.capture());

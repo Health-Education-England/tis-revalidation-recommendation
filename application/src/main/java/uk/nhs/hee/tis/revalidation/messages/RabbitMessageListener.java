@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
+import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
@@ -94,18 +95,18 @@ public class RabbitMessageListener {
   @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
       ackMode = "NONE")
   public void receiveUpdateMessageFromMasterDoctorView(
-      final MasterDoctorView masterDoctorView) {
+      final MasterDoctorViewDto masterDoctorViewDto) {
 
-    if (masterDoctorView == null) {
+    if (masterDoctorViewDto == null) {
       throw new AmqpRejectAndDontRequeueException(
           "Received update message MasterDoctorView is null.");
     }
-    if (masterDoctorView.getId() == null) {
+    if (masterDoctorViewDto.getId() == null) {
       throw new AmqpRejectAndDontRequeueException(
           "Received update message MasterDoctorView with null id.");
     }
     recommendationElasticSearchService.saveRecommendationView(
-        recommendationViewMapper.mapMasterDoctorViewToRecommendationView(
-        masterDoctorView));
+        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
+            masterDoctorViewDto));
   }
 }

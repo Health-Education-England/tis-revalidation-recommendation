@@ -36,6 +36,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MasterDoctorViewDto {
 
+  String id;
   Long tcsPersonId;
   String gmcReferenceNumber;
   String doctorFirstName;
