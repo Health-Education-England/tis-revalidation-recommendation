@@ -25,7 +25,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
-import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 
 @Mapper(componentModel = "spring")
