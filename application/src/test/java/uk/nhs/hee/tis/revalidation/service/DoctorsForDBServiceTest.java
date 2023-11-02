@@ -46,9 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -67,7 +65,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
-import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
+import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapperImpl;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapperImpl;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
@@ -78,7 +76,6 @@ class DoctorsForDBServiceTest {
 
   private final Faker faker = new Faker();
 
-  @InjectMocks
   private DoctorsForDBService doctorsForDBService;
 
   @Mock
@@ -93,14 +90,11 @@ class DoctorsForDBServiceTest {
   @Mock
   private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
-  @Spy
-  private RecommendationViewMapper recommendationViewMapper = new RecommendationViewMapperImpl();
-
   @Captor
   ArgumentCaptor<DoctorsForDB> doctorCaptor;
 
   @Mock
-  private Page page;
+  private Page<RecommendationView> page;
 
   private DoctorsForDB doc1, doc2, doc3, doc4, doc5, docNullDbc;
   private RecommendationView rv1, rv2, rv3, rv4, rv5;
@@ -121,6 +115,9 @@ class DoctorsForDBServiceTest {
 
   @BeforeEach
   public void setup() {
+    doctorsForDBService = new DoctorsForDBService(repository, recommendationService,
+        recommendationElasticSearchRepository, recommendationElasticSearchService,
+        new RecommendationViewMapperImpl(), new DoctorsForDbMapperImpl());
     ReflectionTestUtils.setField(doctorsForDBService, "pageSize", 20);
     setupData();
   }
@@ -138,7 +135,8 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
+        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
         .thenReturn(formattedDbcs);
@@ -173,7 +171,8 @@ class DoctorsForDBServiceTest {
     UnderNotice[] underNotices = {un1, un2, un3, un4, un5};
     RecommendationStatus[] statuses = {status1, status2, status3, status4, status5};
     for (int i = 0; i < doctorsForDB.size(); i++) {
-      TraineeInfoDto doc = doctorsForDB.get(i);    assertThat(doc.getGmcReferenceNumber(), is(refs[i]));
+      TraineeInfoDto doc = doctorsForDB.get(i);
+      assertThat(doc.getGmcReferenceNumber(), is(refs[i]));
       assertThat(doc.getDoctorFirstName(), is(f_names[i]));
       assertThat(doc.getDoctorLastName(), is(l_names[i]));
       assertThat(doc.getSubmissionDate(), is(subDates[i]));
@@ -194,7 +193,8 @@ class DoctorsForDBServiceTest {
     List<String> dbcs = List.of(designatedBody1);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(
+        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable)).thenReturn(
         page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -244,7 +244,8 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findByUnderNotice("", formattedDbcs, programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+        .findByUnderNotice("", formattedDbcs, programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable)).thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
     ).thenReturn(formattedDbcs);
@@ -300,7 +301,8 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(
+        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable)).thenReturn(
         page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -339,7 +341,8 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
+        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -397,7 +400,8 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
+        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
         .thenReturn(formattedDbcs);
@@ -452,7 +456,8 @@ class DoctorsForDBServiceTest {
         .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
     when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1, pageableAndSortable))
+        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
+            pageableAndSortable))
         .thenReturn(page);
     when(recommendationElasticSearchService
         .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
@@ -747,7 +752,8 @@ class DoctorsForDBServiceTest {
         now(), designatedBody4, admin4, true);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
         now(), designatedBody5, admin5, true);
-    docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
+    docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1,
+        status1,
         now(), null, admin1, true);
 
     rv1 = RecommendationView.builder()
