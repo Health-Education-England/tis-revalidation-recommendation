@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.springframework.util.StringUtils;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 
@@ -35,6 +36,6 @@ public interface DoctorsForDbMapper {
 
   @Named("desgnatedBodyToConnectionStatus")
   default String designatedBodyToConnectionStatus(String designatedBody) {
-    return (designatedBody == null || designatedBody.equals("")) ? "No" : "Yes";
+    return StringUtils.hasLength(designatedBody) ? "Yes" : "No";
   }
 }
