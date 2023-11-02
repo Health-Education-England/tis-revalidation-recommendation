@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -53,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto.TraineeRecommendationDtoBuilder;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.GmcResponseCode;
@@ -73,23 +73,17 @@ public class RecommendationServiceImpl implements RecommendationService {
   private static final int MAX_DAYS_FROM_SUBMISSION_DATE = 365;
   private static final String DOCTOR_NOT_FOUND_MESSAGE = "Doctor %s does not exist!";
 
-  @Autowired
-  private DoctorsForDBRepository doctorsForDBRepository;
+  private final DoctorsForDBRepository doctorsForDBRepository;
 
-  @Autowired
-  private SnapshotService snapshotService;
+  private final SnapshotService snapshotService;
 
-  @Autowired
-  private RecommendationRepository recommendationRepository;
+  private final RecommendationRepository recommendationRepository;
 
-  @Autowired
-  private DeferralReasonService deferralReasonService;
+  private final DeferralReasonService deferralReasonService;
 
-  @Autowired
-  private GmcClientService gmcClientService;
+  private final GmcClientService gmcClientService;
 
-  @Autowired
-  private RabbitTemplate rabbitTemplate;
+  private final RabbitTemplate rabbitTemplate;
 
   @Value("${app.rabbit.reval.exchange}")
   private String revalExchange;
@@ -97,6 +91,17 @@ public class RecommendationServiceImpl implements RecommendationService {
   @Value("${app.rabbit.reval.routingKey.recommendationstatuscheck.requested}")
   private String revalRoutingKeyRecommendationStatus;
 
+  public RecommendationServiceImpl(DoctorsForDBRepository doctorsForDBRepository,
+      SnapshotService snapshotService, RecommendationRepository recommendationRepository,
+      DeferralReasonService deferralReasonService, GmcClientService gmcClientService,
+      RabbitTemplate rabbitTemplate) {
+    this.doctorsForDBRepository = doctorsForDBRepository;
+    this.snapshotService = snapshotService;
+    this.recommendationRepository = recommendationRepository;
+    this.deferralReasonService = deferralReasonService;
+    this.gmcClientService = gmcClientService;
+    this.rabbitTemplate = rabbitTemplate;
+  }
 
   /**
    * Cron job to send RecommendationStatusDtos to Rabbit queue for GMC recommendation status check.
@@ -121,18 +126,20 @@ public class RecommendationServiceImpl implements RecommendationService {
     final var optionalDoctorsForDB = doctorsForDBRepository.findById(gmcId);
 
     if (optionalDoctorsForDB.isPresent()) {
-      final var doctorsForDB = optionalDoctorsForDB.get();
+      final var doctorsForDb = optionalDoctorsForDB.get();
+      TraineeRecommendationDtoBuilder builder = TraineeRecommendationDto.builder()
+          .fullName(format("%s %s",
+              doctorsForDb.getDoctorFirstName(), doctorsForDb.getDoctorLastName()))
+          .gmcNumber(doctorsForDb.getGmcReferenceNumber())
+          .designatedBody(doctorsForDb.getDesignatedBodyCode())
+          .gmcSubmissionDate(doctorsForDb.getSubmissionDate())
+          .revalidations(getCurrentAndLegacyRecommendation(doctorsForDb))
+          .deferralReasons(deferralReasonService.getAllCurrentDeferralReasons());
+      if (doctorsForDb.getUnderNotice() != null) {
+        builder.underNotice(doctorsForDb.getUnderNotice().value());
+      }
 
-      return TraineeRecommendationDto.builder()
-          .fullName(String.format("%s %s",
-              doctorsForDB.getDoctorFirstName(), doctorsForDB.getDoctorLastName()))
-          .gmcNumber(doctorsForDB.getGmcReferenceNumber())
-          .underNotice(doctorsForDB.getUnderNotice().value())
-          .designatedBody(doctorsForDB.getDesignatedBodyCode())
-          .gmcSubmissionDate(doctorsForDB.getSubmissionDate())
-          .revalidations(getCurrentAndLegacyRecommendation(doctorsForDB))
-          .deferralReasons(deferralReasonService.getAllCurrentDeferralReasons())
-          .build();
+      return builder.build();
     }
 
     return null;
@@ -285,7 +292,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     log.info("Fetching latest recommendation info for GmcId: {}", gmcId);
     final var recommendations = recommendationRepository.findByGmcNumber(gmcId);
     final var draftRecommendations = recommendations.stream().filter(
-        recommendation -> recommendation.getRecommendationStatus().name().equals("READY_TO_REVIEW"))
+            recommendation -> recommendation.getRecommendationStatus().name().equals("READY_TO_REVIEW"))
         .collect(Collectors.toList());
     //Check draft recommendation: if yes return draft else normal original flow
     if (!draftRecommendations.isEmpty()) {
@@ -304,7 +311,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         final Recommendation recommendation = optionalRecommendation.get();
 
         final boolean isPastCompletedRecommendation =
-            checkIfPastCompletedRecommendation(recommendation,optionalDoctorsForDB.get());
+            checkIfPastCompletedRecommendation(recommendation, optionalDoctorsForDB.get());
 
         if (!isPastCompletedRecommendation) {
           return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
@@ -320,7 +327,7 @@ public class RecommendationServiceImpl implements RecommendationService {
    *
    * @param gmcIds The GMC IDs/Numbers of the Trainees to search for
    * @return A mapping of input GMC Numbers to the last submitted Recommendation for each which may
-   * be empty
+   *     be empty
    */
   public Map<String, TraineeRecommendationRecordDto> getLatestRecommendations(
       List<String> gmcIds) {
@@ -353,17 +360,17 @@ public class RecommendationServiceImpl implements RecommendationService {
     List<RecommendationStatusCheckDto> recommendationStatusCheckDtos = new ArrayList<>();
     recommendationRepository
         .findAllByRecommendationStatus(RecommendationStatus.SUBMITTED_TO_GMC).forEach(rec -> {
-      final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
-      if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
-        final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
-            .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
-            .gmcReferenceNumber(rec.getGmcNumber())
-            .gmcRecommendationId(rec.getGmcRevalidationId())
-            .recommendationId(rec.getId())
-            .build();
-        recommendationStatusCheckDtos.add(recommendationStatusDto);
-      }
-    });
+          final var doctorsForDB = doctorsForDBRepository.findById(rec.getGmcNumber());
+          if (doctorsForDB.isPresent() && rec.getGmcRevalidationId() != null) {
+            final var recommendationStatusDto = RecommendationStatusCheckDto.builder()
+                .designatedBodyId(doctorsForDB.get().getDesignatedBodyCode())
+                .gmcReferenceNumber(rec.getGmcNumber())
+                .gmcRecommendationId(rec.getGmcRevalidationId())
+                .recommendationId(rec.getId())
+                .build();
+            recommendationStatusCheckDtos.add(recommendationStatusDto);
+          }
+        });
     return recommendationStatusCheckDtos;
   }
 
@@ -450,9 +457,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     recommendationRepository.findByGmcNumber(gmcNumber).stream()
         .filter(inProgressFilter)
         .findFirst().ifPresent(r -> {
-      throw new RecommendationException(
-          "Trainee already has a recommendation in draft or waiting for approval from GMC.");
-    });
+          throw new RecommendationException(
+              "Trainee already has a recommendation in draft or waiting for approval from GMC.");
+        });
   }
 
   private TraineeRecommendationRecordDto buildTraineeRecommendationRecordDto(String gmcNumber,

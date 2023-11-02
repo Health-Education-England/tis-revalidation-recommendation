@@ -105,7 +105,7 @@ public class DoctorsForDBService {
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
     if (doctor.isPresent()) {
       doctorsForDB.setAdmin(doctor.get().getAdmin());
-      if (gmcDoctor.getUnderNotice().equals(NO.value())) {
+      if (NO.value().equals(gmcDoctor.getUnderNotice())) {
         doctorsForDB.setDoctorStatus(RecommendationStatus.COMPLETED);
       } else {
         doctorsForDB.setDoctorStatus(recommendationService.getRecommendationStatusForTrainee(
