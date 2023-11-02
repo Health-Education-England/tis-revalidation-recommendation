@@ -303,10 +303,8 @@ public class RecommendationServiceImpl implements RecommendationService {
       if (optionalRecommendation.isPresent()) {
         final Recommendation recommendation = optionalRecommendation.get();
 
-        final boolean isPastCompletedRecommendation = checkIfPastCompletedRecommendation(
-            recommendation,
-            optionalDoctorsForDB.get()
-        );
+        final boolean isPastCompletedRecommendation =
+            checkIfPastCompletedRecommendation(recommendation,optionalDoctorsForDB.get());
 
         if (!isPastCompletedRecommendation) {
           return buildTraineeRecommendationRecordDto(recommendation.getGmcNumber(),
@@ -480,7 +478,7 @@ public class RecommendationServiceImpl implements RecommendationService {
   private boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
       DoctorsForDB doctor) {
     final boolean approved = APPROVED.equals(recommendation.getOutcome());
-    final boolean underNotice = doctor.getUnderNotice().equals(YES);
+    final boolean underNotice = YES.equals(doctor.getUnderNotice());
     //TODO find more empirical timeframe
     final boolean notRecent = recommendation.getActualSubmissionDate() != null
         && recommendation.getActualSubmissionDate()
