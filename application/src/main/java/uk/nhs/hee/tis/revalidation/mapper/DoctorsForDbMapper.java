@@ -20,10 +20,12 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
+import java.time.LocalDateTime;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 
@@ -37,5 +39,28 @@ public interface DoctorsForDbMapper {
   @Named("desgnatedBodyToConnectionStatus")
   default String designatedBodyToConnectionStatus(String designatedBody) {
     return StringUtils.hasLength(designatedBody) ? "Yes" : "No";
+  }
+
+  @Mapping(target = "submissionDate", expression = "java("
+      + "uk.nhs.hee.tis.revalidation.util.DateUtil"
+      + ".convertGmcDateToLocalDate(dto.getSubmissionDate()))")
+  @Mapping(target = "dateAdded", expression = "java("
+      + "uk.nhs.hee.tis.revalidation.util.DateUtil.convertGmcDateToLocalDate(dto.getDateAdded()))")
+  @Mapping(target = "underNotice", expression = "java("
+      + "uk.nhs.hee.tis.revalidation.entity.UnderNotice.fromString(dto.getUnderNotice()))")
+  @Mapping(target = "lastUpdatedDate", expression = "java(java.time.LocalDate.now())")
+  @Mapping(target = "gmcLastUpdatedDateTime", source = "gmcLastUpdatedDateTime",
+      qualifiedByName = "localDateTimeFromString")
+  @Mapping(target = "existsInGmc", constant = "true")
+  @Mapping(target = "doctorStatus", constant = "NOT_STARTED")
+  DoctorsForDB toEntity(DoctorsForDbDto dto);
+
+  @Named("localDateTimeFromString")
+  default LocalDateTime localDateTimeFromString(String gmcLastUpdatedDateTime) {
+    if (StringUtils.hasLength(gmcLastUpdatedDateTime)) {
+      return LocalDateTime.parse(gmcLastUpdatedDateTime);
+    } else {
+      return null;
+    }
   }
 }

@@ -26,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
@@ -37,6 +38,7 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +71,6 @@ import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapperImpl;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapperImpl;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
-
 
 @ExtendWith(MockitoExtension.class)
 class DoctorsForDBServiceTest {
@@ -112,6 +113,7 @@ class DoctorsForDBServiceTest {
   private String connectionStatus1, connectionStatus2, connectionStatus3, connectionStatus4, connectionStatus5;
   private String programmeName;
   private String outcome1;
+  private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
 
   @BeforeEach
   public void setup() {
@@ -619,10 +621,13 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
-  void shouldGetTisStatusForDoctorOnUpdate() {
+  void shouldGetTisStatusAndGmcLastUpdatedDateForDoctorOnUpdate() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     doctorsForDBService.updateTrainee(docDto1);
     verify(recommendationService).getRecommendationStatusForTrainee(gmcRef1);
+    verify(repository).save(doctorCaptor.capture());
+    DoctorsForDB doctorsForDb = doctorCaptor.getValue();
+    assertEquals(doctorsForDb.getGmcLastUpdatedDateTime(), gmcLastUpdatedDateTime);
   }
 
   @Test
@@ -631,7 +636,8 @@ class DoctorsForDBServiceTest {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     doctorsForDBService.updateTrainee(docDto2);
     verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getDoctorStatus(), is(RecommendationStatus.COMPLETED));
+    DoctorsForDB doctorsForDb = doctorCaptor.getValue();
+    assertThat(doctorsForDb.getDoctorStatus(), is(RecommendationStatus.COMPLETED));
   }
 
   @Test
@@ -743,18 +749,17 @@ class DoctorsForDBServiceTest {
     outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now().minusDays(1), designatedBody1, admin1, true);
+        now().minusDays(1), null, designatedBody1, admin1, true);
     doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
-        now(), designatedBody2, admin2, true);
+        now(), null, designatedBody2, admin2, true);
     doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,
-        now(), designatedBody3, admin3, true);
+        now(), null, designatedBody3, admin3, true);
     doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, addedDate4, un4, sanction4, status4,
-        now(), designatedBody4, admin4, true);
+        now(), null, designatedBody4, admin4, true);
     doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
-        now(), designatedBody5, admin5, true);
+        now(), null, designatedBody5, admin5, true);
     docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1,
-        status1,
-        now(), null, admin1, true);
+        status1, now(), null, null, admin1, true);
 
     rv1 = RecommendationView.builder()
         .gmcReferenceNumber(gmcRef1)
@@ -814,6 +819,7 @@ class DoctorsForDBServiceTest {
 
     docDto1 = new DoctorsForDbDto();
     docDto1.setGmcReferenceNumber(gmcRef1);
+    docDto1.setGmcLastUpdatedDateTime(gmcLastUpdatedDateTime.toString());
     docDto1.setUnderNotice(YES.value());
 
     docDto2 = new DoctorsForDbDto();

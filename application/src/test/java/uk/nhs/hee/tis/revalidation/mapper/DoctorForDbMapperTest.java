@@ -20,25 +20,44 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
+import static java.time.LocalDateTime.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.javafaker.Faker;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 
-class DoctorsForDbMapperTest {
+class DoctorForDbMapperTest {
 
   public static final String CONNECTION_STATUS_YES = "Yes";
+  private final Faker faker = new Faker();
+  private final String dbc = faker.lorem().characters(6);
+  private final String gmcNumber = faker.number().digits(7);
+  private final String firstName = faker.name().firstName();
+  private final String lastName = faker.name().lastName();
+  private final LocalDate submissionDate = LocalDate.now().minusDays(1);
+  private final LocalDate dateAdded = LocalDate.now().minusMonths(1);
+  private final UnderNotice underNotice = UnderNotice.NO;
+  private final String sanction = faker.lorem().characters(2);
+  private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
   DoctorsForDbMapper testObj;
 
   @BeforeEach
@@ -104,5 +123,46 @@ class DoctorsForDbMapperTest {
   @Test
   void shouldReturnYesForString() {
     assertThat(testObj.designatedBodyToConnectionStatus("Oooh"), is(CONNECTION_STATUS_YES));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  void shouldReturnNullWhenLocalDateTimeFromEmptyString(String dateTime) {
+    assertNull(testObj.localDateTimeFromString(dateTime));
+  }
+
+  @Test
+  void shouldReturnLocalDateTimeFromString() {
+    LocalDateTime now = now();
+    assertEquals(now, testObj.localDateTimeFromString(now.toString()));
+  }
+
+  @Test
+  void shouldMapDoctorsForDbDtoToEntity() {
+    DoctorsForDbDto doctorsForDbDto = DoctorsForDbDto.builder()
+        .doctorFirstName(firstName)
+        .doctorLastName(lastName)
+        .gmcReferenceNumber(gmcNumber)
+        .sanction(sanction)
+        .underNotice(underNotice.toString())
+        .dateAdded(dateAdded.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        .submissionDate(submissionDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime.toString())
+        .designatedBodyCode(dbc)
+        .build();
+
+    DoctorsForDB doctorsForDb = testObj.toEntity(doctorsForDbDto);
+    assertEquals(doctorsForDb.getGmcReferenceNumber(), gmcNumber);
+    assertEquals(doctorsForDb.getDoctorFirstName(), firstName);
+    assertEquals(doctorsForDb.getDoctorLastName(), lastName);
+    assertEquals(doctorsForDb.getSanction(), sanction);
+    assertEquals(doctorsForDb.getDesignatedBodyCode(), dbc);
+    assertEquals(doctorsForDb.getSubmissionDate(), submissionDate);
+    assertEquals(doctorsForDb.getDateAdded(), dateAdded);
+    assertEquals(doctorsForDb.getUnderNotice(), underNotice);
+    assertEquals(doctorsForDb.getGmcLastUpdatedDateTime(), gmcLastUpdatedDateTime);
+    assertTrue(doctorsForDb.getExistsInGmc());
+    assertEquals(doctorsForDb.getDoctorStatus(), RecommendationStatus.NOT_STARTED);
+    assertNotNull(doctorsForDb.getLastUpdatedDate());
   }
 }

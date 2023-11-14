@@ -44,4 +44,5 @@ public class DoctorsForDbDto {
   private String underNotice;
   private String sanction;
   private String designatedBodyCode;
+  private String gmcLastUpdatedDateTime;
 }
