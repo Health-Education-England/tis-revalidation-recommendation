@@ -138,17 +138,17 @@ class DoctorForDbMapperTest {
         .build();
 
     DoctorsForDB doctorsForDb = testObj.toEntity(doctorsForDbDto);
-    assertEquals(doctorsForDb.getGmcReferenceNumber(), gmcNumber);
-    assertEquals(doctorsForDb.getDoctorFirstName(), firstName);
-    assertEquals(doctorsForDb.getDoctorLastName(), lastName);
-    assertEquals(doctorsForDb.getSanction(), sanction);
-    assertEquals(doctorsForDb.getDesignatedBodyCode(), dbc);
-    assertEquals(doctorsForDb.getSubmissionDate(), submissionDate);
-    assertEquals(doctorsForDb.getDateAdded(), dateAdded);
-    assertEquals(doctorsForDb.getUnderNotice(), underNotice);
-    assertEquals(doctorsForDb.getGmcLastUpdatedDateTime(), gmcLastUpdatedDateTime);
+    assertEquals(gmcNumber, doctorsForDb.getGmcReferenceNumber());
+    assertEquals(firstName, doctorsForDb.getDoctorFirstName());
+    assertEquals(lastName, doctorsForDb.getDoctorLastName());
+    assertEquals(sanction, doctorsForDb.getSanction());
+    assertEquals(dbc, doctorsForDb.getDesignatedBodyCode());
+    assertEquals(submissionDate, doctorsForDb.getSubmissionDate());
+    assertEquals(dateAdded, doctorsForDb.getDateAdded());
+    assertEquals(underNotice, doctorsForDb.getUnderNotice());
+    assertEquals(gmcLastUpdatedDateTime, doctorsForDb.getGmcLastUpdatedDateTime());
     assertTrue(doctorsForDb.getExistsInGmc());
-    assertEquals(doctorsForDb.getDoctorStatus(), RecommendationStatus.NOT_STARTED);
+    assertEquals(RecommendationStatus.NOT_STARTED, doctorsForDb.getDoctorStatus());
     assertNotNull(doctorsForDb.getLastUpdatedDate());
   }
 }
