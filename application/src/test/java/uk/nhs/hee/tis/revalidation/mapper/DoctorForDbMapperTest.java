@@ -20,7 +20,6 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
-import static java.time.LocalDateTime.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -28,7 +27,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.javafaker.Faker;
@@ -125,18 +123,6 @@ class DoctorForDbMapperTest {
     assertThat(testObj.designatedBodyToConnectionStatus("Oooh"), is(CONNECTION_STATUS_YES));
   }
 
-  @ParameterizedTest
-  @NullAndEmptySource
-  void shouldReturnNullWhenLocalDateTimeFromEmptyString(String dateTime) {
-    assertNull(testObj.localDateTimeFromString(dateTime));
-  }
-
-  @Test
-  void shouldReturnLocalDateTimeFromString() {
-    LocalDateTime now = now();
-    assertEquals(now, testObj.localDateTimeFromString(now.toString()));
-  }
-
   @Test
   void shouldMapDoctorsForDbDtoToEntity() {
     DoctorsForDbDto doctorsForDbDto = DoctorsForDbDto.builder()
@@ -147,7 +133,7 @@ class DoctorForDbMapperTest {
         .underNotice(underNotice.toString())
         .dateAdded(dateAdded.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
         .submissionDate(submissionDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime.toString())
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime)
         .designatedBodyCode(dbc)
         .build();
 

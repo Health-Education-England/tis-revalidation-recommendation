@@ -20,7 +20,6 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
-import java.time.LocalDateTime;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -49,18 +48,7 @@ public interface DoctorsForDbMapper {
   @Mapping(target = "underNotice", expression = "java("
       + "uk.nhs.hee.tis.revalidation.entity.UnderNotice.fromString(dto.getUnderNotice()))")
   @Mapping(target = "lastUpdatedDate", expression = "java(java.time.LocalDate.now())")
-  @Mapping(target = "gmcLastUpdatedDateTime", source = "gmcLastUpdatedDateTime",
-      qualifiedByName = "localDateTimeFromString")
   @Mapping(target = "existsInGmc", constant = "true")
   @Mapping(target = "doctorStatus", constant = "NOT_STARTED")
   DoctorsForDB toEntity(DoctorsForDbDto dto);
-
-  @Named("localDateTimeFromString")
-  default LocalDateTime localDateTimeFromString(String gmcLastUpdatedDateTime) {
-    if (StringUtils.hasLength(gmcLastUpdatedDateTime)) {
-      return LocalDateTime.parse(gmcLastUpdatedDateTime);
-    } else {
-      return null;
-    }
-  }
 }

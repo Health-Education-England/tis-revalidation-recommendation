@@ -819,7 +819,7 @@ class DoctorsForDBServiceTest {
 
     docDto1 = new DoctorsForDbDto();
     docDto1.setGmcReferenceNumber(gmcRef1);
-    docDto1.setGmcLastUpdatedDateTime(gmcLastUpdatedDateTime.toString());
+    docDto1.setGmcLastUpdatedDateTime(gmcLastUpdatedDateTime);
     docDto1.setUnderNotice(YES.value());
 
     docDto2 = new DoctorsForDbDto();
