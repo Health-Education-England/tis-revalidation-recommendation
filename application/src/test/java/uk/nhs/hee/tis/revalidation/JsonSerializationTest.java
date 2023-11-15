@@ -27,6 +27,7 @@ import static org.hamcrest.core.Is.is;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 
@@ -45,12 +46,17 @@ class JsonSerializationTest {
         .sanction("sanction")
         .underNotice("under notice")
         .dateAdded("04/07/2017")
-        .submissionDate("04/07/2017").build();
+        .submissionDate("04/07/2017")
+        .gmcLastUpdatedDateTime(LocalDateTime.of(2023, 11, 14,
+            9, 55, 20, 123456)).build();
 
     final var json = mapper.writeValueAsString(doctor);
 
     assertThat(json,
-        is("{\"gmcReferenceNumber\":\"gmtRef\",\"doctorFirstName\":\"first\",\"doctorLastName\":\"last\",\"submissionDate\":\"04/07/2017\",\"dateAdded\":\"04/07/2017\",\"underNotice\":\"under notice\",\"sanction\":\"sanction\",\"designatedBodyCode\":null}"));
+        is("{\"gmcReferenceNumber\":\"gmtRef\",\"doctorFirstName\":\"first\","
+            + "\"doctorLastName\":\"last\",\"submissionDate\":\"04/07/2017\","
+            + "\"dateAdded\":\"04/07/2017\",\"underNotice\":\"under notice\","
+            + "\"sanction\":\"sanction\",\"designatedBodyCode\":null,"
+            + "\"gmcLastUpdatedDateTime\":\"2023-11-14T09:55:20.000123456\"}"));
   }
-
 }

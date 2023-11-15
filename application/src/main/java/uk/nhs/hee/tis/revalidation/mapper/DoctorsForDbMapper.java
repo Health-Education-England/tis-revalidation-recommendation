@@ -20,12 +20,15 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
+import java.time.LocalDate;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 
 @Mapper(componentModel = "spring")
 public interface DoctorsForDbMapper {
@@ -38,4 +41,11 @@ public interface DoctorsForDbMapper {
   default String designatedBodyToConnectionStatus(String designatedBody) {
     return StringUtils.hasLength(designatedBody) ? "Yes" : "No";
   }
+
+  @Mapping(target = "underNotice", expression = "java("
+      + "uk.nhs.hee.tis.revalidation.entity.UnderNotice.fromString(dto.getUnderNotice()))")
+  @Mapping(target = "dateAdded", dateFormat = "dd/MM/yyyy")
+  @Mapping(target = "submissionDate", dateFormat = "dd/MM/yyyy")
+  DoctorsForDB toEntity(DoctorsForDbDto dto, LocalDate lastUpdatedDate, boolean existsInGmc,
+      RecommendationStatus doctorStatus);
 }

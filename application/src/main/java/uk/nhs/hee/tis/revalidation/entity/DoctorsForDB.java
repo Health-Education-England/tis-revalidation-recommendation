@@ -21,25 +21,20 @@
 
 package uk.nhs.hee.tis.revalidation.entity;
 
-
-import static java.time.LocalDate.now;
-import static uk.nhs.hee.tis.revalidation.entity.RecommendationStatus.NOT_STARTED;
-import static uk.nhs.hee.tis.revalidation.util.DateUtil.convertGmcDateToLocalDate;
-
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import io.swagger.annotations.ApiModel;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.lang.Nullable;
-import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 
 @Data
 @AllArgsConstructor
@@ -62,26 +57,12 @@ public class DoctorsForDB {
   private UnderNotice underNotice;
   private String sanction;
   private RecommendationStatus doctorStatus;
+  @LastModifiedDate
   @JsonDeserialize(using = LocalDateDeserializer.class)
   @JsonSerialize(using = LocalDateSerializer.class)
   private LocalDate lastUpdatedDate;
+  private LocalDateTime gmcLastUpdatedDateTime;
   private String designatedBodyCode;
   private String admin;
   private Boolean existsInGmc = true;
-
-  public static final  DoctorsForDB convert(final DoctorsForDbDto doctorsForDBDTO) {
-    return DoctorsForDB.builder()
-        .gmcReferenceNumber(doctorsForDBDTO.getGmcReferenceNumber())
-        .doctorFirstName(doctorsForDBDTO.getDoctorFirstName())
-        .doctorLastName(doctorsForDBDTO.getDoctorLastName())
-        .submissionDate(convertGmcDateToLocalDate(doctorsForDBDTO.getSubmissionDate()))
-        .dateAdded(convertGmcDateToLocalDate(doctorsForDBDTO.getDateAdded()))
-        .underNotice(UnderNotice.fromString(doctorsForDBDTO.getUnderNotice()))
-        .sanction(doctorsForDBDTO.getSanction())
-        .doctorStatus(NOT_STARTED)
-        .designatedBodyCode(doctorsForDBDTO.getDesignatedBodyCode())
-        .lastUpdatedDate(now())
-        .existsInGmc(true)
-        .build();
-  }
 }

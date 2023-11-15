@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,4 +45,5 @@ public class DoctorsForDbDto {
   private String underNotice;
   private String sanction;
   private String designatedBodyCode;
+  private LocalDateTime gmcLastUpdatedDateTime;
 }

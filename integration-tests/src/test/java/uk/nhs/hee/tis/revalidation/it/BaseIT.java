@@ -158,15 +158,15 @@ public class BaseIT {
     admin = faker.internet().emailAddress();
 
     doc1 = new DoctorsForDB(gmcRef1, fName1, lName1, subDate1, addedDate1, un1, sanction1, status1,
-        now(), desBody1, admin, true);
+        now(), null, desBody1, admin, true);
     doc2 = new DoctorsForDB(gmcRef2, fName2, lName2, subDate2, addedDate2, un2, sanction2, status2,
-        now(), desBody2, admin, true);
+        now(), null, desBody2, admin, true);
     doc3 = new DoctorsForDB(gmcRef3, fName3, lName3, subDate3, addedDate3, un3, sanction3, status3,
-        now(), desBody3, admin, true);
+        now(), null, desBody3, admin, true);
     doc4 = new DoctorsForDB(gmcRef4, fName4, lName4, subDate4, addedDate4, un4, sanction4, status4,
-        now(), desBody4, admin, true);
+        now(), null, desBody4, admin, true);
     doc5 = new DoctorsForDB(gmcRef5, fName5, lName5, subDate5, addedDate5, un5, sanction5, status5,
-        now(), desBody5, admin, true);
+        now(), null, desBody5, admin, true);
 
     coreDTO1 = new TraineeCoreDto(gmcRef1, curriculumEndDate1, memType1, progName1, grade1);
     coreDTO2 = new TraineeCoreDto(gmcRef2, curriculumEndDate2, memType2, progName2, grade2);

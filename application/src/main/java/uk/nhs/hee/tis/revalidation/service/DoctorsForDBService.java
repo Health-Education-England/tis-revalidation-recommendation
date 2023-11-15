@@ -100,8 +100,15 @@ public class DoctorsForDBService {
         .totalResults(paginatedDoctors.getTotalElements()).build();
   }
 
+  /**
+   * During nightly sync job, update DoctorsForDB data after we get data from GMC.
+   *
+   * @param gmcDoctor doctor dto from GMC
+   */
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
-    final var doctorsForDB = DoctorsForDB.convert(gmcDoctor);
+    // Set default lastUpdatedDate, existsInGmc and doctorStatus when mapping dto to entity.
+    final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor, now(), true,
+        RecommendationStatus.NOT_STARTED);
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
     if (doctor.isPresent()) {
       doctorsForDB.setAdmin(doctor.get().getAdmin());

@@ -66,14 +66,4 @@ public class DateUtil {
 
     return null;
   }
-
-  public static LocalDate convertGmcDateToLocalDate(final String date) {
-    log.debug("Format date to GMC format: {}", date);
-    if (StringUtils.hasLength(date)) {
-      return parse(date, GMC_DATE_FORMATTER);
-    }
-
-    return null;
-  }
-
 }
