@@ -526,46 +526,23 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
-  void shouldSetLastUpdatedDate() {
-    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
-    final var message = ConnectionMessageDto.builder()
-        .gmcId(gmcRef1)
-        .designatedBodyCode(designatedBody2)
-        .build();
-    doctorsForDBService.updateDoctorConnection(message);
-
-    verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getLastUpdatedDate(), is(LocalDate.now()));
-  }
-
-  @Test
-  void shouldUpdateDesignatedBodyCode() {
-    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
-    final var message = ConnectionMessageDto.builder()
-        .gmcId(gmcRef1)
-        .designatedBodyCode(designatedBody2)
-        .build();
-    doctorsForDBService.updateDoctorConnection(message);
-
-    verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody2));
-    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
-  }
-
-  @Test
-  void shouldUpdateSubmissionDateOnConnectionChange() {
+  void shouldUpdateDoctorsForDbFieldsWhenUpdateConnection() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     final var message = ConnectionMessageDto.builder()
         .gmcId(gmcRef1)
         .designatedBodyCode(designatedBody2)
         .submissionDate(subDate2)
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime)
         .build();
     doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
-    assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody2));
-    assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
-    assertThat(doctorCaptor.getValue().getSubmissionDate(), is(subDate2));
+    DoctorsForDB doctor = doctorCaptor.getValue();
+    assertThat(doctor.getLastUpdatedDate(), is(LocalDate.now()));
+    assertThat(doctor.getDesignatedBodyCode(), is(designatedBody2));
+    assertThat(doctor.getExistsInGmc(), is(true));
+    assertThat(doctor.getSubmissionDate(), is(subDate2));
+    assertThat(doctor.getGmcLastUpdatedDateTime(), is(gmcLastUpdatedDateTime));
   }
 
   @Test
@@ -749,7 +726,7 @@ class DoctorsForDBServiceTest {
     outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now().minusDays(1), null, designatedBody1, admin1, true);
+        now().minusDays(1), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
     doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
         now(), null, designatedBody2, admin2, true);
     doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,

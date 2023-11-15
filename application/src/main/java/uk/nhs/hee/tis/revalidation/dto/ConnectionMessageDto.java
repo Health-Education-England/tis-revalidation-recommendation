@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,5 +37,6 @@ public class ConnectionMessageDto {
   private String gmcId;
   private String designatedBodyCode;
   private LocalDate submissionDate;
+  private LocalDateTime gmcLastUpdatedDateTime;
 }
 
