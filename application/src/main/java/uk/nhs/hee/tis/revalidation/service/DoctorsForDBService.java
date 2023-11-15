@@ -101,7 +101,8 @@ public class DoctorsForDBService {
   }
 
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
-    final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor);
+    final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor, now(), true,
+        RecommendationStatus.NOT_STARTED);
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
     if (doctor.isPresent()) {
       doctorsForDB.setAdmin(doctor.get().getAdmin());

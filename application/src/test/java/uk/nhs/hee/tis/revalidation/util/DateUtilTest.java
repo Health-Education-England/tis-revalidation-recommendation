@@ -21,14 +21,12 @@
 
 package uk.nhs.hee.tis.revalidation.util;
 
-import static java.time.LocalDate.of;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.convertDateInGmcFormat;
-import static uk.nhs.hee.tis.revalidation.util.DateUtil.convertGmcDateToLocalDate;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDate;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDateTime;
 
@@ -90,22 +88,4 @@ class DateUtilTest {
     assertNotNull(gmcDate);
     assertThat(gmcDate, is("19/07/2017"));
   }
-
-  @Test
-  void shouldFormatGmcFormatStringDateToLocalDate() {
-    final var dateToFormat = "04/07/2017";
-    final var localDate = of(2017, 07, 04);
-
-    final var gmcDate = convertGmcDateToLocalDate(dateToFormat);
-    assertNotNull(gmcDate);
-    assertThat(gmcDate, is(localDate));
-  }
-
-  @Test
-  void shouldReturnNullWhenDateIsEmptyString() {
-    final var dateToFormat = "";
-    final var gmcDate = convertGmcDateToLocalDate(dateToFormat);
-    assertNull(gmcDate);
-  }
-
 }
