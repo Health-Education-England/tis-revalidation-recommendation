@@ -20,7 +20,6 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
-import java.time.LocalDate;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
