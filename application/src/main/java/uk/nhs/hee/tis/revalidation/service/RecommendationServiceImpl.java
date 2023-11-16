@@ -211,7 +211,6 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     Recommendation savedRecommendation = recommendationRepository.save(recommendation);
-    doctor.setLastUpdatedDate(now());
     doctor.setDoctorStatus(
         getRecommendationStatusForTrainee(recordDTO.getGmcNumber())
     );
@@ -265,7 +264,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         recommendation.setActualSubmissionDate(now());
         recommendation.setGmcRevalidationId(tryRecommendationResponseCT.getRecommendationID());
         recommendationRepository.save(recommendation);
-        doctor.setLastUpdatedDate(now());
         doctor.setDoctorStatus(getRecommendationStatusForTrainee(gmcNumber)
         );
         doctorsForDBRepository.save(doctor);

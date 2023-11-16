@@ -538,7 +538,6 @@ class DoctorsForDBServiceTest {
 
     verify(repository).save(doctorCaptor.capture());
     DoctorsForDB doctor = doctorCaptor.getValue();
-    assertThat(doctor.getLastUpdatedDate(), is(LocalDate.now()));
     assertThat(doctor.getDesignatedBodyCode(), is(designatedBody2));
     assertThat(doctor.getExistsInGmc(), is(true));
     assertThat(doctor.getSubmissionDate(), is(subDate2));
@@ -726,7 +725,7 @@ class DoctorsForDBServiceTest {
     outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now().minusDays(1), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
+        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
     doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
         now(), null, designatedBody2, admin2, true);
     doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,

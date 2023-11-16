@@ -46,6 +46,7 @@ public interface DoctorsForDbMapper {
       + "uk.nhs.hee.tis.revalidation.entity.UnderNotice.fromString(dto.getUnderNotice()))")
   @Mapping(target = "dateAdded", dateFormat = "dd/MM/yyyy")
   @Mapping(target = "submissionDate", dateFormat = "dd/MM/yyyy")
-  DoctorsForDB toEntity(DoctorsForDbDto dto, LocalDate lastUpdatedDate, boolean existsInGmc,
+  @Mapping(target = "lastUpdatedDate", ignore = true)
+  DoctorsForDB toEntity(DoctorsForDbDto dto, boolean existsInGmc,
       RecommendationStatus doctorStatus);
 }
