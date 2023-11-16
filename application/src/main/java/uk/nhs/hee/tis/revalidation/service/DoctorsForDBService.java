@@ -156,6 +156,7 @@ public class DoctorsForDBService {
         doctorsForDb.setUnderNotice(null);
       }
       doctorsForDb.setSubmissionDate(message.getSubmissionDate());
+      doctorsForDb.setGmcLastUpdatedDateTime(message.getGmcLastUpdatedDateTime());
       doctorsForDb.setLastUpdatedDate(LocalDate.now());
       doctorsRepository.save(doctorsForDb);
     } else {

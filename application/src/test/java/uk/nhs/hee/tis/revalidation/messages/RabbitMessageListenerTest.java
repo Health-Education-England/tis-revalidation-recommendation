@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -80,6 +81,7 @@ class RabbitMessageListenerTest {
   private final String recommendationId = faker.number().digits(3);
   private final String designatedBody = faker.lorem().characters(5);
   private final LocalDate submissionDate = LocalDate.now();
+  private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
 
   private final RecommendationStatusCheckDto recommendationStatusCheckDto =
       RecommendationStatusCheckDto.builder()
@@ -132,6 +134,7 @@ class RabbitMessageListenerTest {
         .gmcId(gmcNumber)
         .submissionDate(submissionDate)
         .designatedBodyCode(designatedBody)
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime)
         .build();
 
     rabbitMessageListener.receiveUpdateDoctorConnectionMessage(message);
@@ -143,6 +146,7 @@ class RabbitMessageListenerTest {
     assertThat(capture.getGmcId(), is(gmcNumber));
     assertThat(capture.getSubmissionDate(), is(submissionDate));
     assertThat(capture.getDesignatedBodyCode(), is(designatedBody));
+    assertThat(capture.getGmcLastUpdatedDateTime(), is(gmcLastUpdatedDateTime));
   }
 
   @Test
