@@ -10,9 +10,9 @@ import uk.nhs.hee.tis.revalidation.messages.publisher.GmcDoctorsForDbSyncStartPu
 @Service
 public class GmcDoctorNightlySyncService {
 
-  private GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
+  private final GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
 
-  private DoctorsForDBService doctorsForDBService;
+  private final DoctorsForDBService doctorsForDBService;
 
   public GmcDoctorNightlySyncService(
       DoctorsForDBService doctorsForDBService,
@@ -22,12 +22,12 @@ public class GmcDoctorNightlySyncService {
     this.doctorsForDBService = doctorsForDBService;
   }
 
-  @Scheduled(cron="${app.gmc.nightlySyncStart.cronExpression}")
+  @Scheduled(cron = "${app.gmc.nightlySyncStart.cronExpression}")
   @SchedulerLock(name = "GmcNightlySyncJob")
   public void startNightlyGmcDoctorSync() {
-    this.doctorsForDBService.hideAllDoctors();
+    doctorsForDBService.hideAllDoctors();
     log.info("All doctors are hidden now");
-    this.gmcDoctorsForDbSyncStartPublisher.publishNightlySyncStartMessage();
+    gmcDoctorsForDbSyncStartPublisher.publishNightlySyncStartMessage();
     log.info("Start message has been sent to start gmc sync");
   }
 
