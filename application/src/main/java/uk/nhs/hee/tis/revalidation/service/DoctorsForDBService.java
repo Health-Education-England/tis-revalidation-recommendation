@@ -107,7 +107,7 @@ public class DoctorsForDBService {
    */
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
     // Set default lastUpdatedDate, existsInGmc and doctorStatus when mapping dto to entity.
-    final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor, now(), true,
+    final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor, true,
         RecommendationStatus.NOT_STARTED);
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
     if (doctor.isPresent()) {
@@ -130,7 +130,6 @@ public class DoctorsForDBService {
       if (doctor.isPresent()) {
         final var doctorsForDB = doctor.get();
         doctorsForDB.setAdmin(traineeAdmin.getAdmin());
-        doctorsForDB.setLastUpdatedDate(now());
         doctorsRepository.save(doctorsForDB);
       }
     });
@@ -157,7 +156,6 @@ public class DoctorsForDBService {
       }
       doctorsForDb.setSubmissionDate(message.getSubmissionDate());
       doctorsForDb.setGmcLastUpdatedDateTime(message.getGmcLastUpdatedDateTime());
-      doctorsForDb.setLastUpdatedDate(LocalDate.now());
       doctorsRepository.save(doctorsForDb);
     } else {
       log.info("No doctor found to update designated body code");

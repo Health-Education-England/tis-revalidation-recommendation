@@ -138,7 +138,7 @@ class DoctorsForDbMapperTest {
         .build();
 
     LocalDate now = LocalDate.now();
-    DoctorsForDB doctorsForDb = testObj.toEntity(doctorsForDbDto, now, true,
+    DoctorsForDB doctorsForDb = testObj.toEntity(doctorsForDbDto, true,
         RecommendationStatus.NOT_STARTED);
     assertEquals(gmcNumber, doctorsForDb.getGmcReferenceNumber());
     assertEquals(firstName, doctorsForDb.getDoctorFirstName());
@@ -151,6 +151,5 @@ class DoctorsForDbMapperTest {
     assertEquals(gmcLastUpdatedDateTime, doctorsForDb.getGmcLastUpdatedDateTime());
     assertTrue(doctorsForDb.getExistsInGmc());
     assertEquals(RecommendationStatus.NOT_STARTED, doctorsForDb.getDoctorStatus());
-    assertEquals(now, doctorsForDb.getLastUpdatedDate());
   }
 }

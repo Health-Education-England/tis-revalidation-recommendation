@@ -20,7 +20,6 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
-import java.time.LocalDate;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -46,6 +45,7 @@ public interface DoctorsForDbMapper {
       + "uk.nhs.hee.tis.revalidation.entity.UnderNotice.fromString(dto.getUnderNotice()))")
   @Mapping(target = "dateAdded", dateFormat = "dd/MM/yyyy")
   @Mapping(target = "submissionDate", dateFormat = "dd/MM/yyyy")
-  DoctorsForDB toEntity(DoctorsForDbDto dto, LocalDate lastUpdatedDate, boolean existsInGmc,
+  @Mapping(target = "lastUpdatedDate", ignore = true)
+  DoctorsForDB toEntity(DoctorsForDbDto dto, boolean existsInGmc,
       RecommendationStatus doctorStatus);
 }
