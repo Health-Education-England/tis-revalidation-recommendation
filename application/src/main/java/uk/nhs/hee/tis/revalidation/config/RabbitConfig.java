@@ -23,74 +23,15 @@ package uk.nhs.hee.tis.revalidation.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.AcknowledgeMode;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
-
-  @Value("${app.rabbit.queue}")
-  private String queueName;
-
-  @Value("${app.rabbit.exchange}")
-  private String exchange;
-
-  @Value("${app.rabbit.routingkey}")
-  private String routingKey;
-
-  @Value("${app.rabbit.connection.routingkey}")
-  private String removeDbcRoutingKey;
-
-  @Value("${app.rabbit.reval.exchange}")
-  private String revalExchange;
-
-  @Value("${app.rabbit.reval.queue.recommendation.syncstart}")
-  private String recommendationGmcSyncStartQueue;
-
-  @Value("${app.rabbit.reval.routingKey.recommendation.syncstart}")
-  private String recommendationGmcSyncStartKey;
-
-  @Bean
-  public Queue queue() {
-    return new Queue(queueName, false);
-  }
-
-  @Bean
-  public DirectExchange exchange() {
-    return new DirectExchange(exchange);
-  }
-
-
-  @Bean
-  public Queue recommendationRevalQueue() {
-    return new Queue(recommendationGmcSyncStartQueue, false);
-  }
-
-  @Bean
-  public DirectExchange revalExchange() {
-    return new DirectExchange(revalExchange);
-  }
-
-  @Bean
-  public Binding revalidationBinding(final Queue recommendationRevalQueue,
-      final DirectExchange revalExchange) {
-    return BindingBuilder.bind(recommendationRevalQueue).to(revalExchange)
-        .with(recommendationGmcSyncStartKey);
-  }
-
-  @Bean
-  public Binding binding(final Queue queue, final DirectExchange exchange) {
-    return BindingBuilder.bind(queue).to(exchange).with(routingKey);
-  }
 
   @Bean
   public MessageConverter jsonMessageConverter() {
@@ -99,9 +40,10 @@ public class RabbitConfig {
   }
 
   @Bean
-  public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {
+  public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory,
+      MessageConverter jsonMessageConverter) {
     final var rabbitTemplate = new RabbitTemplate(connectionFactory);
-    rabbitTemplate.setMessageConverter(jsonMessageConverter());
+    rabbitTemplate.setMessageConverter(jsonMessageConverter);
     rabbitTemplate.containerAckMode(AcknowledgeMode.AUTO);
     return rabbitTemplate;
   }
