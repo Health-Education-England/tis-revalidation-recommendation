@@ -31,6 +31,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.oxm.Unmarshaller;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.ws.client.core.WebServiceTemplate;
@@ -65,10 +66,10 @@ public class RevalidationApplication {
   }
 
   @Bean
-  public WebServiceTemplate webServiceTemplate() {
+  public WebServiceTemplate webServiceTemplate(Unmarshaller unmarshaller) {
     final var webServiceTemplate = new WebServiceTemplate();
     webServiceTemplate.setMarshaller(marshaller());
-    webServiceTemplate.setUnmarshaller(marshaller());
+    webServiceTemplate.setUnmarshaller(unmarshaller);
     return webServiceTemplate;
   }
 
