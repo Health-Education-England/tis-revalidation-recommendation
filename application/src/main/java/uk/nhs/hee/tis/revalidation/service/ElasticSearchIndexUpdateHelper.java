@@ -44,18 +44,6 @@ public class ElasticSearchIndexUpdateHelper {
   @Autowired
   RestHighLevelClient highLevelClient;
 
-
-  /**
-   * Route changes to correct elasticsearch index.
-   *
-   * @param masterDoctorViewDto details of changes that need to be propagated to elasticsearch
-   */
-  public void updateElasticSearchIndex(final MasterDoctorViewDto masterDoctorViewDto) {
-
-    recommendationElasticSearchService.saveRecommendationView(
-        buildRecommendationView(masterDoctorViewDto));
-  }
-
   /**
    * Create entry for Recommendation elasticsearch index.
    *
