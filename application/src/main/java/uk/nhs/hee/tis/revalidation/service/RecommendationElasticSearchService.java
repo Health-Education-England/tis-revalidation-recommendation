@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.exception.DoctorIndexUpdateException;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
 @Service
@@ -52,7 +53,7 @@ public class RecommendationElasticSearchService {
     } catch (Exception ex) {
       LOG.error("Exception in `saveRecommendationViews` (GmcId: {}; PersonId: {}): {}",
           dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
-      throw ex;
+      throw new DoctorIndexUpdateException(ex.getMessage());
     }
   }
 
