@@ -5,4 +5,8 @@ public class DoctorIndexUpdateException extends RuntimeException {
   public DoctorIndexUpdateException(String message) {
     super(message);
   }
+
+  public DoctorIndexUpdateException(String message, Throwable throwable) {
+    super(message, throwable);
+  }
 }
