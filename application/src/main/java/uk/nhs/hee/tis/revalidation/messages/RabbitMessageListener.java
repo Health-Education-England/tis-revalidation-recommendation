@@ -92,7 +92,8 @@ public class RabbitMessageListener {
   /**
    * get updated doctors from Master index then update recommendation indexes.
    */
-  @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}")
+  @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
+      containerFactory = "prefetchTenRabbitListenerContainerFactory")
   public void receiveUpdateMessageFromMasterDoctorView(
       final MasterDoctorViewDto masterDoctorViewDto) {
 
