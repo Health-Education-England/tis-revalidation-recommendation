@@ -62,6 +62,7 @@ public class RabbitConfig {
     SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
     factory.setConnectionFactory(rabbitConnectionFactory);
     factory.setPrefetchCount(recommendationPrefetchBatchSize);
+    factory.setMessageConverter(jsonMessageConverter());
     return factory;
   }
 }
