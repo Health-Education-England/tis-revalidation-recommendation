@@ -51,8 +51,6 @@ public class RecommendationElasticSearchService {
     try {
       recommendationElasticSearchRepository.save(dataToSave);
     } catch (Exception ex) {
-      LOG.error("Exception in `saveRecommendationViews` (GmcId: {}; PersonId: {}): {}",
-          dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
       throw new DoctorIndexUpdateException(ex.getMessage(), ex);
     }
   }
