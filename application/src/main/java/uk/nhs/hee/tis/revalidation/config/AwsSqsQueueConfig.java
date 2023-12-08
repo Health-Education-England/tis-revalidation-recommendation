@@ -33,8 +33,9 @@ import org.springframework.context.annotation.Primary;
 public class AwsSqsQueueConfig {
 
   @Bean
-  public QueueMessagingTemplate queueMessagingTemplate(ObjectMapper objectMapper) {
-    return new QueueMessagingTemplate(amazonSQSAsync(), null, objectMapper);
+  public QueueMessagingTemplate queueMessagingTemplate(AmazonSQSAsync amazonSQSAsync,
+      ObjectMapper objectMapper) {
+    return new QueueMessagingTemplate(amazonSQSAsync, null, objectMapper);
   }
 
   @Primary

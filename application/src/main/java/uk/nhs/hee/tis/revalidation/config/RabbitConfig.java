@@ -35,8 +35,8 @@ public class RabbitConfig {
 
   @Bean
   public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
-    final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
-    return new Jackson2JsonMessageConverter(mapper);
+    objectMapper.findAndRegisterModules();
+    return new Jackson2JsonMessageConverter(objectMapper);
   }
 
   @Bean
