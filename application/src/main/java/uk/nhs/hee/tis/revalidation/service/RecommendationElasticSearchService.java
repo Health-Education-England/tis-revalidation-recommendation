@@ -46,7 +46,10 @@ public class RecommendationElasticSearchService {
     try {
       recommendationElasticSearchRepository.save(dataToSave);
     } catch (Exception ex) {
-      throw new DoctorIndexUpdateException(ex.getMessage(), ex);
+      throw new DoctorIndexUpdateException(
+          String.format("Failed to save a recommendation view for doctor (GMC: %s, Person ID: %d)",
+              dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId()),
+          ex);
     }
   }
 
