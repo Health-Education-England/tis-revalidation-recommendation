@@ -23,6 +23,7 @@ package uk.nhs.hee.tis.revalidation.config;
 
 import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.awspring.cloud.messaging.core.QueueMessagingTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,8 +33,8 @@ import org.springframework.context.annotation.Primary;
 public class AwsSqsQueueConfig {
 
   @Bean
-  public QueueMessagingTemplate queueMessagingTemplate() {
-    return new QueueMessagingTemplate(amazonSQSAsync());
+  public QueueMessagingTemplate queueMessagingTemplate(ObjectMapper objectMapper) {
+    return new QueueMessagingTemplate(amazonSQSAsync(), null, objectMapper);
   }
 
   @Primary
