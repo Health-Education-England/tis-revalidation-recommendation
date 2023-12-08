@@ -92,8 +92,7 @@ public class RabbitMessageListener {
   /**
    * get updated doctors from Master index then update recommendation indexes.
    */
-  @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}",
-      ackMode = "NONE")
+  @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}")
   public void receiveUpdateMessageFromMasterDoctorView(
       final MasterDoctorViewDto masterDoctorViewDto) {
 

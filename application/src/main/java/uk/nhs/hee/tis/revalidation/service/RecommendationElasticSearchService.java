@@ -25,18 +25,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.exception.DoctorIndexUpdateException;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
 @Service
 public class RecommendationElasticSearchService {
-
-  private static final Logger LOG = LoggerFactory.getLogger(
-      RecommendationElasticSearchService.class);
 
   @Autowired
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
@@ -50,8 +46,10 @@ public class RecommendationElasticSearchService {
     try {
       recommendationElasticSearchRepository.save(dataToSave);
     } catch (Exception ex) {
-      LOG.error("Exception in `saveRecommendationViews` (GmcId: {}; PersonId: {}): {}",
-          dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId(), ex);
+      throw new DoctorIndexUpdateException(
+          String.format("Failed to save a recommendation view for doctor (GMC: %s, Person ID: %d)",
+              dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId()),
+          ex);
     }
   }
 

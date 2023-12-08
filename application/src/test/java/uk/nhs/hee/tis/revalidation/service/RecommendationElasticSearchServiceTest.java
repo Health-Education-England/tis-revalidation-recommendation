@@ -40,7 +40,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.exception.DoctorIndexUpdateException;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -124,6 +126,15 @@ class RecommendationElasticSearchServiceTest {
         inputParam, dbcsParam);
 
     assertThat(results.size(), is(0));
+  }
+
+  @Test
+  void shouldThrowExceptionOnFailedSave() {
+    doThrow(new DataAccessException("Message") {}).when(
+        recommendationElasticSearchRepository).save(recommendationView);
+
+    assertThrows(DoctorIndexUpdateException.class,
+        () -> recommendationElasticSearchService.saveRecommendationView(recommendationView));
   }
 
   private List<RecommendationView> generateListOfRecommendationViews() {
