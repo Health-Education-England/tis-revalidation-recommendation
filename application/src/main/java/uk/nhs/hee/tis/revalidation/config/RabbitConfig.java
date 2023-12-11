@@ -34,9 +34,8 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
 
   @Bean
-  public MessageConverter jsonMessageConverter() {
-    final ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
-    return new Jackson2JsonMessageConverter(mapper);
+  public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
+    return new Jackson2JsonMessageConverter(objectMapper);
   }
 
   @Bean
