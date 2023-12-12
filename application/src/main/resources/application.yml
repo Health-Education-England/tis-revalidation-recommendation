@@ -18,7 +18,7 @@ spring:
       uris: ${ES_URLS:http://localhost:9200}
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://${MONGODB_USERNAME:root}:${MONGODB_PASSWORD:password}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:revalidation}?authSource=admin&authMechanism=SCRAM-SHA-1&replicaSet=rs0&readPreference=secondaryPreferred}
+      uri: ${MONGODB_URI:mongodb://${MONGODB_USERNAME:root}:${MONGODB_PASSWORD:password}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:revalidation}?authSource=admin&authMechanism=SCRAM-SHA-1}
 
 server:
   servlet:
@@ -32,7 +32,7 @@ logging:
     org.springframework.boot.autoconfigure: ${LOGGING_LEVEL:ERROR}
 
   file:
-    name: ${LOG_DIR:${HOME}}/revalidation.log
+    name: ./revalidation.log
 
 management:
   endpoints:
@@ -92,7 +92,7 @@ sentry:
 cloud:
   aws:
     end-point:
-      uri: ${SQS_SYNC_GMC_QUEUE:}
+      uri: ${SQS_SYNC_GMC_QUEUE:http://localhost:4566/000000000000/localstack-queue}
 
 mongock:
   change-logs-scan-package: uk.nhs.hee.tis.revalidation.changelog

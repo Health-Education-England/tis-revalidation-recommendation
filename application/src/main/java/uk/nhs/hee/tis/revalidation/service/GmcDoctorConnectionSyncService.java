@@ -21,16 +21,20 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import io.awspring.cloud.messaging.core.QueueMessagingTemplate;
+import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
-import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.messages.batch.SqsBatchGenerator;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
@@ -38,25 +42,30 @@ import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 @Service
 public class GmcDoctorConnectionSyncService {
 
-  private final QueueMessagingTemplate queueMessagingTemplate;
   private final DoctorsForDBRepository doctorsForDBRepository;
   private final RecommendationService recommendationService;
+  private final SqsBatchGenerator batchGenerator;
+  private final AmazonSQSClient sqsClient;
+  private final ObjectMapper objectMapper;
   @Value("${app.rabbit.reval.exchange}")
   private String exchange;
   @Value("${cloud.aws.end-point.uri}")
   private String sqsEndPoint;
 
-  public GmcDoctorConnectionSyncService(QueueMessagingTemplate queueMessagingTemplate,
+  public GmcDoctorConnectionSyncService(
       DoctorsForDBRepository doctorsForDBRepository,
-      RecommendationService recommendationService) {
-    this.queueMessagingTemplate = queueMessagingTemplate;
+      RecommendationService recommendationService, SqsBatchGenerator batchGenerator,
+      AmazonSQSClient sqsClient, ObjectMapper objectMapper) {
+    this.sqsClient = sqsClient;
     this.doctorsForDBRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
+    this.batchGenerator = batchGenerator;
+    this.objectMapper = objectMapper;
   }
 
   @RabbitListener(queues = "${app.rabbit.reval.queue.recommendation.syncstart}", ackMode = "NONE")
   @SchedulerLock(name = "IndexRebuildGetGmcJob")
-  public void receiveMessage(final String gmcSyncStart) {
+  public void receiveMessage(final String gmcSyncStart) throws JsonProcessingException {
     log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
 
     if (gmcSyncStart != null && gmcSyncStart.equals("gmcSyncStart")) {
@@ -70,31 +79,28 @@ public class GmcDoctorConnectionSyncService {
     return allGmcDoctors;
   }
 
-  private void sendToSqsQueue(final List<DoctorsForDB> gmcDoctors) {
-    gmcDoctors.stream()
-        .forEach(doctor ->
-            {
-              TraineeRecommendationRecordDto recommendation =
-                  recommendationService.getLatestRecommendation(doctor.getGmcReferenceNumber());
+  private void sendToSqsQueue(final List<DoctorsForDB> gmcDoctors) throws JsonProcessingException {
 
-              final var summary = RevalidationSummaryDto.builder()
-                  .doctor(doctor)
-                  .gmcOutcome(recommendation.getGmcOutcome())
-                  .build();
-              final var message = IndexSyncMessage.builder()
-                  .payload(summary)
-                  .syncEnd(false)
-                  .build();
-              queueMessagingTemplate.convertAndSend(sqsEndPoint, message);
-            }
-        );
+    var batchedDoctors = Lists.partition(gmcDoctors, 10);
+    batchedDoctors.stream().forEach(batch -> {
+      var messages = batchGenerator.generateBatchMessagesFromList(batch);
+      SendMessageBatchRequest request = new SendMessageBatchRequest();
+      request.withEntries(messages);
+      request.withQueueUrl(sqsEndPoint);
+      sqsClient.sendMessageBatch(request);
+    });
 
     log.info("GMC doctors have been published to the SQS queue ");
 
     final var syncEnd = IndexSyncMessage.builder()
         .syncEnd(true)
         .build();
-    queueMessagingTemplate.convertAndSend(sqsEndPoint, syncEnd);
+    SendMessageBatchRequestEntry syncEndMessage = new SendMessageBatchRequestEntry();
+    syncEndMessage.setId("1");
+    syncEndMessage.setMessageBody(objectMapper.writeValueAsString(syncEnd));
+    SendMessageBatchRequest request = new SendMessageBatchRequest();
+    request.withEntries(syncEndMessage);
+    request.withQueueUrl(sqsEndPoint);
+    sqsClient.sendMessageBatch(request);
   }
-
 }
