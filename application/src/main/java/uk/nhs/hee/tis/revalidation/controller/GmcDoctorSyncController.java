@@ -39,9 +39,13 @@ public class GmcDoctorSyncController {
     this.gmcDoctorConnectionSyncService = gmcDoctorConnectionSyncService;
   }
 
+  /**
+   * This endpoint is used to start a gmc sync manually.
+   *
+   * @return OK Response if this succeeds within a defined time
+   */
   @GetMapping("/send-doctor")
   public ResponseEntity<Void> startGmcSync() {
-    //this endpoint is needed to start gmc sync manually
     gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
     return ResponseEntity.ok().build();
   }

@@ -27,7 +27,8 @@ server:
 
 logging:
   level:
-    uk.nhs.hee.tis.revalidation: ${LOGGING_LEVEL:INFO}
+    ROOT: ${LOGGING_LEVEL:WARN}
+    uk.nhs.hee.tis.revalidation: ${LOGGING_LEVEL_TIS:${LOGGING_LEVEL:INFO}}
     org.springframework.data.mongodb.core.MongoTemplate: ${LOGGING_LEVEL:ERROR}
     org.springframework.boot.autoconfigure: ${LOGGING_LEVEL:ERROR}
 

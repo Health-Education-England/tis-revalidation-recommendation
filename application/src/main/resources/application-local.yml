@@ -1,0 +1,10 @@
+spring:
+  cloud.aws.sqs.endpoint: host.docker.internal:4566
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://${MONGODB_USERNAME:root}:${MONGODB_PASSWORD:password}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:revalidation}?authSource=admin&authMechanism=SCRAM-SHA-1}
+
+cloud:
+  aws:
+    end-point:
+      uri: ${SQS_SYNC_GMC_QUEUE:http://localhost:4566/000000000000/tis-revalidation-sync-gmc-queue-local}

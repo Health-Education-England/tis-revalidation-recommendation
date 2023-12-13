@@ -31,6 +31,8 @@ import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDate;
 import static uk.nhs.hee.tis.revalidation.util.DateUtil.formatDateTime;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
 
 class DateUtilTest {
@@ -41,7 +43,7 @@ class DateUtilTest {
     final var localDateTime = formatDateTime(dateToFormat);
     assertThat(localDateTime, is(notNullValue()));
     assertThat(localDateTime.getYear(), is(2017));
-    assertThat(localDateTime.getMonthValue(), is(07));
+    assertThat(localDateTime.getMonthValue(), is(7));
     assertThat(localDateTime.getDayOfMonth(), is(19));
   }
 
@@ -51,7 +53,7 @@ class DateUtilTest {
     final var localDateTime = formatDateTime(dateToFormat);
     assertThat(localDateTime, is(notNullValue()));
     assertThat(localDateTime.getYear(), is(2017));
-    assertThat(localDateTime.getMonthValue(), is(07));
+    assertThat(localDateTime.getMonthValue(), is(7));
     assertThat(localDateTime.getDayOfMonth(), is(19));
   }
 
@@ -61,20 +63,20 @@ class DateUtilTest {
     final var localDate = formatDate(dateToFormat);
     assertThat(localDate, is(notNullValue()));
     assertThat(localDate.getYear(), is(2017));
-    assertThat(localDate.getMonthValue(), is(07));
+    assertThat(localDate.getMonthValue(), is(7));
     assertThat(localDate.getDayOfMonth(), is(19));
   }
 
-  @Test
-  void shouldReturnNullWhenDateTimeIsEmpty() {
-    final String dateToFormat = null;
+  @ParameterizedTest
+  @NullAndEmptySource
+  void shouldReturnNullWhenDateTimeIsEmpty(String dateToFormat) {
     final var localDateTime = formatDateTime(dateToFormat);
     assertNull(localDateTime);
   }
 
-  @Test
-  void shouldReturnNullWhenDateIsEmpty() {
-    final String dateToFormat = null;
+  @ParameterizedTest
+  @NullAndEmptySource
+  void shouldReturnNullWhenDateIsEmpty(String dateToFormat) {
     final var localDateTime = formatDate(dateToFormat);
     assertNull(localDateTime);
   }
