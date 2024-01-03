@@ -61,20 +61,15 @@ app:
     sort.order: ${SORT_ORDER:asc,desc}
 
   rabbit:
-    exchange: ${EXCHANGE:reval.exchange.gmcsync}
-    queue: ${QUEUE:reval.queue.gmcsync.recommendation}
-    routingKey: ${ROUTING_KEY:reval.gmcsync}
     connection.queue: ${CONNECTION_QUEUE:reval.queue.connection.manualupdate.recommendation}
-    connection.routingKey: ${CONNECTION_ROUTING_KEY:reval.connection.manualupdate}
-    reval.exchange: ${REVAL_RABBIT_EXCHANGE:reval.exchange}
-    reval.queue.recommendation.syncstart: ${REVAL_RABBIT_RECOMMENDATION_SYNC_START_QUEUE:reval.queue.recommendation.syncstart}
-    reval.routingKey.recommendation.syncstart: ${REVAL_RABBIT_RECOMMENDATION_SYNCSTART_ROUTING_KEY:reval.recommendation.syncstart}
-    reval.queue.recommendationStatusCheck.updated: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_UPDATED_QUEUE:reval.queue.recommendationstatuscheck.updated.recommendation}
-    reval.routingKey.recommendationstatuscheck.requested: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_REQUESTED_ROUTING_KEY:reval.recommendationstatuscheck.requested}
-    reval.queue.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_QUEUE:reval.queue.gmcsync.requested.gmcclient}
-    reval.routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
-    reval.queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
-    reval.routingKey.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW_ROUTING_KEY:reval.masterdoctorview.updated}
+    reval:
+      exchange: ${REVAL_RABBIT_EXCHANGE:reval.exchange}
+      queue.recommendation.syncstart: ${REVAL_RABBIT_RECOMMENDATION_SYNC_START_QUEUE:reval.queue.recommendation.syncstart}
+      queue.recommendationStatusCheck.updated: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_UPDATED_QUEUE:reval.queue.recommendationstatuscheck.updated.recommendation}
+      routingKey.recommendationstatuscheck.requested: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_REQUESTED_ROUTING_KEY:reval.recommendationstatuscheck.requested}
+      routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
+      queue.doctorfordb.received.recommendation: ${REVAL_RABBIT_DOCTOR_DB_QUEUE:reval.queue.doctorfordb.received.recommendation}
+      queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}

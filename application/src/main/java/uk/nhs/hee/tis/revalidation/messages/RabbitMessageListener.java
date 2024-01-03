@@ -30,7 +30,6 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
-import uk.nhs.hee.tis.revalidation.entity.MasterDoctorView;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -51,7 +50,7 @@ public class RabbitMessageListener {
   @Autowired
   private RecommendationElasticSearchService recommendationElasticSearchService;
 
-  @RabbitListener(queues = "${app.rabbit.queue}")
+  @RabbitListener(queues = "${app.rabbit.reval.queue.doctorfordb.received.recommendation}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
     try {
       log.debug("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);
