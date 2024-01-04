@@ -28,6 +28,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import io.swagger.annotations.ApiModel;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -65,4 +66,17 @@ public class DoctorsForDB {
   private String designatedBodyCode;
   private String admin;
   private Boolean existsInGmc = true;
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    DoctorsForDB that = (DoctorsForDB) obj;
+    return gmcReferenceNumber == that.gmcReferenceNumber;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(gmcReferenceNumber);
+  }
 }

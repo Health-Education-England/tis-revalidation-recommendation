@@ -31,6 +31,7 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
@@ -106,6 +108,7 @@ public class DoctorsForDBService {
    * @param gmcDoctor doctor dto from GMC
    */
   public void updateTrainee(final DoctorsForDbDto gmcDoctor) {
+    final LocalDateTime gmcLastUpdatedDateTime = gmcDoctor.getGmcLastUpdatedDateTime();//00:24
     // Set default lastUpdatedDate, existsInGmc and doctorStatus when mapping dto to entity.
     final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor, true,
         RecommendationStatus.NOT_STARTED);
@@ -118,9 +121,12 @@ public class DoctorsForDBService {
         doctorsForDB.setDoctorStatus(recommendationService.getRecommendationStatusForTrainee(
             gmcDoctor.getGmcReferenceNumber()));
       }
+      connect(doctor.get(), gmcLastUpdatedDateTime);
     } else {
       doctorsForDB.setDoctorStatus(RecommendationStatus.NOT_STARTED);
     }
+    //disconnect doctor
+    disconnect(doctorsForDB, gmcLastUpdatedDateTime);
     doctorsRepository.save(doctorsForDB);
   }
 
@@ -160,6 +166,41 @@ public class DoctorsForDBService {
     } else {
       log.info("No doctor found to update designated body code");
     }
+  }
+
+  private void disconnect(final DoctorsForDB doctorsForDB, final LocalDateTime gmcLastUpdatedDateTime){
+    List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCode(doctorsForDB.getDesignatedBodyCode());
+
+    final LocalDateTime mongoDbLastUpdatedDateTime = doctorsForDB.getGmcLastUpdatedDateTime();//00:23:59.9999
+
+    if (gmcIdExists(doctorsForDBList, doctorsForDB.getGmcReferenceNumber()) && mongoDbLastUpdatedDateTime.isBefore(gmcLastUpdatedDateTime)) {
+      doctorsForDB.setExistsInGmc(false);
+      doctorsForDB.setDesignatedBodyCode(null);
+    }
+  }
+
+  private void connect(final DoctorsForDB doctorsForDB, final LocalDateTime gmcLastUpdatedDateTime){
+    List<DoctorsForDB> disconnectedDoctorsForDBList = doctorsRepository.findByExistsInGmcIsFalse();
+
+    final LocalDateTime mongoDbLastUpdatedDateTime = doctorsForDB.getGmcLastUpdatedDateTime();//00:23:59.9999
+
+    if (gmcIdExists(disconnectedDoctorsForDBList,doctorsForDB.getGmcReferenceNumber()) && mongoDbLastUpdatedDateTime.isBefore(gmcLastUpdatedDateTime)) {
+      doctorsForDB.setExistsInGmc(true);
+      doctorsForDB.setDesignatedBodyCode(doctorsForDB.getDesignatedBodyCode());
+    }
+  }
+
+  private boolean gmcIdExists(List<DoctorsForDB> disconnectedDoctorsForDBList, String gmcId){
+
+    boolean idExists = false;
+
+    for (DoctorsForDB doctorsForDB : disconnectedDoctorsForDBList) {
+      if (doctorsForDB.getGmcReferenceNumber().equals(gmcId)) {
+        idExists = true;
+        break;
+      }
+    }
+    return idExists;
   }
 
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {

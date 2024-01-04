@@ -57,6 +57,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
@@ -640,6 +641,30 @@ class DoctorsForDBServiceTest {
     for (int i = 0; i < iterableDocs.size(); i++) {
       assertSubsetOfConvertedFields(actualDocs.get(i), iterableDocs.get(i));
     }
+  }
+
+  @Test
+  void testFredLeftDisconnected() {
+    //I am thinking to write a separate service class called DoctorConnectionService which will
+    //do disconnect and connect. Not sure if is a good idea or not
+    DoctorConnectionService doctorConnectionService = Mockito.mock(DoctorConnectionService.class);
+
+    DoctorsForDbCollectedEvent doctorsForDbCollectedEvent = new DoctorsForDbCollectedEvent();
+
+    String fredId = "123";
+
+    // Given Fred was not connected to Designated Body 1
+
+    //when(repository.findById(fredId)).
+    when(doctorConnectionService.isConnected("Fred", "Designated Body 1")).thenReturn(false);
+
+    // When we receive a list of doctors for Designated Body 1 that Fred is NOT on the list
+
+    doctorsForDBService.disconnectDoctorsFromDb(doctorsForDbCollectedEvent);//How shall we find Fred?
+
+    // Then Fred is left disconnected
+    verify(doctorConnectionService, times(1)).disconnect("Fred", "Designated Body 1");
+    verify(doctorConnectionService, times(0)).connect(anyString(), anyString());
   }
 
   private static void assertSubsetOfConvertedFields(TraineeInfoDto actual, DoctorsForDB expected) {

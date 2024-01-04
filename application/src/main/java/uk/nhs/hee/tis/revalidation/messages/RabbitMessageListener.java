@@ -27,6 +27,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
@@ -53,8 +54,8 @@ public class RabbitMessageListener {
   @RabbitListener(queues = "${app.rabbit.reval.queue.doctorfordb.received.recommendation}")
   public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
     try {
-      log.debug("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);
-      doctorsForDBService.updateTrainee(gmcDoctor);
+      log.debug("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);//gmcId//Fred//DB1
+      doctorsForDBService.updateTrainee(gmcDoctor);//in the message gmcLastUpdatedDateTime = 00:23:59.999999999
     } catch (Exception exception) {
       log.warn("Rejecting message for failed doctor update", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
@@ -107,4 +108,19 @@ public class RabbitMessageListener {
         recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
             masterDoctorViewDto));
   }
+
+  /**
+   * disconnect Doctors from a Designated Body (DB) when the GMC give us a DB without them.
+   */
+  // queue is not created yet
+  /*@RabbitListener(queues = "${app.rabbit.reval.queue.gmcsync.doctorsfordb.collected.recommendation}")
+  public void disconnectDoctorsFromDbWhenTheyAreNotInGmc(final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent){
+    try {
+      log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}", doctorsForDbCollectedEvent);
+      doctorsForDBService.disconnectDoctorsFromDb(doctorsForDbCollectedEvent);
+    } catch (Exception exception) {
+      log.warn("Rejecting message for failed doctor update", exception);
+      throw new AmqpRejectAndDontRequeueException(exception);
+    }
+  }*/
 }
