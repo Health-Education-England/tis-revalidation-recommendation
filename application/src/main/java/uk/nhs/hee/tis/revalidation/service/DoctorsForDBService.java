@@ -43,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRequestDto;
@@ -159,6 +160,35 @@ public class DoctorsForDBService {
       doctorsRepository.save(doctorsForDb);
     } else {
       log.info("No doctor found to update designated body code");
+    }
+  }
+
+  public void disconnectDoctorsFromDb(final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    final var doctorsGmcDbc = doctorsForDbCollectedEvent.getDesignatedBodyCode();
+    final var doctorsForDBOptional = doctorsRepository.findById(doctorsForDbCollectedEvent.getGmcId());
+
+    if(doctorsForDBOptional.isPresent()) {
+      final var doctorsForDb = doctorsForDBOptional.get();
+      final var doctorsRevalServiceDbc = doctorsForDb.getDesignatedBodyCode();
+      //Option 1: Both of the DBCs are same
+      //if both of the DBCs are same the doctor will remain connected to the doctorsRevalServiceDbc
+      if(doctorsGmcDbc.equalsIgnoreCase(doctorsRevalServiceDbc)){
+        //we need to do setExistsInGmc
+        doctorsForDb.setExistsInGmc(true);
+      }
+      //Option 2: Both of the DBCs are different
+      //Doctor will have updated connection to the doctorsGmcDbc
+      else if(!doctorsGmcDbc.equalsIgnoreCase(doctorsRevalServiceDbc)){
+        doctorsForDb.setDesignatedBodyCode(doctorsGmcDbc);
+        doctorsForDb.setExistsInGmc(true);
+      }
+      //Option 3: doctorsRevalServiceDbc can be null, doctorsGmcDbc will have a value always as we are
+      // receiving doctors from GMC by DBC
+      //if doctorsRevalServiceDbc is null but she has doctorsGmcDbc, she will have connection to doctorsGmcDbc
+      else if(doctorsRevalServiceDbc == null){
+        doctorsForDb.setDesignatedBodyCode(doctorsGmcDbc);
+        doctorsForDb.setExistsInGmc(true);
+      }
     }
   }
 
