@@ -53,4 +53,6 @@ public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, St
 
   List<DoctorsForDB> findByExistsInGmcIsFalse();
 
+  List<DoctorsForDB> findByDesignatedBodyCode(final String dbc);
+
 }

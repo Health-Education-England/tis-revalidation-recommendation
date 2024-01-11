@@ -30,6 +30,7 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -106,5 +107,21 @@ public class RabbitMessageListener {
     recommendationElasticSearchService.saveRecommendationView(
         recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
             masterDoctorViewDto));
+  }
+
+  /**
+   * disconnect Doctors from a Designated Body (DB) when the GMC give us a DB without them.
+   */
+  @RabbitListener(queues = "${app.rabbit.reval.queue.doctorsfordb.collected.recommendation}")
+  public void disconnectDoctorsFromDbWhenTheyAreNotInGmc(
+      final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    try {
+      log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}",
+          doctorsForDbCollectedEvent);
+      doctorsForDBService.disconnectDoctorsFromDb(doctorsForDbCollectedEvent);
+    } catch (Exception exception) {
+      log.warn("Rejecting message for failed doctor update", exception);
+      throw new AmqpRejectAndDontRequeueException(exception);
+    }
   }
 }

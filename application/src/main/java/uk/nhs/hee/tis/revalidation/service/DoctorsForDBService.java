@@ -21,7 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import static java.time.LocalDate.now;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.domain.Sort.Direction.ASC;
@@ -30,7 +29,7 @@ import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +49,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapper;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
@@ -159,6 +159,25 @@ public class DoctorsForDBService {
       doctorsRepository.save(doctorsForDb);
     } else {
       log.info("No doctor found to update designated body code");
+    }
+  }
+
+  public void disconnectDoctorsFromDb(final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
+    final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();//00:24
+    List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCode(
+        designatedBodyCode);
+    handleDisconnections(doctorsForDBList, requestDateTime);
+  }
+
+  private void handleDisconnections(List<DoctorsForDB> doctorsForDBList,
+      LocalDateTime requestDateTime) {
+    for (DoctorsForDB doctorsForDB : doctorsForDBList) {
+      final LocalDateTime mongoDbLastUpdatedDateTime = doctorsForDB.getGmcLastUpdatedDateTime();//00:23:59.9999
+      if (mongoDbLastUpdatedDateTime.isBefore(requestDateTime)) {
+        doctorsForDB.setExistsInGmc(false);
+        doctorsForDB.setDesignatedBodyCode(null);
+      }
     }
   }
 
