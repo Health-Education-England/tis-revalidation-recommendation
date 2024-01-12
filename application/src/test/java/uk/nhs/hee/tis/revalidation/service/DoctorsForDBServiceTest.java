@@ -67,6 +67,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapperImpl;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapperImpl;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
@@ -578,6 +579,26 @@ class DoctorsForDBServiceTest {
     verify(repository).save(doctorCaptor.capture());
     assertThat(doctorCaptor.getValue().getDesignatedBodyCode(), is(designatedBody1));
     assertThat(doctorCaptor.getValue().getExistsInGmc(), is(true));
+  }
+
+  @Test
+  void shouldDisconnectDoctorsWhenGmcLastUpdatedDateTimeBeforeRequestTime() {
+    LocalDateTime requestDateTime = LocalDateTime.now();
+    DoctorsForDB doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1,
+        sanction1, status1,
+        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
+
+    List<DoctorsForDB> doctorsForDBList = List.of(doc1);
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
+        requestDateTime)).thenReturn(doctorsForDBList);
+
+    doctorsForDBService.disconnectDoctorsFromDb(
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime));
+
+    assertThat(null, is(doc1.getDesignatedBodyCode()));
+    assertThat(false, is(doc1.getExistsInGmc()));
+    assertThat(gmcRef1, is(doc1.getGmcReferenceNumber()));
   }
 
   @Test
