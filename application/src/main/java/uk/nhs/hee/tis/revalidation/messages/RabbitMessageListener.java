@@ -120,7 +120,7 @@ public class RabbitMessageListener {
           doctorsForDbCollectedEvent);
       doctorsForDBService.disconnectDoctorsFromDb(doctorsForDbCollectedEvent);
     } catch (Exception exception) {
-      log.warn("Rejecting message for failed doctor update", exception);
+      log.warn("Rejecting message for failed doctor collected event", exception);
       throw new AmqpRejectAndDontRequeueException(exception);
     }
   }

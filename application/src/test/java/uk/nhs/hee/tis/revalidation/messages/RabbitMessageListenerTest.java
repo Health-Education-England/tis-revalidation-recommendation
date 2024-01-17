@@ -26,7 +26,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +48,7 @@ import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -82,6 +85,7 @@ class RabbitMessageListenerTest {
   private final String designatedBody = faker.lorem().characters(5);
   private final LocalDate submissionDate = LocalDate.now();
   private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
+  private final LocalDateTime requestDateTime = LocalDateTime.now();
 
   private final RecommendationStatusCheckDto recommendationStatusCheckDto =
       RecommendationStatusCheckDto.builder()
@@ -117,6 +121,25 @@ class RabbitMessageListenerTest {
         is(designatedBody));
     assertThat(recommendationStatusCheckDtoCaptor.getValue().getOutcome(),
         is(RecommendationGmcOutcome.APPROVED));
+  }
+
+  @Test
+  void shouldHandleDoctorsForDbCollectedMessage() {
+    DoctorsForDbCollectedEvent event = new DoctorsForDbCollectedEvent(designatedBody,
+        requestDateTime);
+
+    rabbitMessageListener.handleDoctorsForDbCollectedMessage(event);
+
+    verify(doctorsForDBService, times(1)).disconnectDoctorsFromDb(event);
+  }
+
+  @Test
+  void shouldNotHandleDoctorsForDbCollectedMessageOnException() {
+    doThrow(new NullPointerException()).when(doctorsForDBService).disconnectDoctorsFromDb(any());
+
+    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
+      rabbitMessageListener.handleDoctorsForDbCollectedMessage(null);
+    });
   }
 
   @Test
