@@ -174,6 +174,7 @@ public class DoctorsForDBService {
     for (DoctorsForDB doctorsForDB : doctorsForDBList) {
         doctorsForDB.setExistsInGmc(false);
         doctorsForDB.setDesignatedBodyCode(null);
+        doctorsRepository.save(doctorsForDB);
       }
   }
 
