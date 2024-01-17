@@ -110,10 +110,10 @@ public class RabbitMessageListener {
   }
 
   /**
-   * disconnect Doctors from a Designated Body (DB) when the GMC give us a DB without them.
+   * handle Doctors from a Designated Body (DB) collected message when the GMC give us a DB without them.
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.doctorsfordb.collected.recommendation}")
-  public void disconnectDoctorsFromDbWhenTheyAreNotInGmc(
+  public void handleDoctorsForDbCollectedMessage(
       final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
     try {
       log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}",

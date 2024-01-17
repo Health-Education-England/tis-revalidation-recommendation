@@ -164,21 +164,17 @@ public class DoctorsForDBService {
 
   public void disconnectDoctorsFromDb(final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
     final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
-    final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();//00:24
-    List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCode(
-        designatedBodyCode);
-    handleDisconnections(doctorsForDBList, requestDateTime);
+    final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
+    List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
+        designatedBodyCode, requestDateTime);
+    handleDisconnections(doctorsForDBList);
   }
 
-  private void handleDisconnections(List<DoctorsForDB> doctorsForDBList,
-      LocalDateTime requestDateTime) {
+  private void handleDisconnections(List<DoctorsForDB> doctorsForDBList) {
     for (DoctorsForDB doctorsForDB : doctorsForDBList) {
-      final LocalDateTime mongoDbLastUpdatedDateTime = doctorsForDB.getGmcLastUpdatedDateTime();//00:23:59.9999
-      if (mongoDbLastUpdatedDateTime.isBefore(requestDateTime)) {
         doctorsForDB.setExistsInGmc(false);
         doctorsForDB.setDesignatedBodyCode(null);
       }
-    }
   }
 
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {
