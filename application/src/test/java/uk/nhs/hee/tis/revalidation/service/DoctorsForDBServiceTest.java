@@ -67,6 +67,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapperImpl;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapperImpl;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
@@ -581,6 +582,46 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldDisconnectDoctorsWhenGmcLastUpdatedDateTimeBeforeRequestTime() {
+    LocalDateTime requestDateTime = LocalDateTime.now();
+    DoctorsForDB doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1,
+        sanction1, status1,
+        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
+
+    List<DoctorsForDB> doctorsForDBList = List.of(doc1);
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
+        requestDateTime)).thenReturn(doctorsForDBList);
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime));
+
+    verify(repository).save(doctorCaptor.capture());
+    final var savedDoctor = doctorCaptor.getValue();
+
+    assertThat(savedDoctor.getExistsInGmc(), is(false));
+    assertNull(savedDoctor.getDesignatedBodyCode());
+  }
+
+  @Test
+  void shouldDisconnectDoctors() {
+    DoctorsForDB doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1,
+        sanction1, status1,
+        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
+
+    List<DoctorsForDB> doctorsForDBList = List.of(doc1);
+
+    doctorsForDBService.disconnectDoctorsFromDb(doctorsForDBList);
+
+    verify(repository).save(doctorCaptor.capture());
+    final var savedDoctor = doctorCaptor.getValue();
+
+    assertThat(savedDoctor.getExistsInGmc(), is(false));
+    assertNull(savedDoctor.getDesignatedBodyCode());
+  }
+
+
+  @Test
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
@@ -614,16 +655,6 @@ class DoctorsForDBServiceTest {
     verify(repository).save(doctorCaptor.capture());
     DoctorsForDB doctorsForDb = doctorCaptor.getValue();
     assertThat(doctorsForDb.getDoctorStatus(), is(RecommendationStatus.COMPLETED));
-  }
-
-  @Test
-  void shouldHideAllDoctorsBySettingFlagToFalseAndDBCToNull() {
-    when(repository.findAll()).thenReturn(List.of(doc1));
-    doctorsForDBService.hideAllDoctors();
-    verify(repository).save(doctorCaptor.capture());
-    DoctorsForDB doctor = doctorCaptor.getValue();
-    assertThat(doctor.getExistsInGmc(), is(false));
-    assertThat(doctor.getDesignatedBodyCode(), nullValue());
   }
 
   @Test

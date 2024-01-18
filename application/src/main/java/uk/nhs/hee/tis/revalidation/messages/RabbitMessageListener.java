@@ -30,6 +30,7 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -106,5 +107,16 @@ public class RabbitMessageListener {
     recommendationElasticSearchService.saveRecommendationView(
         recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
             masterDoctorViewDto));
+  }
+
+  /**
+   * handle Doctors from a Designated Body (DB) collected message.
+   */
+  @RabbitListener(queues = "${app.rabbit.reval.queue.doctorsfordb.collected.recommendation}")
+  public void handleDoctorsForDbCollectedMessage(
+      final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}",
+        doctorsForDbCollectedEvent);
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(doctorsForDbCollectedEvent);
   }
 }

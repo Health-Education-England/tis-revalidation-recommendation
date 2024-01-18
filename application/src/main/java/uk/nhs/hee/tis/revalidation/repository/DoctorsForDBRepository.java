@@ -22,6 +22,7 @@
 package uk.nhs.hee.tis.revalidation.repository;
 
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,4 +54,8 @@ public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, St
 
   List<DoctorsForDB> findByExistsInGmcIsFalse();
 
+  List<DoctorsForDB> findByDesignatedBodyCode(final String dbc);
+
+  List<DoctorsForDB> findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
+      String designatedBodyCode, LocalDateTime requestDateTime);
 }

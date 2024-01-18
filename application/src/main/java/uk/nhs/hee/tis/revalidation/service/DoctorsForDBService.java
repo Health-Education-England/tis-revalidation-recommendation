@@ -21,7 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import static java.time.LocalDate.now;
 import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.domain.Sort.Direction.ASC;
@@ -30,7 +29,7 @@ import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +49,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapper;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
@@ -91,9 +91,9 @@ public class DoctorsForDBService {
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
       final List<String> hiddenGmcIds) {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
-    final var doctorsList = paginatedDoctors.get().collect(toList());
+    final var doctorsList = paginatedDoctors.get().toList();
     final var traineeDoctors = doctorsList.stream().map(recommendationViewMapper::toTraineeInfoDto)
-        .collect(toList());
+        .toList();
 
     return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
         .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
@@ -162,22 +162,42 @@ public class DoctorsForDBService {
     }
   }
 
+  /**
+   * Disconnect doctors by setting DB to null and existsInGmc to false, then save to repository.
+   *
+   * @param doctorsForDBList list of doctors to be disconnected
+   */
+  public void disconnectDoctorsFromDb(List<DoctorsForDB> doctorsForDBList) {
+    for (DoctorsForDB doctorForDB : doctorsForDBList) {
+      doctorForDB.setExistsInGmc(false);
+      doctorForDB.setDesignatedBodyCode(null);
+      doctorsRepository.save(doctorForDB);
+    }
+  }
+
+  /**
+   * Handle DoctorsForDbCollectedEvent as part of GMC Overnight Sync by disconnecting doctors for a
+   * given DBC that were not updated in this sync period.
+   *
+   * @param doctorsForDbCollectedEvent event that signifies that all doctors for a given DB have
+   *                                   been collected
+   */
+  public void handleDoctorsForDbCollectedEvent(
+      final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
+    final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
+    List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
+        designatedBodyCode, requestDateTime);
+    disconnectDoctorsFromDb(doctorsForDBList);
+  }
+
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {
     final Iterable<DoctorsForDB> doctorsForDb = doctorsRepository.findAllById(gmcIds);
     final var doctorsForDbs = IterableUtils.toList(doctorsForDb);
     final var traineeInfoDtos = doctorsForDbs.stream().map(doctorsForDbMapper::toTraineeInfoDto)
-        .collect(toList());
+        .toList();
     return TraineeSummaryDto.builder().countTotal(traineeInfoDtos.size())
         .totalResults(traineeInfoDtos.size()).traineeInfo(traineeInfoDtos).build();
-  }
-
-  public void hideAllDoctors() {
-    List<DoctorsForDB> doctors = doctorsRepository.findAll();
-    doctors.forEach(doctor -> {
-      doctor.setExistsInGmc(false);
-      doctor.setDesignatedBodyCode(null);
-      doctorsRepository.save(doctor);
-    });
   }
 
   private Page<RecommendationView> getSortedAndFilteredDoctorsByPageNumber(

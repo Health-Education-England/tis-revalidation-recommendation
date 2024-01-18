@@ -21,7 +21,7 @@
     <description>TIS Revalidation Recommendation project</description>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <spring-boot.version>2.6.7</spring-boot.version>
         <lombok.version>1.18.22</lombok.version>
         <javafaker.version>1.0.2</javafaker.version>
