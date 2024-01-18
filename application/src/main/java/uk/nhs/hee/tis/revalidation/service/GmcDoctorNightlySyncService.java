@@ -25,8 +25,6 @@ public class GmcDoctorNightlySyncService {
   @Scheduled(cron = "${app.gmc.nightlySyncStart.cronExpression}")
   @SchedulerLock(name = "GmcNightlySyncJob")
   public void startNightlyGmcDoctorSync() {
-    doctorsForDBService.hideAllDoctors();
-    log.info("All doctors are hidden now");
     gmcDoctorsForDbSyncStartPublisher.publishNightlySyncStartMessage();
     log.info("Start message has been sent to start gmc sync");
   }

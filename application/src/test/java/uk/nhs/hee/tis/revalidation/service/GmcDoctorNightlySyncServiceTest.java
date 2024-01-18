@@ -42,13 +42,6 @@ class GmcDoctorNightlySyncServiceTest {
   @Mock
   GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
 
-
-  @Test
-  void shouldHideAllDoctors() {
-    gmcDoctorNightlySyncService.startNightlyGmcDoctorSync();
-    verify(doctorsForDBService).hideAllDoctors();
-  }
-
   @Test
   void shouldPublishMessageToStartSync() {
     gmcDoctorNightlySyncService.startNightlyGmcDoctorSync();

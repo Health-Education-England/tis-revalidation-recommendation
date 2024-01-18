@@ -130,16 +130,8 @@ class RabbitMessageListenerTest {
 
     rabbitMessageListener.handleDoctorsForDbCollectedMessage(event);
 
-    verify(doctorsForDBService, times(1)).disconnectDoctorsFromDb(event);
-  }
-
-  @Test
-  void shouldNotHandleDoctorsForDbCollectedMessageOnException() {
-    doThrow(new NullPointerException()).when(doctorsForDBService).disconnectDoctorsFromDb(any());
-
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.handleDoctorsForDbCollectedMessage(null);
-    });
+    verify(doctorsForDBService, times(1))
+        .handleDoctorsForDbCollectedEvent(event);
   }
 
   @Test

@@ -110,18 +110,13 @@ public class RabbitMessageListener {
   }
 
   /**
-   * handle Doctors from a Designated Body (DB) collected message when the GMC give us a DB without them.
+   * handle Doctors from a Designated Body (DB) collected message.
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.doctorsfordb.collected.recommendation}")
   public void handleDoctorsForDbCollectedMessage(
       final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
-    try {
-      log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}",
-          doctorsForDbCollectedEvent);
-      doctorsForDBService.disconnectDoctorsFromDb(doctorsForDbCollectedEvent);
-    } catch (Exception exception) {
-      log.warn("Rejecting message for failed doctor collected event", exception);
-      throw new AmqpRejectAndDontRequeueException(exception);
-    }
+    log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}",
+        doctorsForDbCollectedEvent);
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(doctorsForDbCollectedEvent);
   }
 }

@@ -91,9 +91,9 @@ public class DoctorsForDBService {
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
       final List<String> hiddenGmcIds) {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
-    final var doctorsList = paginatedDoctors.get().collect(toList());
+    final var doctorsList = paginatedDoctors.get().toList();
     final var traineeDoctors = doctorsList.stream().map(recommendationViewMapper::toTraineeInfoDto)
-        .collect(toList());
+        .toList();
 
     return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
         .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
@@ -162,37 +162,42 @@ public class DoctorsForDBService {
     }
   }
 
-  public void disconnectDoctorsFromDb(final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+  /**
+   * Disconnect doctors by setting DB to null and existsInGmc to false, then save to repository.
+   *
+   * @param doctorsForDBList list of doctors to be disconnected
+   */
+  public void disconnectDoctorsFromDb(List<DoctorsForDB> doctorsForDBList) {
+    for (DoctorsForDB doctorForDB : doctorsForDBList) {
+      doctorForDB.setExistsInGmc(false);
+      doctorForDB.setDesignatedBodyCode(null);
+      doctorsRepository.save(doctorForDB);
+    }
+  }
+
+  /**
+   * Handle DoctorsForDbCollectedEvent as part of GMC Overnight Sync by disconnecting doctors for a
+   * given DBC that were not updated in this sync period.
+   *
+   * @param doctorsForDbCollectedEvent event that signifies that all doctors for a given DB have
+   *                                   been collected
+   */
+  public void handleDoctorsForDbCollectedEvent(
+      final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
     final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
     final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
     List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
         designatedBodyCode, requestDateTime);
-    handleDisconnections(doctorsForDBList);
-  }
-
-  private void handleDisconnections(List<DoctorsForDB> doctorsForDBList) {
-    for (DoctorsForDB doctorsForDB : doctorsForDBList) {
-        doctorsForDB.setExistsInGmc(false);
-        doctorsForDB.setDesignatedBodyCode(null);
-      }
+    disconnectDoctorsFromDb(doctorsForDBList);
   }
 
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {
     final Iterable<DoctorsForDB> doctorsForDb = doctorsRepository.findAllById(gmcIds);
     final var doctorsForDbs = IterableUtils.toList(doctorsForDb);
     final var traineeInfoDtos = doctorsForDbs.stream().map(doctorsForDbMapper::toTraineeInfoDto)
-        .collect(toList());
+        .toList();
     return TraineeSummaryDto.builder().countTotal(traineeInfoDtos.size())
         .totalResults(traineeInfoDtos.size()).traineeInfo(traineeInfoDtos).build();
-  }
-
-  public void hideAllDoctors() {
-    List<DoctorsForDB> doctors = doctorsRepository.findAll();
-    doctors.forEach(doctor -> {
-      doctor.setExistsInGmc(false);
-      doctor.setDesignatedBodyCode(null);
-      doctorsRepository.save(doctor);
-    });
   }
 
   private Page<RecommendationView> getSortedAndFilteredDoctorsByPageNumber(
