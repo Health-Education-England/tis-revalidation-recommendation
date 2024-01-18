@@ -12,14 +12,10 @@ public class GmcDoctorNightlySyncService {
 
   private final GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
 
-  private final DoctorsForDBService doctorsForDBService;
-
   public GmcDoctorNightlySyncService(
-      DoctorsForDBService doctorsForDBService,
       GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher
   ) {
     this.gmcDoctorsForDbSyncStartPublisher = gmcDoctorsForDbSyncStartPublisher;
-    this.doctorsForDBService = doctorsForDBService;
   }
 
   @Scheduled(cron = "${app.gmc.nightlySyncStart.cronExpression}")
