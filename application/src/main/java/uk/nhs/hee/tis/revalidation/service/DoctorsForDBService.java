@@ -21,7 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
@@ -163,19 +162,6 @@ public class DoctorsForDBService {
   }
 
   /**
-   * Disconnect doctors by setting DB to null and existsInGmc to false, then save to repository.
-   *
-   * @param doctorsForDBList list of doctors to be disconnected
-   */
-  public void disconnectDoctorsFromDb(List<DoctorsForDB> doctorsForDBList) {
-    for (DoctorsForDB doctorForDB : doctorsForDBList) {
-      doctorForDB.setExistsInGmc(false);
-      doctorForDB.setDesignatedBodyCode(null);
-      doctorsRepository.save(doctorForDB);
-    }
-  }
-
-  /**
    * Handle DoctorsForDbCollectedEvent as part of GMC Overnight Sync by disconnecting doctors for a
    * given DBC that were not updated in this sync period.
    *
@@ -186,9 +172,23 @@ public class DoctorsForDBService {
       final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
     final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
     final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
-    List<DoctorsForDB> doctorsForDBList = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
+
+    //There are expected to be no more than 2,000 small records, well within limits on payload and transaction limits
+    doctorsRepository.saveAll(doctorsForDbCollectedEvent.doctors());
+    List<DoctorsForDB> staleDoctors = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
         designatedBodyCode, requestDateTime);
-    disconnectDoctorsFromDb(doctorsForDBList);
+    staleDoctors.forEach(d -> {
+      //To minimise issues of concurrency ensure we've got the latest since we first collected the batch
+      var doctorForDB = doctorsRepository.findById(d.getGmcReferenceNumber());
+      doctorForDB.ifPresentOrElse(
+          doctorsForDB -> {
+            doctorsForDB.setExistsInGmc(false);
+            doctorsForDB.setDesignatedBodyCode(null);
+            doctorsRepository.save(doctorsForDB);
+          },
+          () -> log.info("Ignoring record no longer found for GMC: {}}", d.getGmcReferenceNumber())
+      );
+    });
   }
 
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {
