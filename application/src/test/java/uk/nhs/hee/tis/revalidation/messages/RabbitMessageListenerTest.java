@@ -26,7 +26,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -126,7 +125,7 @@ class RabbitMessageListenerTest {
   @Test
   void shouldHandleDoctorsForDbCollectedMessage() {
     DoctorsForDbCollectedEvent event = new DoctorsForDbCollectedEvent(designatedBody,
-        requestDateTime);
+        requestDateTime, null);
 
     rabbitMessageListener.handleDoctorsForDbCollectedMessage(event);
 
@@ -138,9 +137,8 @@ class RabbitMessageListenerTest {
   void shouldNotRequeueDoctorUpdateMessageOnException() {
     doThrow(new NullPointerException()).when(doctorsForDBService).updateTrainee(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receivedMessage(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receivedMessage(null));
   }
 
   @Test
@@ -168,9 +166,8 @@ class RabbitMessageListenerTest {
   void shouldNotRequeueDBCStatusUpdateMessageOnException() {
     doThrow(new NullPointerException()).when(doctorsForDBService).updateDoctorConnection(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateDoctorConnectionMessage(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateDoctorConnectionMessage(null));
   }
 
   @Test
@@ -178,9 +175,8 @@ class RabbitMessageListenerTest {
     doThrow(new NullPointerException()).when(recommendationStatusCheckUpdatedMessageHandler)
         .updateRecommendationAndTisStatus(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveMessageForRecommendationStatusUpdate(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveMessageForRecommendationStatusUpdate(null));
   }
 
   @Test
@@ -193,25 +189,22 @@ class RabbitMessageListenerTest {
             .underNotice("Yes")
             .build();
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto));
   }
 
   @Test
   void shouldNotUpdateMessageFromMasterDoctorViewOnException() {
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null));
   }
 
   @Test
   void shouldThrowExceptionWhenIdNullInReceivedMsgFromMasterDoctorView() {
     MasterDoctorViewDto masterDoctorViewDto = getMasterDoctorViewDto();
     masterDoctorViewDto.setId(null);
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto));
   }
 
   @Test

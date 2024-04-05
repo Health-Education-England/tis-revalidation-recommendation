@@ -22,7 +22,10 @@
 package uk.nhs.hee.tis.revalidation.event;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 
-public record DoctorsForDbCollectedEvent(String designatedBodyCode, LocalDateTime requestDateTime) {
+public record DoctorsForDbCollectedEvent(String designatedBodyCode, LocalDateTime requestDateTime,
+                                         Collection<DoctorsForDB> doctors) {
 
 }
