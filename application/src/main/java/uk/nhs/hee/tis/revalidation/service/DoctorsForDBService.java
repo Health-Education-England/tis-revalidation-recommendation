@@ -182,6 +182,12 @@ public class DoctorsForDBService {
       var doctorForDB = doctorsRepository.findById(d.getGmcReferenceNumber());
       doctorForDB.ifPresentOrElse(
           doctorsForDB -> {
+            if (!doctorsForDB.getDesignatedBodyCode().equals(designatedBodyCode)
+                || requestDateTime.isBefore(doctorsForDB.getGmcLastUpdatedDateTime())) {
+              log.debug("Close one.  Doctor [{}] modified between updates and being disconnected.",
+                  doctorsForDB.getGmcReferenceNumber());
+              return;
+            }
             doctorsForDB.setExistsInGmc(false);
             doctorsForDB.setDesignatedBodyCode(null);
             doctorsRepository.save(doctorsForDB);

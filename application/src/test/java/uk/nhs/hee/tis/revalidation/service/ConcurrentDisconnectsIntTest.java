@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.random.RandomGeneratorFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
+@Slf4j
 @Disabled("Used for verifying the concetpt so hasn't been configured for running as part of CI.")
 @DataMongoTest
 class ConcurrentDisconnectsIntTest {
@@ -69,15 +71,18 @@ class ConcurrentDisconnectsIntTest {
   void shouldRemoveDesignatedBodyFromDoctorsSafely()
       throws ExecutionException, InterruptedException {
     // Run 2 designated body updates in parallel
+    log.info("Starting the test");
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
-    Future<?> db1future = executor.submit(() -> testObj.handleDoctorsForDbCollectedEvent(db1Event),
-        null);
+    Future<?> db1future = executor.submit(
+        () -> testObj.handleDoctorsForDbCollectedEvent(db1Event), null);
     Future<?> db2future = executor.schedule(
         () -> testObj.handleDoctorsForDbCollectedEvent(db2Event), 500, TimeUnit.MILLISECONDS);
 
-    // Ensure that tasks have finished
+    // Block until tasks have finished
     db1future.get();
+    log.info("Designated Body 1 completed.");
     db2future.get();
+    log.info("Designated Body 2 completed.");
 
     List<String> actualGmcNumbers = repository.findByDesignatedBodyCode(DB1_NAME).stream()
         .map(DoctorsForDB::getGmcReferenceNumber).toList();
