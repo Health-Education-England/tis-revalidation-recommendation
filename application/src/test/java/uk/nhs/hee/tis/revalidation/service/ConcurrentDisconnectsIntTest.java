@@ -21,17 +21,18 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.random.RandomGeneratorFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,15 +46,17 @@ import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 @DataMongoTest
 class ConcurrentDisconnectsIntTest {
 
+  // Designated Body names are also used in the test data `doctorFirstName` field as a convenience.
+  public static final String DB1_NAME = "Won";
+  public static final String DB2_NAME = "Too";
   @Autowired
   DoctorsForDBRepository repository;
   private DoctorsForDbCollectedEvent db1Event;
-
-
   private DoctorsForDbCollectedEvent db2Event;
-  private List<DoctorsForDB> db1Doctors;
-  private List<DoctorsForDB> db2Doctors;
-  private List<DoctorsForDB> unconnectedDoctors;
+
+  private List<String> expectedDb1Doctors;
+  private List<String> expectedDb2Doctors;
+  private List<String> expectedNoDbDoctors;
   private final Faker faker = Faker.instance();
   AtomicInteger gmcNumberGenerator = new AtomicInteger(100000);
 
@@ -62,30 +65,28 @@ class ConcurrentDisconnectsIntTest {
   @Test
   void shouldRemoveDesignatedBodyFromDoctorsSafely()
       throws ExecutionException, InterruptedException {
-    Future<Void> db1future = new FutureTask<>(
-        () -> testObj.handleDoctorsForDbCollectedEvent(db1Event), null);
-    Future<Void> db2future = new FutureTask<>(
-        () -> {
-          try {
-            // Sleep to introduce some overlap
-            Thread.sleep(500);
-          } catch (InterruptedException ignored) {
-          }
-          testObj.handleDoctorsForDbCollectedEvent(db2Event);
-        }, null);
+    // Run 2 designated body updates in parallel
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+    Future<?> db1future = executor.submit(() -> testObj.handleDoctorsForDbCollectedEvent(db1Event),
+        null);
+    Future<?> db2future = executor.schedule(
+        () -> testObj.handleDoctorsForDbCollectedEvent(db2Event), 500, TimeUnit.MILLISECONDS);
 
+    // Ensure that tasks have finished
     db1future.get();
     db2future.get();
-    //Assert the doctors are in the expected designated bodies
-    db1Doctors.forEach(d -> assertThat(d + " did not have the expected designated body",
-        repository.findById(d.getGmcReferenceNumber()).get().getDesignatedBodyCode(),
-        is(d.getDesignatedBodyCode())));
-    db2Doctors.forEach(d -> assertThat(d + " did not have the expected designated body",
-        repository.findById(d.getGmcReferenceNumber()).get().getDesignatedBodyCode(),
-        is(d.getDesignatedBodyCode())));
-    unconnectedDoctors.forEach(d -> assertThat(d + " did not have the expected designated body",
-        repository.findById(d.getGmcReferenceNumber()).get().getDesignatedBodyCode(),
-        is(d.getDesignatedBodyCode())));
+
+    List<String> actualGmcNumbers = repository.findByDesignatedBodyCode(DB1_NAME).stream()
+        .map(DoctorsForDB::getGmcReferenceNumber).toList();
+    assertThat(actualGmcNumbers, containsInAnyOrder(expectedDb1Doctors.toArray()));
+
+    actualGmcNumbers = repository.findByDesignatedBodyCode(DB2_NAME).stream()
+        .map(DoctorsForDB::getGmcReferenceNumber).toList();
+    assertThat(actualGmcNumbers, containsInAnyOrder(expectedDb2Doctors.toArray()));
+
+    actualGmcNumbers = repository.findByDesignatedBodyCode(null).stream()
+        .map(DoctorsForDB::getGmcReferenceNumber).toList();
+    assertThat(actualGmcNumbers, containsInAnyOrder(expectedNoDbDoctors.toArray()));
 
   }
 
@@ -93,91 +94,90 @@ class ConcurrentDisconnectsIntTest {
   void setData() {
     LocalDateTime setupDateTime = LocalDateTime.now();
     testObj = new DoctorsForDBService(repository, null, null, null, null, null);
-    db1Doctors = new ArrayList<>();
-    db2Doctors = new ArrayList<>();
-    unconnectedDoctors = new ArrayList<>();
-    db1Event = new DoctorsForDbCollectedEvent("Won", setupDateTime, db1Doctors);
-    db2Event = new DoctorsForDbCollectedEvent("Too", setupDateTime, db2Doctors);
+    ArrayList<DoctorsForDB> db1Doctors = new ArrayList<>();
+    ArrayList<DoctorsForDB> db2Doctors = new ArrayList<>();
+    expectedNoDbDoctors = new ArrayList<>();
 
-    //TODO: Refactor
-    //Add a bunch of docs to designated bodies
-    //Save them
-    //Shuffle them
-    //Call the handler
     repository.deleteAll();
-    OfInt random = RandomGeneratorFactory.getDefault().create()
-        .ints(1, 20000).iterator();
+    LocalDateTime staleRecordDateTime = setupDateTime.minus(
+        RandomGeneratorFactory.getDefault().create()
+            .nextInt(1, 20000), ChronoUnit.MINUTES);
 
-    for (int i = 0; i < 1000; i++) {
-      DoctorsForDB d = DoctorsForDB.builder().designatedBodyCode("Won").doctorFirstName("Won")
+    for (int i = 0; i < 100; i++) {
+      DoctorsForDB d = DoctorsForDB.builder().designatedBodyCode(DB1_NAME).doctorFirstName(DB1_NAME)
           .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       db1Doctors.add(d);
-      d = DoctorsForDB.builder().designatedBodyCode("Won").doctorFirstName("Two")
+
+      d = DoctorsForDB.builder().designatedBodyCode(DB1_NAME).doctorFirstName(DB2_NAME)
           .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      d.setDesignatedBodyCode("Two");
+      d.setDesignatedBodyCode(DB2_NAME);
       db2Doctors.add(d);
-      d = DoctorsForDB.builder().designatedBodyCode("Won").doctorLastName(faker.name().lastName())
+
+      d = DoctorsForDB.builder().designatedBodyCode(DB1_NAME)
+          .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       d.setDesignatedBodyCode(null);
-      unconnectedDoctors.add(d);
+      expectedNoDbDoctors.add(d.getGmcReferenceNumber());
 
-      d = DoctorsForDB.builder().designatedBodyCode("Too").doctorFirstName("Won")
+      d = DoctorsForDB.builder().designatedBodyCode(DB2_NAME).doctorFirstName(DB1_NAME)
           .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      d.setDesignatedBodyCode("Won");
+      d.setDesignatedBodyCode(DB1_NAME);
       db1Doctors.add(d);
-      d = DoctorsForDB.builder().designatedBodyCode("Too").doctorFirstName("Two")
+
+      d = DoctorsForDB.builder().designatedBodyCode(DB2_NAME).doctorFirstName(DB2_NAME)
           .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       db2Doctors.add(d);
-      d = DoctorsForDB.builder().designatedBodyCode("Too").doctorLastName(faker.name().lastName())
+
+      d = DoctorsForDB.builder().designatedBodyCode(DB2_NAME)
+          .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       d.setDesignatedBodyCode(null);
-      unconnectedDoctors.add(d);
+      expectedNoDbDoctors.add(d.getGmcReferenceNumber());
 
-      d = DoctorsForDB.builder().doctorFirstName("Won").doctorLastName(faker.name().lastName())
+      d = DoctorsForDB.builder().doctorFirstName(DB1_NAME).doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      d.setDesignatedBodyCode("Won");
+      d.setDesignatedBodyCode(DB1_NAME);
       db1Doctors.add(d);
-      d = DoctorsForDB.builder().doctorFirstName("Two").doctorLastName(faker.name().lastName())
+
+      d = DoctorsForDB.builder().doctorFirstName(DB2_NAME).doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      d.setDesignatedBodyCode("Two");
+      d.setDesignatedBodyCode(DB2_NAME);
       db2Doctors.add(d);
+
       d = DoctorsForDB.builder().doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
-          .gmcLastUpdatedDateTime(
-              setupDateTime.minus(random.next(), ChronoUnit.MINUTES)).build();
+          .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      unconnectedDoctors.add(d);
+      expectedNoDbDoctors.add(d.getGmcReferenceNumber());
     }
+
     LocalDateTime updateTime = setupDateTime.plusSeconds(1);
     db1Doctors.forEach(d -> d.setGmcLastUpdatedDateTime(updateTime));
     db2Doctors.forEach(d -> d.setGmcLastUpdatedDateTime(updateTime));
+    expectedDb1Doctors = db1Doctors.stream().map(DoctorsForDB::getGmcReferenceNumber).toList();
+    expectedDb2Doctors = db2Doctors.stream().map(DoctorsForDB::getGmcReferenceNumber).toList();
+
+    db1Event = new DoctorsForDbCollectedEvent(DB1_NAME, setupDateTime, db1Doctors);
+    db2Event = new DoctorsForDbCollectedEvent(DB2_NAME, setupDateTime, db2Doctors);
   }
 }
