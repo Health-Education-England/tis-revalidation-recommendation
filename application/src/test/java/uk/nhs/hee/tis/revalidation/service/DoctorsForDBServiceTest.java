@@ -25,7 +25,6 @@ import static java.time.LocalDate.now;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
@@ -40,6 +39,7 @@ import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -105,13 +105,12 @@ class DoctorsForDBServiceTest {
   private String fname1, fname2, fname3, fname4, fname5;
   private String lname1, lname2, lname3, lname4, lname5;
   private LocalDate subDate1, subDate2, subDate3, subDate4, subDate5;
-  private LocalDate addedDate1, addedDate2, addedDate3, addedDate4, addedDate5;
+  private LocalDate addedDate1;
   private UnderNotice un1, un2, un3, un4, un5;
-  private String sanction1, sanction2, sanction3, sanction4, sanction5;
+  private String sanction1;
   private RecommendationStatus status1, status2, status3, status4, status5;
   private String designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5;
-  private String admin1, admin2, admin3, admin4, admin5;
-  private String connectionStatus1, connectionStatus2, connectionStatus3, connectionStatus4, connectionStatus5;
+  private String admin1;
   private String programmeName;
   private String outcome1;
   private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
@@ -594,7 +593,7 @@ class DoctorsForDBServiceTest {
         requestDateTime)).thenReturn(doctorsForDBList);
 
     doctorsForDBService.handleDoctorsForDbCollectedEvent(
-        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime));
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, Collections.emptyList()));
 
     verify(repository).save(doctorCaptor.capture());
     final var savedDoctor = doctorCaptor.getValue();
@@ -602,24 +601,6 @@ class DoctorsForDBServiceTest {
     assertThat(savedDoctor.getExistsInGmc(), is(false));
     assertNull(savedDoctor.getDesignatedBodyCode());
   }
-
-  @Test
-  void shouldDisconnectDoctors() {
-    DoctorsForDB doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1,
-        sanction1, status1,
-        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
-
-    List<DoctorsForDB> doctorsForDBList = List.of(doc1);
-
-    doctorsForDBService.disconnectDoctorsFromDb(doctorsForDBList);
-
-    verify(repository).save(doctorCaptor.capture());
-    final var savedDoctor = doctorCaptor.getValue();
-
-    assertThat(savedDoctor.getExistsInGmc(), is(false));
-    assertNull(savedDoctor.getDesignatedBodyCode());
-  }
-
 
   @Test
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
@@ -712,10 +693,6 @@ class DoctorsForDBServiceTest {
     subDate5 = now();
 
     addedDate1 = now().minusDays(5);
-    addedDate2 = now().minusDays(5);
-    addedDate3 = now().minusDays(5);
-    addedDate4 = now().minusDays(5);
-    addedDate5 = now().minusDays(5);
 
     un1 = faker.options().option(UnderNotice.class);
     un2 = faker.options().option(UnderNotice.class);
@@ -724,10 +701,6 @@ class DoctorsForDBServiceTest {
     un5 = faker.options().option(UnderNotice.class);
 
     sanction1 = faker.lorem().characters(2);
-    sanction2 = faker.lorem().characters(2);
-    sanction3 = faker.lorem().characters(2);
-    sanction4 = faker.lorem().characters(2);
-    sanction5 = faker.lorem().characters(2);
 
     status1 = RecommendationStatus.NOT_STARTED;
     status2 = RecommendationStatus.NOT_STARTED;
@@ -742,28 +715,26 @@ class DoctorsForDBServiceTest {
     designatedBody5 = faker.lorem().characters(8);
 
     admin1 = faker.internet().emailAddress();
-    admin2 = faker.internet().emailAddress();
-    admin3 = faker.internet().emailAddress();
-    admin4 = faker.internet().emailAddress();
-    admin5 = faker.internet().emailAddress();
-
-    connectionStatus1 = "Yes";
-    connectionStatus2 = "Yes";
-    connectionStatus3 = "Yes";
-    connectionStatus4 = "Yes";
-    connectionStatus5 = "Yes";
+    String admin2 = faker.internet().emailAddress();
+    String admin3 = faker.internet().emailAddress();
+    String admin4 = faker.internet().emailAddress();
+    String admin5 = faker.internet().emailAddress();
 
     outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
         now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
-    doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, addedDate2, un2, sanction2, status2,
+    doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, now().minusDays(5), un2,
+        faker.lorem().characters(2), status2,
         now(), null, designatedBody2, admin2, true);
-    doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, addedDate3, un3, sanction3, status3,
+    doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, now().minusDays(5), un3,
+        faker.lorem().characters(2), status3,
         now(), null, designatedBody3, admin3, true);
-    doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, addedDate4, un4, sanction4, status4,
+    doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, now().minusDays(5), un4,
+        faker.lorem().characters(2), status4,
         now(), null, designatedBody4, admin4, true);
-    doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, addedDate5, un5, sanction5, status5,
+    doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, now().minusDays(5), un5,
+        faker.lorem().characters(2), status5,
         now(), null, designatedBody5, admin5, true);
     docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1,
         status1, now(), null, null, admin1, true);
