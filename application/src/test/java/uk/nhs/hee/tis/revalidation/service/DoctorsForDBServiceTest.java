@@ -105,9 +105,7 @@ class DoctorsForDBServiceTest {
   private String fname1, fname2, fname3, fname4, fname5;
   private String lname1, lname2, lname3, lname4, lname5;
   private LocalDate subDate1, subDate2, subDate3, subDate4, subDate5;
-  private LocalDate addedDate1;
   private UnderNotice un1, un2, un3, un4, un5;
-  private String sanction1;
   private RecommendationStatus status1, status2, status3, status4, status5;
   private String designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5;
   private String admin1;
@@ -582,15 +580,12 @@ class DoctorsForDBServiceTest {
 
   @Test
   void shouldDisconnectDoctorsWhenGmcLastUpdatedDateTimeBeforeRequestTime() {
-    LocalDateTime requestDateTime = LocalDateTime.now();
-    DoctorsForDB doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1,
-        sanction1, status1,
-        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
-
+    LocalDateTime requestDateTime = doc1.getGmcLastUpdatedDateTime().plusDays(1);
     List<DoctorsForDB> doctorsForDBList = List.of(doc1);
 
     when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
         requestDateTime)).thenReturn(doctorsForDBList);
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
 
     doctorsForDBService.handleDoctorsForDbCollectedEvent(
         new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, Collections.emptyList()));
@@ -600,6 +595,7 @@ class DoctorsForDBServiceTest {
 
     assertThat(savedDoctor.getExistsInGmc(), is(false));
     assertNull(savedDoctor.getDesignatedBodyCode());
+    assertThat(savedDoctor.getGmcLastUpdatedDateTime(), is(requestDateTime));
   }
 
   @Test
@@ -692,7 +688,7 @@ class DoctorsForDBServiceTest {
     subDate4 = now();
     subDate5 = now();
 
-    addedDate1 = now().minusDays(5);
+    LocalDate addedDate1 = now().minusDays(5);
 
     un1 = faker.options().option(UnderNotice.class);
     un2 = faker.options().option(UnderNotice.class);
@@ -700,7 +696,7 @@ class DoctorsForDBServiceTest {
     un4 = faker.options().option(UnderNotice.class);
     un5 = faker.options().option(UnderNotice.class);
 
-    sanction1 = faker.lorem().characters(2);
+    String sanction1 = faker.lorem().characters(2);
 
     status1 = RecommendationStatus.NOT_STARTED;
     status2 = RecommendationStatus.NOT_STARTED;

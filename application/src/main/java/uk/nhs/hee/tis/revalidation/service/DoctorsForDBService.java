@@ -90,11 +90,10 @@ public class DoctorsForDBService {
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
       final List<String> hiddenGmcIds) {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
-    final var doctorsList = paginatedDoctors.get().toList();
-    final var traineeDoctors = doctorsList.stream().map(recommendationViewMapper::toTraineeInfoDto)
-        .toList();
+    final var doctorsList = paginatedDoctors.get()
+        .map(recommendationViewMapper::toTraineeInfoDto).toList();
 
-    return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
+    return TraineeSummaryDto.builder().traineeInfo(doctorsList).countTotal(getCountAll())
         .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
         .totalResults(paginatedDoctors.getTotalElements()).build();
   }
@@ -190,6 +189,7 @@ public class DoctorsForDBService {
             }
             doctorsForDB.setExistsInGmc(false);
             doctorsForDB.setDesignatedBodyCode(null);
+            doctorsForDB.setGmcLastUpdatedDateTime(requestDateTime);
             doctorsRepository.save(doctorsForDB);
           },
           () -> log.info("Ignoring record no longer found for GMC: {}}", d.getGmcReferenceNumber())
