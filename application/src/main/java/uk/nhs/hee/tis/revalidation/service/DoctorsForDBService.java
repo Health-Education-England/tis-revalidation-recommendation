@@ -172,7 +172,7 @@ public class DoctorsForDBService {
     final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
     final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
 
-    //There are expected to be no more than 8,000 small records, well within limits on payload and transaction limits
+    // Designated bodies have less than 8,000 doctors, well within max payload and transaction size
     doctorsRepository.saveAll(doctorsForDbCollectedEvent.doctors());
     List<DoctorsForDB> staleDoctors = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
         designatedBodyCode, requestDateTime);

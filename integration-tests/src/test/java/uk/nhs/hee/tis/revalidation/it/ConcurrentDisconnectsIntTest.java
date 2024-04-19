@@ -18,7 +18,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package uk.nhs.hee.tis.revalidation.service;
+package uk.nhs.hee.tis.revalidation.it;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -44,9 +44,10 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 
 @Slf4j
-@Disabled("Used for verifying the concetpt so hasn't been configured for running as part of CI.")
+@Disabled("Used for verifying the concept so hasn't been configured to run as part of CI.")
 @DataMongoTest
 class ConcurrentDisconnectsIntTest {
 
