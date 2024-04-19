@@ -22,12 +22,14 @@
 package uk.nhs.hee.tis.revalidation.service;
 
 import static java.time.LocalDate.now;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +41,6 @@ import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -49,6 +50,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -588,7 +590,7 @@ class DoctorsForDBServiceTest {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
 
     doctorsForDBService.handleDoctorsForDbCollectedEvent(
-        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, Collections.emptyList()));
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, emptyList()));
 
     verify(repository).save(doctorCaptor.capture());
     final var savedDoctor = doctorCaptor.getValue();
@@ -596,6 +598,41 @@ class DoctorsForDBServiceTest {
     assertThat(savedDoctor.getExistsInGmc(), is(false));
     assertNull(savedDoctor.getDesignatedBodyCode());
     assertThat(savedDoctor.getGmcLastUpdatedDateTime(), is(requestDateTime));
+  }
+
+  @Test
+  void shouldNotDisconnectWhenDesignatedBodyChanged() {
+    LocalDateTime requestDateTime = doc1.getGmcLastUpdatedDateTime().plusDays(1);
+    List<DoctorsForDB> staleDoctorList = List.of(doc1);
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
+        requestDateTime)).thenReturn(staleDoctorList);
+    DoctorsForDB mockedSavedDoc = Mockito.mock(DoctorsForDB.class);
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(mockedSavedDoc));
+    when(mockedSavedDoc.getDesignatedBodyCode()).thenReturn("SUPRISE!!!");
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, emptyList()));
+
+    verify(repository, never()).save(any());
+  }
+
+  @Test
+  void shouldNotDisconnectWhenDoctorGotUpdated() {
+    LocalDateTime requestDateTime = doc1.getGmcLastUpdatedDateTime().minusDays(1);
+    List<DoctorsForDB> staleDoctorList = List.of(doc1);
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
+        requestDateTime)).thenReturn(staleDoctorList);
+    DoctorsForDB mockedSavedDoc = Mockito.mock(DoctorsForDB.class);
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(mockedSavedDoc));
+    when(mockedSavedDoc.getDesignatedBodyCode()).thenReturn(doc1.getDesignatedBodyCode());
+    when(mockedSavedDoc.getGmcLastUpdatedDateTime()).thenReturn(requestDateTime);
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, emptyList()));
+
+    verify(repository, never()).save(any());
   }
 
   @Test

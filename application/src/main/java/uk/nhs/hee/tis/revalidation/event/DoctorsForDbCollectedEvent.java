@@ -23,9 +23,9 @@ package uk.nhs.hee.tis.revalidation.event;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 
 public record DoctorsForDbCollectedEvent(String designatedBodyCode, LocalDateTime requestDateTime,
-                                         Collection<DoctorsForDB> doctors) {
+                                         Collection<DoctorsForDbDto> doctors) {
 
 }

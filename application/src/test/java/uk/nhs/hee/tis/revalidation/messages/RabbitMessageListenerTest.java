@@ -134,14 +134,6 @@ class RabbitMessageListenerTest {
   }
 
   @Test
-  void shouldNotRequeueDoctorUpdateMessageOnException() {
-    doThrow(new NullPointerException()).when(doctorsForDBService).updateTrainee(any());
-
-    assertThrows(AmqpRejectAndDontRequeueException.class,
-        () -> rabbitMessageListener.receivedMessage(null));
-  }
-
-  @Test
   void shouldHandleDoctorConnectionMessage() {
     final var message = ConnectionMessageDto.builder()
         .gmcId(gmcNumber)

@@ -173,26 +173,28 @@ public class DoctorsForDBService {
     final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
 
     // Designated bodies have less than 8,000 doctors, well within max payload and transaction size
-    doctorsRepository.saveAll(doctorsForDbCollectedEvent.doctors());
+    doctorsForDbCollectedEvent.doctors().forEach(this::updateTrainee);
+
     List<DoctorsForDB> staleDoctors = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
         designatedBodyCode, requestDateTime);
     staleDoctors.forEach(d -> {
-      //To minimise issues of concurrency ensure we've got the latest since we first collected the batch
-      var doctorForDB = doctorsRepository.findById(d.getGmcReferenceNumber());
-      doctorForDB.ifPresentOrElse(
-          doctorsForDB -> {
-            if (!doctorsForDB.getDesignatedBodyCode().equals(designatedBodyCode)
-                || requestDateTime.isBefore(doctorsForDB.getGmcLastUpdatedDateTime())) {
+      // To minimise concurrency issues in large collections, get the latest
+      var optionalSavedDoctor = doctorsRepository.findById(d.getGmcReferenceNumber());
+      optionalSavedDoctor.ifPresentOrElse(
+          savedDoctor -> {
+            if (designatedBodyCode.equals(savedDoctor.getDesignatedBodyCode())
+                && requestDateTime.isAfter(savedDoctor.getGmcLastUpdatedDateTime())) {
+              savedDoctor.setExistsInGmc(false);
+              savedDoctor.setDesignatedBodyCode(null);
+              savedDoctor.setGmcLastUpdatedDateTime(requestDateTime);
+              doctorsRepository.save(savedDoctor);
+            } else {
               log.debug("Close one.  Doctor [{}] modified between updates and being disconnected.",
-                  doctorsForDB.getGmcReferenceNumber());
-              return;
+                  savedDoctor.getGmcReferenceNumber());
             }
-            doctorsForDB.setExistsInGmc(false);
-            doctorsForDB.setDesignatedBodyCode(null);
-            doctorsForDB.setGmcLastUpdatedDateTime(requestDateTime);
-            doctorsRepository.save(doctorsForDB);
           },
-          () -> log.info("Ignoring record no longer found for GMC: {}}", d.getGmcReferenceNumber())
+          () -> log.warn("Ignoring 'stale' record no longer found for GMC Number: [{}]",
+              d.getGmcReferenceNumber())
       );
     });
   }

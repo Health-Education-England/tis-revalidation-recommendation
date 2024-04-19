@@ -41,8 +41,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
+import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 
@@ -57,6 +59,9 @@ class ConcurrentDisconnectsIntTest {
 
   @Autowired
   DoctorsForDBRepository repository;
+
+  @Autowired
+  DoctorsForDbMapper mapper;
   private DoctorsForDbCollectedEvent db1Event;
   private DoctorsForDbCollectedEvent db2Event;
 
@@ -103,8 +108,8 @@ class ConcurrentDisconnectsIntTest {
   void setData() {
     LocalDateTime setupDateTime = LocalDateTime.now();
     testObj = new DoctorsForDBService(repository, null, null, null, null, null);
-    ArrayList<DoctorsForDB> db1Doctors = new ArrayList<>();
-    ArrayList<DoctorsForDB> db2Doctors = new ArrayList<>();
+    ArrayList<DoctorsForDbDto> db1Doctors = new ArrayList<>();
+    ArrayList<DoctorsForDbDto> db2Doctors = new ArrayList<>();
     expectedNoDbDoctors = new ArrayList<>();
 
     repository.deleteAll();
@@ -118,7 +123,7 @@ class ConcurrentDisconnectsIntTest {
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
           .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      db1Doctors.add(d);
+      db1Doctors.add(mapper.toDto(d));
 
       d = DoctorsForDB.builder().designatedBodyCode(DB1_NAME).doctorFirstName(DB2_NAME)
           .doctorLastName(faker.name().lastName())
@@ -126,7 +131,7 @@ class ConcurrentDisconnectsIntTest {
           .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       d.setDesignatedBodyCode(DB2_NAME);
-      db2Doctors.add(d);
+      db2Doctors.add(mapper.toDto(d));
 
       d = DoctorsForDB.builder().designatedBodyCode(DB1_NAME)
           .doctorLastName(faker.name().lastName())
@@ -142,14 +147,14 @@ class ConcurrentDisconnectsIntTest {
           .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       d.setDesignatedBodyCode(DB1_NAME);
-      db1Doctors.add(d);
+      db1Doctors.add(mapper.toDto(d));
 
       d = DoctorsForDB.builder().designatedBodyCode(DB2_NAME).doctorFirstName(DB2_NAME)
           .doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
           .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
-      db2Doctors.add(d);
+      db2Doctors.add(mapper.toDto(d));
 
       d = DoctorsForDB.builder().designatedBodyCode(DB2_NAME)
           .doctorLastName(faker.name().lastName())
@@ -164,14 +169,14 @@ class ConcurrentDisconnectsIntTest {
           .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       d.setDesignatedBodyCode(DB1_NAME);
-      db1Doctors.add(d);
+      db1Doctors.add(mapper.toDto(d));
 
       d = DoctorsForDB.builder().doctorFirstName(DB2_NAME).doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
           .gmcLastUpdatedDateTime(staleRecordDateTime).build();
       repository.save(d);
       d.setDesignatedBodyCode(DB2_NAME);
-      db2Doctors.add(d);
+      db2Doctors.add(mapper.toDto(d));
 
       d = DoctorsForDB.builder().doctorLastName(faker.name().lastName())
           .gmcReferenceNumber(Integer.toString(gmcNumberGenerator.getAndIncrement()))
@@ -183,8 +188,8 @@ class ConcurrentDisconnectsIntTest {
     LocalDateTime updateTime = setupDateTime.plusSeconds(1);
     db1Doctors.forEach(d -> d.setGmcLastUpdatedDateTime(updateTime));
     db2Doctors.forEach(d -> d.setGmcLastUpdatedDateTime(updateTime));
-    expectedDb1Doctors = db1Doctors.stream().map(DoctorsForDB::getGmcReferenceNumber).toList();
-    expectedDb2Doctors = db2Doctors.stream().map(DoctorsForDB::getGmcReferenceNumber).toList();
+    expectedDb1Doctors = db1Doctors.stream().map(DoctorsForDbDto::getGmcReferenceNumber).toList();
+    expectedDb2Doctors = db2Doctors.stream().map(DoctorsForDbDto::getGmcReferenceNumber).toList();
 
     db1Event = new DoctorsForDbCollectedEvent(DB1_NAME, setupDateTime, db1Doctors);
     db2Event = new DoctorsForDbCollectedEvent(DB2_NAME, setupDateTime, db2Doctors);
