@@ -161,8 +161,8 @@ public class DoctorsForDBService {
   }
 
   /**
-   * Handle DoctorsForDbCollectedEvent as part of GMC Overnight Sync by disconnecting doctors for a
-   * given DBC that were not updated in this sync period.
+   * Handle DoctorsForDbCollectedEvent as part of GMC Overnight Sync. Doctors in the event are
+   * updated and any doctors which previously part of the Designated Body are removed.
    *
    * @param doctorsForDbCollectedEvent event that signifies that all doctors for a given DB have
    *                                   been collected
