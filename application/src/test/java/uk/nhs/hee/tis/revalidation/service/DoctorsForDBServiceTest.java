@@ -636,6 +636,22 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldNotDisconnectWhenDoctorNoLongerFound() {
+    LocalDateTime requestDateTime = doc1.getGmcLastUpdatedDateTime().plusDays(1);
+    List<DoctorsForDB> staleDoctorList = List.of(doc1);
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
+        requestDateTime)).thenReturn(staleDoctorList);
+    when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(
+        new DoctorsForDbCollectedEvent(designatedBody1, requestDateTime, emptyList()));
+
+    verify(repository, never()).save(any());
+
+  }
+
+  @Test
   void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
     final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
