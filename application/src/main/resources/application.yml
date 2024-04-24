@@ -68,8 +68,8 @@ app:
       queue.recommendationStatusCheck.updated: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_UPDATED_QUEUE:reval.queue.recommendationstatuscheck.updated.recommendation}
       routingKey.recommendationstatuscheck.requested: ${REVAL_RABBIT_RECOMMENDATION_STATUS_CHECK_REQUESTED_ROUTING_KEY:reval.recommendationstatuscheck.requested}
       routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
-      queue.doctorfordb.received.recommendation: ${REVAL_RABBIT_DOCTOR_DB_QUEUE:reval.queue.doctorfordb.received.recommendation}
       queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
+      queue.doctorsfordb.collected.recommendation: ${REVAL_RABBIT_DOCTORS_FOR_DB_COLLECTED_QUEUE:reval.queue.doctorsfordb.collected.recommendation}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2021 Crown Copyright (Health Education England)
+ * Copyright 2023 Crown Copyright (Health Education England)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -19,33 +19,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package uk.nhs.hee.tis.revalidation.service;
+package uk.nhs.hee.tis.revalidation.event;
 
-import static org.mockito.Mockito.verify;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import uk.nhs.hee.tis.revalidation.messages.publisher.GmcDoctorsForDbSyncStartPublisher;
-
-@ExtendWith(MockitoExtension.class)
-class GmcDoctorNightlySyncServiceTest {
-
-  @InjectMocks
-  GmcDoctorNightlySyncService gmcDoctorNightlySyncService;
-
-  @Mock
-  DoctorsForDBService doctorsForDBService;
-
-  @Mock
-  GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
-
-  @Test
-  void shouldPublishMessageToStartSync() {
-    gmcDoctorNightlySyncService.startNightlyGmcDoctorSync();
-    verify(gmcDoctorsForDbSyncStartPublisher).publishNightlySyncStartMessage();
-  }
+public record DoctorsForDbCollectedEvent(String designatedBodyCode, LocalDateTime requestDateTime,
+                                         Collection<DoctorsForDbDto> doctors) {
 
 }

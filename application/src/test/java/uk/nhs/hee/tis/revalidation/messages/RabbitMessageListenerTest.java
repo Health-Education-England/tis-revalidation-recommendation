@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +47,7 @@ import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -82,6 +84,7 @@ class RabbitMessageListenerTest {
   private final String designatedBody = faker.lorem().characters(5);
   private final LocalDate submissionDate = LocalDate.now();
   private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
+  private final LocalDateTime requestDateTime = LocalDateTime.now();
 
   private final RecommendationStatusCheckDto recommendationStatusCheckDto =
       RecommendationStatusCheckDto.builder()
@@ -120,12 +123,14 @@ class RabbitMessageListenerTest {
   }
 
   @Test
-  void shouldNotRequeueDoctorUpdateMessageOnException() {
-    doThrow(new NullPointerException()).when(doctorsForDBService).updateTrainee(any());
+  void shouldHandleDoctorsForDbCollectedMessage() {
+    DoctorsForDbCollectedEvent event = new DoctorsForDbCollectedEvent(designatedBody,
+        requestDateTime, null);
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receivedMessage(null);
-    });
+    rabbitMessageListener.handleDoctorsForDbCollectedMessage(event);
+
+    verify(doctorsForDBService, times(1))
+        .handleDoctorsForDbCollectedEvent(event);
   }
 
   @Test
@@ -153,9 +158,8 @@ class RabbitMessageListenerTest {
   void shouldNotRequeueDBCStatusUpdateMessageOnException() {
     doThrow(new NullPointerException()).when(doctorsForDBService).updateDoctorConnection(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateDoctorConnectionMessage(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateDoctorConnectionMessage(null));
   }
 
   @Test
@@ -163,9 +167,8 @@ class RabbitMessageListenerTest {
     doThrow(new NullPointerException()).when(recommendationStatusCheckUpdatedMessageHandler)
         .updateRecommendationAndTisStatus(any());
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveMessageForRecommendationStatusUpdate(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveMessageForRecommendationStatusUpdate(null));
   }
 
   @Test
@@ -178,25 +181,22 @@ class RabbitMessageListenerTest {
             .underNotice("Yes")
             .build();
 
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto));
   }
 
   @Test
   void shouldNotUpdateMessageFromMasterDoctorViewOnException() {
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null));
   }
 
   @Test
   void shouldThrowExceptionWhenIdNullInReceivedMsgFromMasterDoctorView() {
     MasterDoctorViewDto masterDoctorViewDto = getMasterDoctorViewDto();
     masterDoctorViewDto.setId(null);
-    assertThrows(AmqpRejectAndDontRequeueException.class, () -> {
-      rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto);
-    });
+    assertThrows(AmqpRejectAndDontRequeueException.class,
+        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto));
   }
 
   @Test

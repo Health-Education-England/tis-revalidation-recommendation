@@ -21,8 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import static java.time.LocalDate.now;
-import static java.util.stream.Collectors.toList;
 import static org.springframework.data.domain.PageRequest.of;
 import static org.springframework.data.domain.Sort.Direction.ASC;
 import static org.springframework.data.domain.Sort.Direction.DESC;
@@ -30,7 +28,7 @@ import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +48,7 @@ import uk.nhs.hee.tis.revalidation.dto.TraineeSummaryDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapper;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
@@ -91,11 +90,10 @@ public class DoctorsForDBService {
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
       final List<String> hiddenGmcIds) {
     final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
-    final var doctorsList = paginatedDoctors.get().collect(toList());
-    final var traineeDoctors = doctorsList.stream().map(recommendationViewMapper::toTraineeInfoDto)
-        .collect(toList());
+    final var doctorsList = paginatedDoctors.get()
+        .map(recommendationViewMapper::toTraineeInfoDto).toList();
 
-    return TraineeSummaryDto.builder().traineeInfo(traineeDoctors).countTotal(getCountAll())
+    return TraineeSummaryDto.builder().traineeInfo(doctorsList).countTotal(getCountAll())
         .countUnderNotice(getCountUnderNotice()).totalPages(paginatedDoctors.getTotalPages())
         .totalResults(paginatedDoctors.getTotalElements()).build();
   }
@@ -162,22 +160,52 @@ public class DoctorsForDBService {
     }
   }
 
+  /**
+   * Handle DoctorsForDbCollectedEvent as part of GMC Overnight Sync. Doctors in the event are
+   * updated and any doctors which previously part of the Designated Body are removed.
+   *
+   * @param doctorsForDbCollectedEvent event that signifies that all doctors for a given DB have
+   *                                   been collected
+   */
+  public void handleDoctorsForDbCollectedEvent(
+      final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    final String designatedBodyCode = doctorsForDbCollectedEvent.designatedBodyCode();
+    final LocalDateTime requestDateTime = doctorsForDbCollectedEvent.requestDateTime();
+
+    // Designated bodies have less than 8,000 doctors, well within max payload and transaction size
+    doctorsForDbCollectedEvent.doctors().forEach(this::updateTrainee);
+
+    List<DoctorsForDB> staleDoctors = doctorsRepository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
+        designatedBodyCode, requestDateTime);
+    staleDoctors.forEach(d -> {
+      // To minimise concurrency issues in large collections, get the latest
+      var optionalSavedDoctor = doctorsRepository.findById(d.getGmcReferenceNumber());
+      optionalSavedDoctor.ifPresentOrElse(
+          savedDoctor -> {
+            if (designatedBodyCode.equals(savedDoctor.getDesignatedBodyCode())
+                && requestDateTime.isAfter(savedDoctor.getGmcLastUpdatedDateTime())) {
+              savedDoctor.setExistsInGmc(false);
+              savedDoctor.setDesignatedBodyCode(null);
+              savedDoctor.setGmcLastUpdatedDateTime(requestDateTime);
+              doctorsRepository.save(savedDoctor);
+            } else {
+              log.debug("Close one.  Doctor [{}] modified between updates and being disconnected.",
+                  savedDoctor.getGmcReferenceNumber());
+            }
+          },
+          () -> log.warn("Ignoring 'stale' record no longer found for GMC Number: [{}]",
+              d.getGmcReferenceNumber())
+      );
+    });
+  }
+
   public TraineeSummaryDto getDoctorsByGmcIds(final List<String> gmcIds) {
     final Iterable<DoctorsForDB> doctorsForDb = doctorsRepository.findAllById(gmcIds);
     final var doctorsForDbs = IterableUtils.toList(doctorsForDb);
     final var traineeInfoDtos = doctorsForDbs.stream().map(doctorsForDbMapper::toTraineeInfoDto)
-        .collect(toList());
+        .toList();
     return TraineeSummaryDto.builder().countTotal(traineeInfoDtos.size())
         .totalResults(traineeInfoDtos.size()).traineeInfo(traineeInfoDtos).build();
-  }
-
-  public void hideAllDoctors() {
-    List<DoctorsForDB> doctors = doctorsRepository.findAll();
-    doctors.forEach(doctor -> {
-      doctor.setExistsInGmc(false);
-      doctor.setDesignatedBodyCode(null);
-      doctorsRepository.save(doctor);
-    });
   }
 
   private Page<RecommendationView> getSortedAndFilteredDoctorsByPageNumber(

@@ -48,4 +48,6 @@ public interface DoctorsForDbMapper {
   @Mapping(target = "lastUpdatedDate", ignore = true)
   DoctorsForDB toEntity(DoctorsForDbDto dto, boolean existsInGmc,
       RecommendationStatus doctorStatus);
+
+  DoctorsForDbDto toDto(DoctorsForDB d);
 }

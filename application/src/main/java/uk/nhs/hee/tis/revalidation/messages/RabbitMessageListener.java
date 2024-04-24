@@ -27,9 +27,9 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
-import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
+import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
 import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
@@ -50,17 +50,6 @@ public class RabbitMessageListener {
   @Autowired
   private RecommendationElasticSearchService recommendationElasticSearchService;
 
-  @RabbitListener(queues = "${app.rabbit.reval.queue.doctorfordb.received.recommendation}")
-  public void receivedMessage(final DoctorsForDbDto gmcDoctor) {
-    try {
-      log.debug("DoctorsForDbDto message received from rabbit: {}", gmcDoctor);
-      doctorsForDBService.updateTrainee(gmcDoctor);
-    } catch (Exception exception) {
-      log.warn("Rejecting message for failed doctor update", exception);
-      throw new AmqpRejectAndDontRequeueException(exception);
-    }
-  }
-
   @RabbitListener(queues = "${app.rabbit.connection.queue}")
   public void receiveUpdateDoctorConnectionMessage(final ConnectionMessageDto message) {
     try {
@@ -77,8 +66,7 @@ public class RabbitMessageListener {
   public void receiveMessageForRecommendationStatusUpdate(
       final RecommendationStatusCheckDto recommendationStatusCheckDto) {
     try {
-      log.info(
-          "Message received to update recommendation status, Message: {}",
+      log.info("Message received to update recommendation status, Message: {}",
           recommendationStatusCheckDto);
       recommendationStatusCheckUpdatedMessageHandler
           .updateRecommendationAndTisStatus(recommendationStatusCheckDto);
@@ -104,7 +92,17 @@ public class RabbitMessageListener {
           "Received update message MasterDoctorView with null id.");
     }
     recommendationElasticSearchService.saveRecommendationView(
-        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(
-            masterDoctorViewDto));
+        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
+  }
+
+  /**
+   * handle Doctors from a Designated Body (DB) collected message.
+   */
+  @RabbitListener(queues = "${app.rabbit.reval.queue.doctorsfordb.collected.recommendation}")
+  public void handleDoctorsForDbCollectedMessage(
+      final DoctorsForDbCollectedEvent doctorsForDbCollectedEvent) {
+    log.debug("DoctorsForDbCollectedEvent message received from rabbit: {}",
+        doctorsForDbCollectedEvent);
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(doctorsForDbCollectedEvent);
   }
 }
