@@ -42,7 +42,7 @@ public enum GmcResponseCode {
   RO_NOT_LICENSED("95", "Responsible Officer is not licensed"),
   MISSING_RO("96", "Missing Responsible Officer"),
   MISSING_RO_RECOMMENDATION_SUBREASONS("97",
-      "Missing RoRecommendationSubreasons (required when RoRecommendationReason = 1)"),
+      "Missing RO Recommendation Subreasons"),
   INTERNAL_ERROR("98", "Internal error"),
   INVALID_CREDENTIALS("99", "Invalid Credentials (user name / password / IP address)"),
   MISSING_INTERNAL_USER("110", "Missing Internal User"),
