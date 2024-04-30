@@ -29,6 +29,9 @@ import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INTERNAL_ERROR;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INVALID_CREDENTIALS;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INVALID_RECOMMENDATION;
+import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.INVALID_RECOMMENDATION_ID;
+import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.MISSING_INTERNAL_USER;
+import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.MISSING_OR_INVALID_DESIGNATED_BODY;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.MISSING_OR_INVALID_GMC_REF_NUMBER;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.SUCCESS;
 import static uk.nhs.hee.tis.revalidation.entity.GmcResponseCode.YOUR_ACCOUNT_DOES_NOT_HAVE_ACCESS_TO_DB;
@@ -171,7 +174,7 @@ class GmcClientServiceTest {
             , any(SoapActionCallback.class))).thenReturn(statusResponse);
 
     when(statusResponse.getCheckRecommendationStatusResult()).thenReturn(statusResponseCT);
-    when(statusResponseCT.getReturnCode()).thenReturn(INVALID_RECOMMENDATION.getCode());
+    when(statusResponseCT.getReturnCode()).thenReturn(INVALID_RECOMMENDATION_ID.getCode());
 
     final var checkRecommendationStatusResponse = gmcClientService.
         checkRecommendationStatus(gmcId, gmcRecommendationId, recommendationId, designatedBodyCode);
@@ -190,6 +193,42 @@ class GmcClientServiceTest {
     when(statusResponse.getCheckRecommendationStatusResult()).thenReturn(statusResponseCT);
     when(statusResponseCT.getReturnCode())
         .thenReturn(YOUR_ACCOUNT_DOES_NOT_HAVE_ACCESS_TO_DB.getCode());
+
+    final var checkRecommendationStatusResponse = gmcClientService.
+        checkRecommendationStatus(gmcId, gmcRecommendationId, recommendationId, designatedBodyCode);
+
+    assertNotNull(checkRecommendationStatusResponse);
+    assertThat(checkRecommendationStatusResponse, is(UNDER_REVIEW));
+  }
+
+  @Test
+  void shouldReturnErrorForCheckStatusOfRecommendationWhenDesignatedBodyInvalid() {
+
+    when(webServiceTemplate
+        .marshalSendAndReceive(any(String.class), any(CheckRecommendationStatus.class)
+            , any(SoapActionCallback.class))).thenReturn(statusResponse);
+
+    when(statusResponse.getCheckRecommendationStatusResult()).thenReturn(statusResponseCT);
+    when(statusResponseCT.getReturnCode())
+        .thenReturn(MISSING_OR_INVALID_DESIGNATED_BODY.getCode());
+
+    final var checkRecommendationStatusResponse = gmcClientService.
+        checkRecommendationStatus(gmcId, gmcRecommendationId, recommendationId, designatedBodyCode);
+
+    assertNotNull(checkRecommendationStatusResponse);
+    assertThat(checkRecommendationStatusResponse, is(UNDER_REVIEW));
+  }
+
+  @Test
+  void shouldReturnErrorForCheckStatusOfRecommendationWhenMissingInternalUser() {
+
+    when(webServiceTemplate
+        .marshalSendAndReceive(any(String.class), any(CheckRecommendationStatus.class)
+            , any(SoapActionCallback.class))).thenReturn(statusResponse);
+
+    when(statusResponse.getCheckRecommendationStatusResult()).thenReturn(statusResponseCT);
+    when(statusResponseCT.getReturnCode())
+        .thenReturn(MISSING_INTERNAL_USER.getCode());
 
     final var checkRecommendationStatusResponse = gmcClientService.
         checkRecommendationStatus(gmcId, gmcRecommendationId, recommendationId, designatedBodyCode);
