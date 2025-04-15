@@ -23,16 +23,15 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.awspring.cloud.messaging.core.QueueMessagingTemplate;
+import com.amazonaws.services.sqs.AmazonSQSAsync;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,26 +52,27 @@ import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 class GmcDoctorConnectionSyncServiceTest {
 
   @Captor
-  ArgumentCaptor<String> syncStartMessage;
+  private ArgumentCaptor<List<SendMessageBatchRequestEntry>> messageCaptor;
   @Captor
-  ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> messageCaptor;
+  private ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> objectCaptor;
 
   @InjectMocks
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
   @Mock
-  private QueueMessagingTemplate queueMessagingTemplate;
+  private AmazonSQSAsync sqsClient;
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
   @Mock
   private RecommendationService recommendationService;
+  @Mock
+  private ObjectMapper objectMapper;
 
-  private DoctorsForDB doctor1;
   private List<DoctorsForDB> doctorsForDBList;
   private TraineeRecommendationRecordDto recommendation1;
-  private String gmcOutcome1 = "APPROVED";
-  private String gmcRef1 = "1111111";
-  private String admin1 = "admin";
-  private String sqsEndpoint = "/endpoint";
+  private final String gmcOutcome1 = "APPROVED";
+  private final String gmcRef1 = "1111111";
+  private final String admin1 = "admin";
+  private final String sqsEndpoint = "/endpoint";
 
   @BeforeEach
   void setup() {
@@ -103,42 +103,46 @@ class GmcDoctorConnectionSyncServiceTest {
   }
 
   @Test
-  void shouldSendRetrievedDoctorsToSqs() {
+  void shouldSendRetrievedDoctorsToSqs() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
     when(recommendationService.getLatestRecommendation(gmcRef1))
         .thenReturn(recommendation1);
+    when(objectMapper.writeValueAsString(objectCaptor.capture())).thenReturn("fooey")
+        .thenReturn("end");
 
     gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
 
-    verify(queueMessagingTemplate, times(2))
-        .convertAndSend(eq(sqsEndpoint), messageCaptor.capture());
+    verify(sqsClient)
+        .sendMessageBatch(eq(sqsEndpoint), messageCaptor.capture());
 
-    final var messagePayloads = messageCaptor.getAllValues();
-    assertThat(messagePayloads.get(0).getSyncEnd(), is(false));
-    assertThat(messagePayloads.get(0).getPayload().getGmcOutcome(), is(gmcOutcome1));
-    assertThat(messagePayloads.get(0).getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
-    assertThat(messagePayloads.get(0).getPayload().getDoctor().getAdmin(), is(admin1));
+    final List<IndexSyncMessage<RevalidationSummaryDto>> messageObjects = objectCaptor.getAllValues();
+    assertThat(messageObjects.get(0).getSyncEnd(), is(false));
+    assertThat(messageObjects.get(0).getPayload().getGmcOutcome(), is(gmcOutcome1));
+    assertThat(messageObjects.get(0).getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
+    assertThat(messageObjects.get(0).getPayload().getDoctor().getAdmin(), is(admin1));
 
-
+    final var messagePayload = messageCaptor.getValue();
+    assertThat(messagePayload.size(), is(1));
+    assertThat(messagePayload.get(0).getMessageBody(), is("fooey"));
   }
 
   @Test
-  void shouldSendSyncEndFlagAtEndOfDoctorsList() {
+  void shouldSendSyncEndFlagAtEndOfDoctorsList() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
     when(recommendationService.getLatestRecommendation(gmcRef1))
         .thenReturn(recommendation1);
 
+    when(objectMapper.writeValueAsString(objectCaptor.capture())).thenReturn("fooey")
+        .thenReturn("end");
+
     gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
 
-    verify(queueMessagingTemplate, times(2))
-        .convertAndSend(eq(sqsEndpoint), messageCaptor.capture());
-
-    final var messagePayloads = messageCaptor.getAllValues();
-    assertThat(messagePayloads.get(1).getSyncEnd(), is(true));
+    verify(sqsClient)
+        .sendMessage(eq(sqsEndpoint), eq("end"));
   }
 
   private void buildDoctorsList() {
-    doctor1 = DoctorsForDB.builder()
+    DoctorsForDB doctor1 = DoctorsForDB.builder()
         .gmcReferenceNumber(gmcRef1)
         .admin(admin1)
         .build();
