@@ -26,6 +26,8 @@ import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.apache.commons.collections4.ListUtils;
@@ -65,8 +67,9 @@ public class GmcDoctorConnectionSyncService {
     log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
 
     if (gmcSyncStart != null && gmcSyncStart.equals("gmcSyncStart")) {
-      ListUtils.partition(doctorsForDBRepository.findAll(), BATCH_SIZE).stream()
-          .map(batch -> batch.stream().map(this::convertToMessage).toList())
+      List<SendMessageBatchRequestEntry> messages = doctorsForDBRepository.findAll().stream()
+          .map(this::convertToMessage).filter(Objects::nonNull).toList();
+      ListUtils.partition(messages, BATCH_SIZE)
           .forEach(batch -> sqsClient.sendMessageBatch(sqsEndPoint, batch));
       log.info("GMC doctors have been published to the SQS queue ");
       final var syncEnd = IndexSyncMessage.builder()
