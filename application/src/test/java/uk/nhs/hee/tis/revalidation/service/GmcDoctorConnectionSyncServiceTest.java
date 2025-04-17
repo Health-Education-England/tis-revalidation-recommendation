@@ -26,13 +26,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.awspring.cloud.messaging.core.QueueMessagingTemplate;
+import com.amazonaws.services.sqs.AmazonSQSAsync;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,27 +53,30 @@ import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 @ExtendWith(MockitoExtension.class)
 class GmcDoctorConnectionSyncServiceTest {
 
+  public static final String GMC_SYNC_START = "gmcSyncStart";
   @Captor
-  ArgumentCaptor<String> syncStartMessage;
+  private ArgumentCaptor<List<SendMessageBatchRequestEntry>> messageCaptor;
   @Captor
-  ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> messageCaptor;
+  private ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> objectCaptor;
 
   @InjectMocks
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
   @Mock
-  private QueueMessagingTemplate queueMessagingTemplate;
+  private AmazonSQSAsync sqsClient;
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
   @Mock
   private RecommendationService recommendationService;
+  @Mock
+  private ObjectMapper objectMapper;
 
-  private DoctorsForDB doctor1;
   private List<DoctorsForDB> doctorsForDBList;
+  private DoctorsForDB doctor1;
   private TraineeRecommendationRecordDto recommendation1;
-  private String gmcOutcome1 = "APPROVED";
-  private String gmcRef1 = "1111111";
-  private String admin1 = "admin";
-  private String sqsEndpoint = "/endpoint";
+  private final String gmcOutcome1 = "APPROVED";
+  private final String gmcRef1 = "1111111";
+  private final String admin1 = "admin";
+  private final String sqsEndpoint = "/endpoint";
 
   @BeforeEach
   void setup() {
@@ -83,7 +87,7 @@ class GmcDoctorConnectionSyncServiceTest {
 
   @Test
   void shouldRetrieveAllDoctors() {
-    gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
     verify(doctorsForDBRepository).findAll();
   }
@@ -103,38 +107,93 @@ class GmcDoctorConnectionSyncServiceTest {
   }
 
   @Test
-  void shouldSendRetrievedDoctorsToSqs() {
+  void shouldSendRetrievedDoctorsToSqs() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1))
-        .thenReturn(recommendation1);
+    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+    when(objectMapper.writeValueAsString(objectCaptor.capture()))
+        .thenReturn("fooey")
+        .thenReturn("end");
 
-    gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    verify(queueMessagingTemplate, times(2))
-        .convertAndSend(eq(sqsEndpoint), messageCaptor.capture());
+    verify(sqsClient).sendMessageBatch(eq(sqsEndpoint), messageCaptor.capture());
 
-    final var messagePayloads = messageCaptor.getAllValues();
-    assertThat(messagePayloads.get(0).getSyncEnd(), is(false));
-    assertThat(messagePayloads.get(0).getPayload().getGmcOutcome(), is(gmcOutcome1));
-    assertThat(messagePayloads.get(0).getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
-    assertThat(messagePayloads.get(0).getPayload().getDoctor().getAdmin(), is(admin1));
+    final List<IndexSyncMessage<RevalidationSummaryDto>> messageObjects = objectCaptor.getAllValues();
+    IndexSyncMessage<RevalidationSummaryDto> messageObject = messageObjects.get(0);
+    assertThat(messageObject.getSyncEnd(), is(false));
+    assertThat(messageObject.getPayload().getGmcOutcome(), is(gmcOutcome1));
+    assertThat(messageObject.getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
+    assertThat(messageObject.getPayload().getDoctor().getAdmin(), is(admin1));
 
-
+    final var messagePayload = messageCaptor.getValue();
+    assertThat(messagePayload.size(), is(1));
+    assertThat(messagePayload.get(0).getMessageBody(), is("fooey"));
   }
 
   @Test
-  void shouldSendSyncEndFlagAtEndOfDoctorsList() {
+  void shouldBatchMessages() throws Exception {
+    when(doctorsForDBRepository.findAll()).thenReturn(List.of(doctor1, doctor1));
+    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
+        .thenReturn("fooey")
+        .thenReturn("fooey2")
+        .thenReturn("end");
+
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
+
+    verify(sqsClient).sendMessageBatch(eq(sqsEndpoint), messageCaptor.capture());
+    verify(sqsClient).sendMessage(sqsEndpoint, "end");
+    List<SendMessageBatchRequestEntry> batch = messageCaptor.getValue();
+    assertThat(batch.size(), is(2));
+    assertThat(batch.get(0).getMessageBody(), is("fooey"));
+    assertThat(batch.get(1).getMessageBody(), is("fooey2"));
+  }
+
+  @Test
+  void shouldSendSyncEndFlagAtEndOfDoctorsList() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1))
-        .thenReturn(recommendation1);
+    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+    when(objectMapper.writeValueAsString(objectCaptor.capture()))
+        .thenReturn("fooey")
+        .thenReturn("end");
 
-    gmcDoctorConnectionSyncService.receiveMessage("gmcSyncStart");
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    verify(queueMessagingTemplate, times(2))
-        .convertAndSend(eq(sqsEndpoint), messageCaptor.capture());
+    verify(sqsClient).sendMessage(sqsEndpoint, "end");
+  }
 
-    final var messagePayloads = messageCaptor.getAllValues();
-    assertThat(messagePayloads.get(1).getSyncEnd(), is(true));
+  @Test
+  void shouldSkipOverUnmarshalledDoctor() throws Exception {
+    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
+    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+    JsonProcessingException expected = new JsonProcessingException("Expected") {
+    };
+    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
+        .thenThrow(expected)
+        .thenReturn("end");
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
+
+    verify(sqsClient, never()).sendMessageBatch(eq(sqsEndpoint), any());
+    verify(sqsClient).sendMessage(sqsEndpoint, "end");
+  }
+
+  @Test
+  void shouldCatchExceptionMarshallingSyncEndFlag() throws Exception {
+    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
+    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+    JsonProcessingException expected = new JsonProcessingException("Expected") {
+    };
+    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
+        .thenReturn("fooey")
+        .thenThrow(expected);
+
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
+
+    verify(sqsClient).sendMessageBatch(eq(sqsEndpoint), messageCaptor.capture());
+    verify(sqsClient, never()).sendMessage(eq(sqsEndpoint), any());
+    List<SendMessageBatchRequestEntry> batch = messageCaptor.getValue();
+    assertThat(batch.size(), is(1));
+    assertThat(batch.get(0).getMessageBody(), is("fooey"));
   }
 
   private void buildDoctorsList() {
