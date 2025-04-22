@@ -163,7 +163,7 @@ class GmcDoctorConnectionSyncServiceTest {
   }
 
   @Test
-  void shouldSkipOverUnmarshalledDoctor() throws Exception {
+  void shouldNotSendEmptyBatches() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
     when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
     JsonProcessingException expected = new JsonProcessingException("Expected") {
@@ -175,6 +175,26 @@ class GmcDoctorConnectionSyncServiceTest {
 
     verify(sqsClient, never()).sendMessageBatch(eq(sqsEndpoint), any());
     verify(sqsClient).sendMessage(sqsEndpoint, "end");
+  }
+
+  @Test
+  void shouldSkipOverUnmarshalledDoctor() throws Exception {
+    when(doctorsForDBRepository.findAll()).thenReturn(List.of(doctor1, doctor1));
+    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+    JsonProcessingException expected = new JsonProcessingException("Expected") {
+    };
+    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
+        .thenThrow(expected)
+        .thenReturn("fooey2")
+        .thenReturn("end");
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
+
+    verify(sqsClient).sendMessageBatch(eq(sqsEndpoint), messageCaptor.capture());
+    verify(sqsClient).sendMessage(sqsEndpoint, "end");
+
+    List<SendMessageBatchRequestEntry> actualBatch = messageCaptor.getValue();
+    assertThat(actualBatch.size(), is(1));
+    assertThat(actualBatch.get(0).getMessageBody(), is("fooey2"));
   }
 
   @Test

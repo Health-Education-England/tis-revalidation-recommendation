@@ -21,6 +21,8 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
+import static java.util.function.Predicate.not;
+
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
@@ -67,9 +69,10 @@ public class GmcDoctorConnectionSyncService {
     log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
 
     if (gmcSyncStart != null && gmcSyncStart.equals("gmcSyncStart")) {
-      List<SendMessageBatchRequestEntry> messages = doctorsForDBRepository.findAll().stream()
-          .map(this::convertToMessage).filter(Objects::nonNull).toList();
-      ListUtils.partition(messages, BATCH_SIZE)
+      ListUtils.partition(doctorsForDBRepository.findAll(), BATCH_SIZE).stream()
+          .map(batch ->
+              batch.stream().map(this::convertToMessage).filter(Objects::nonNull).toList())
+          .filter(not(List::isEmpty))
           .forEach(batch -> sqsClient.sendMessageBatch(sqsEndPoint, batch));
       log.info("GMC doctors have been published to the SQS queue ");
       final var syncEnd = IndexSyncMessage.builder()
