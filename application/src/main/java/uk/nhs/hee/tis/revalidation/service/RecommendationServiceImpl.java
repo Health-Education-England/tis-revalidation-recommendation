@@ -62,6 +62,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationType;
 import uk.nhs.hee.tis.revalidation.exception.RecommendationException;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @Slf4j
@@ -84,6 +85,9 @@ public class RecommendationServiceImpl implements RecommendationService {
   private final GmcClientService gmcClientService;
 
   private final RabbitTemplate rabbitTemplate;
+
+  @Autowired
+  private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
   @Value("${app.rabbit.reval.exchange}")
   private String revalExchange;
@@ -267,6 +271,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         doctor.setDoctorStatus(getRecommendationStatusForTrainee(gmcNumber)
         );
         doctorsForDBRepository.save(doctor);
+        setElasticsearchStatusesForSubmittedRecommendation(doctor.getGmcReferenceNumber());
         return true;
       } else {
         final var responseCode = GmcResponseCode.fromCode(returnCode);
@@ -490,6 +495,17 @@ public class RecommendationServiceImpl implements RecommendationService {
         .isBefore(LocalDate.now().minusMonths(1));
 
     return approved && underNotice && notRecent;
+  }
+
+  // TODO: this is a bit of a hack, need a better solution for mitigating CDC delay
+  private void setElasticsearchStatusesForSubmittedRecommendation(String gmcNumber) {
+    var document = recommendationElasticSearchRepository
+        .findByGmcReferenceNumber(gmcNumber).get(0);
+
+    document.setGmcStatus(UNDER_REVIEW.getOutcome());
+    document.setTisStatus(SUBMITTED_TO_GMC.toString());
+
+    recommendationElasticSearchRepository.save(document);
   }
 
   /**
