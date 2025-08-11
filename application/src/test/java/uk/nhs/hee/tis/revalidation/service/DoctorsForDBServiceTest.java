@@ -26,6 +26,7 @@ import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
@@ -581,6 +582,26 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
+  void shouldCreatePartialDoctorRecordOnDesignatedBodyUpdateIfNoDoctorFound() {
+    when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
+    final var message = ConnectionMessageDto.builder()
+        .gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2)
+        .submissionDate(subDate2)
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime)
+        .build();
+    doctorsForDBService.updateDoctorConnection(message);
+
+    verify(repository).save(doctorCaptor.capture());
+    DoctorsForDB doctor = doctorCaptor.getValue();
+    assertThat(doctor.getDesignatedBodyCode(), is(designatedBody2));
+    assertThat(doctor.getExistsInGmc(), is(true));
+    assertThat(doctor.getSubmissionDate(), is(subDate2));
+    assertThat(doctor.getGmcLastUpdatedDateTime(), is(gmcLastUpdatedDateTime));
+    assertThat(doctor.getUnderNotice(), nullValue());
+  }
+
+  @Test
   void shouldDisconnectDoctorsWhenGmcLastUpdatedDateTimeBeforeRequestTime() {
     LocalDateTime requestDateTime = doc1.getGmcLastUpdatedDateTime().plusDays(1);
     List<DoctorsForDB> doctorsForDBList = List.of(doc1);
@@ -649,15 +670,6 @@ class DoctorsForDBServiceTest {
 
     verify(repository, never()).save(any());
 
-  }
-
-  @Test
-  void shouldNotUpdateDesignatedBodyCodeWhenNoDoctorFound() {
-    when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
-    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1).build();
-    doctorsForDBService.updateDoctorConnection(message);
-
-    verify(repository, times(0)).save(doc1);
   }
 
   @Test

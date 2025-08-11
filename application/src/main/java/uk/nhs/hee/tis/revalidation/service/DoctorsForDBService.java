@@ -28,6 +28,7 @@ import static org.springframework.data.domain.Sort.by;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,10 +141,17 @@ public class DoctorsForDBService {
     return DesignatedBodyDto.builder().designatedBodyCode(designatedBodyCode).build();
   }
 
+  /**
+   * Update the connection details of the doctor including Designated Body, Under Notice and
+   * Submission Date. Creates a partial doctor record in the event of a new connection.
+   *
+   * @param message a DTO containing the details of a successful connection/disconnection action
+   */
   public void updateDoctorConnection(final ConnectionMessageDto message) {
     final var doctorsForDBOptional = doctorsRepository.findById(message.getGmcId());
     if (doctorsForDBOptional.isPresent()) {
-      log.info("Updating designated body code from doctors for DB");
+      log.info(String.format("Updating designated body code for doctor GMC Number: %s, DBC: %s",
+          message.getGmcId(), message.getDesignatedBodyCode()));
       final var dbc = message.getDesignatedBodyCode();
       final var disconnection = dbc == null;
       final var doctorsForDb = doctorsForDBOptional.get();
@@ -156,7 +164,19 @@ public class DoctorsForDBService {
       doctorsForDb.setGmcLastUpdatedDateTime(message.getGmcLastUpdatedDateTime());
       doctorsRepository.save(doctorsForDb);
     } else {
-      log.info("No doctor found to update designated body code");
+      log.info(
+          "No doctor found to update for doctor GMC Number: %s, DBC: %s, creating partial record");
+      DoctorsForDB partialDoctorRecord = DoctorsForDB.builder()
+          .gmcReferenceNumber(message.getGmcId())
+          .submissionDate(message.getSubmissionDate())
+          .designatedBodyCode(message.getDesignatedBodyCode())
+          .gmcLastUpdatedDateTime(message.getGmcLastUpdatedDateTime())
+          .lastUpdatedDate(LocalDate.now())
+          /* NB we do not necessarily know the correct status of the doctor at this stage,
+            so no recommendations can be made until the next gmc sync run */
+          .underNotice(null)
+          .existsInGmc(true).build();
+      doctorsRepository.save(partialDoctorRecord);
     }
   }
 
