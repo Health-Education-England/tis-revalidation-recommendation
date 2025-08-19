@@ -164,8 +164,9 @@ public class DoctorsForDBService {
       doctorsForDb.setGmcLastUpdatedDateTime(message.getGmcLastUpdatedDateTime());
       doctorsRepository.save(doctorsForDb);
     } else {
-      log.info(
-          "No doctor found to update for doctor GMC Number: %s, DBC: %s, creating partial record");
+      log.info(String.format(
+          "No doctor found to update for doctor GMC Number: %s, DBC: %s, creating partial record",
+          message.getGmcId(), message.getDesignatedBodyCode()));
       DoctorsForDB partialDoctorRecord = DoctorsForDB.builder()
           .gmcReferenceNumber(message.getGmcId())
           .submissionDate(message.getSubmissionDate())
