@@ -21,7 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import static java.time.LocalDate.now;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -529,6 +528,7 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldUpdateDoctorsForDbFieldsWhenUpdateConnection() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
+    LocalDate addedDate = doc1.getDateAdded();
     final var message = ConnectionMessageDto.builder()
         .gmcId(gmcRef1)
         .designatedBodyCode(designatedBody2)
@@ -542,6 +542,7 @@ class DoctorsForDBServiceTest {
     assertThat(doctor.getDesignatedBodyCode(), is(designatedBody2));
     assertThat(doctor.getExistsInGmc(), is(true));
     assertThat(doctor.getSubmissionDate(), is(subDate2));
+    assertThat(doctor.getDateAdded(), is(addedDate));
     assertThat(doctor.getGmcLastUpdatedDateTime(), is(gmcLastUpdatedDateTime));
   }
 
@@ -599,6 +600,7 @@ class DoctorsForDBServiceTest {
     assertThat(doctor.getSubmissionDate(), is(subDate2));
     assertThat(doctor.getGmcLastUpdatedDateTime(), is(gmcLastUpdatedDateTime));
     assertThat(doctor.getUnderNotice(), nullValue());
+    assertThat(doctor.getDateAdded(), is(LocalDate.now()));
   }
 
   @Test
@@ -747,13 +749,13 @@ class DoctorsForDBServiceTest {
     lname4 = faker.name().lastName();
     lname5 = faker.name().lastName();
 
-    subDate1 = now();
-    subDate2 = now();
-    subDate3 = now();
-    subDate4 = now();
-    subDate5 = now();
+    subDate1 = LocalDate.now();
+    subDate2 = LocalDate.now();
+    subDate3 = LocalDate.now();
+    subDate4 = LocalDate.now();
+    subDate5 = LocalDate.now();
 
-    LocalDate addedDate1 = now().minusDays(5);
+    LocalDate addedDate1 = LocalDate.now().minusDays(5);
 
     un1 = faker.options().option(UnderNotice.class);
     un2 = faker.options().option(UnderNotice.class);
@@ -784,21 +786,17 @@ class DoctorsForDBServiceTest {
     outcome1 = String.valueOf(RecommendationGmcOutcome.UNDER_REVIEW);
 
     doc1 = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1, status1,
-        now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
-    doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, now().minusDays(5), un2,
-        faker.lorem().characters(2), status2,
-        now(), null, designatedBody2, admin2, true);
-    doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, now().minusDays(5), un3,
-        faker.lorem().characters(2), status3,
-        now(), null, designatedBody3, admin3, true);
-    doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, now().minusDays(5), un4,
-        faker.lorem().characters(2), status4,
-        now(), null, designatedBody4, admin4, true);
-    doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, now().minusDays(5), un5,
-        faker.lorem().characters(2), status5,
-        now(), null, designatedBody5, admin5, true);
+        LocalDate.now(), LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
+    doc2 = new DoctorsForDB(gmcRef2, fname2, lname2, subDate2, LocalDate.now().minusDays(5), un2,
+        faker.lorem().characters(2), status2, LocalDate.now(), null, designatedBody2, admin2, true);
+    doc3 = new DoctorsForDB(gmcRef3, fname3, lname3, subDate3, LocalDate.now().minusDays(5), un3,
+        faker.lorem().characters(2), status3, LocalDate.now(), null, designatedBody3, admin3, true);
+    doc4 = new DoctorsForDB(gmcRef4, fname4, lname4, subDate4, LocalDate.now().minusDays(5), un4,
+        faker.lorem().characters(2), status4, LocalDate.now(), null, designatedBody4, admin4, true);
+    doc5 = new DoctorsForDB(gmcRef5, fname5, lname5, subDate5, LocalDate.now().minusDays(5), un5,
+        faker.lorem().characters(2), status5, LocalDate.now(), null, designatedBody5, admin5, true);
     docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1,
-        status1, now(), null, null, admin1, true);
+        status1, LocalDate.now(), null, null, admin1, true);
 
     rv1 = RecommendationView.builder()
         .gmcReferenceNumber(gmcRef1)

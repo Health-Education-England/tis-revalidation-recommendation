@@ -20,10 +20,14 @@
  */
 package uk.nhs.hee.tis.revalidation.mapper;
 
+import java.time.LocalDate;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeInfoDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
@@ -32,7 +36,8 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 @Mapper(componentModel = "spring")
 public interface DoctorsForDbMapper {
 
-  @Mapping(source = "designatedBodyCode", target = "connectionStatus", qualifiedByName = "desgnatedBodyToConnectionStatus")
+  @Mapping(source = "designatedBodyCode", target = "connectionStatus",
+      qualifiedByName = "desgnatedBodyToConnectionStatus")
   @Mapping(source = "designatedBodyCode", target = "designatedBody")
   TraineeInfoDto toTraineeInfoDto(DoctorsForDB doctor);
 
@@ -40,6 +45,8 @@ public interface DoctorsForDbMapper {
   default String designatedBodyToConnectionStatus(String designatedBody) {
     return StringUtils.hasLength(designatedBody) ? "Yes" : "No";
   }
+
+  DoctorsForDbDto toDto(DoctorsForDB d);
 
   @Mapping(target = "underNotice", expression = "java("
       + "uk.nhs.hee.tis.revalidation.entity.UnderNotice.fromString(dto.getUnderNotice()))")
@@ -49,5 +56,13 @@ public interface DoctorsForDbMapper {
   DoctorsForDB toEntity(DoctorsForDbDto dto, boolean existsInGmc,
       RecommendationStatus doctorStatus);
 
-  DoctorsForDbDto toDto(DoctorsForDB d);
+  @Mapping(source = "gmcId", target = "gmcReferenceNumber")
+  DoctorsForDB updateEntity(ConnectionMessageDto dto, @MappingTarget DoctorsForDB target);
+
+  @AfterMapping
+  default void supplementFields(@MappingTarget DoctorsForDB entity) {
+    if (entity.getDateAdded() == null) {
+      entity.setDateAdded(LocalDate.now());
+    }
+  }
 }
