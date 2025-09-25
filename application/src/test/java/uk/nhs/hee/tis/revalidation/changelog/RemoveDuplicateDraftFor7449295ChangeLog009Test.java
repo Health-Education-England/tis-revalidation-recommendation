@@ -16,10 +16,10 @@ import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @ExtendWith(MockitoExtension.class)
-class RemoveDuplicateDraftFor7449295ChangeLogTest {
+class RemoveDuplicateDraftFor7449295ChangeLog009Test {
 
   @InjectMocks
-  RemoveDuplicateDraftFor7449295ChangeLog changeLog;
+  RemoveDuplicateDraftFor7449295ChangeLog_009 changeLog;
 
   @Mock
   RecommendationRepository recommendationRepository;
@@ -28,7 +28,7 @@ class RemoveDuplicateDraftFor7449295ChangeLogTest {
 
   @BeforeEach
   void setup() {
-    changeLog = new RemoveDuplicateDraftFor7449295ChangeLog();
+    changeLog = new RemoveDuplicateDraftFor7449295ChangeLog_009();
   }
 
   @Test

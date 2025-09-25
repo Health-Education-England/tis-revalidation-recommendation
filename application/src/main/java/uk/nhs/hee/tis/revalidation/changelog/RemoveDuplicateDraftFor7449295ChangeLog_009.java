@@ -7,7 +7,7 @@ import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @ChangeLog(order = "009")
-public class RemoveDuplicateDraftFor7449295ChangeLog {
+public class RemoveDuplicateDraftFor7449295ChangeLog_009 {
 
   private static final String RECOMMENDATION_ID = "65b79baae6d8ff00033dd1b7";
 
