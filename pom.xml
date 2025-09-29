@@ -42,7 +42,6 @@
             ${project.build.directory}/checkstyle-result.xml
         </sonar.java.checkstyle.reportPaths>
         <commons-collections4.version>4.4</commons-collections4.version>
-        <spring-cloud-starter.version>2.4.2</spring-cloud-starter.version>
         <mockito-inline.version>4.0.0</mockito-inline.version>
     </properties>
 
@@ -176,19 +175,17 @@
             <!--spring cloud for sqs-->
 
             <dependency>
-                <groupId>io.awspring.cloud</groupId>
-                <artifactId>spring-cloud-starter-aws</artifactId>
-                <version>${spring-cloud-starter.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.awspring.cloud</groupId>
-                <artifactId>spring-cloud-starter-aws-messaging</artifactId>
-                <version>${spring-cloud-starter.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
                 <version>${spring-boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>2.34.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
         </dependencies>
