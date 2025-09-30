@@ -30,6 +30,6 @@ public class AwsSqsQueueConfig {
 
   @Bean
   public SqsAsyncClient amazonSQSAsync() {
-    return SqsAsyncClient.builder().build();
+    return SqsAsyncClient.create();
   }
 }
