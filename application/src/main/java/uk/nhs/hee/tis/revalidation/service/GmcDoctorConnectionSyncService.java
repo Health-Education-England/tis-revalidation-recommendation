@@ -23,19 +23,22 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import static java.util.function.Predicate.not;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSAsync;
-import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
@@ -48,14 +51,14 @@ public class GmcDoctorConnectionSyncService {
 
   private static final int BATCH_SIZE = 10;
 
-  private final AmazonSQS sqsClient;
+  private final SqsAsyncClient sqsClient;
   private final DoctorsForDBRepository doctorsForDBRepository;
   private final RecommendationService recommendationService;
   private final ObjectMapper objectMapper;
   @Value("${cloud.aws.end-point.uri}")
   private String sqsEndPoint;
 
-  public GmcDoctorConnectionSyncService(AmazonSQSAsync sqsClient, ObjectMapper objectMapper,
+  public GmcDoctorConnectionSyncService(SqsAsyncClient sqsClient, ObjectMapper objectMapper,
       DoctorsForDBRepository doctorsForDBRepository, RecommendationService recommendationService) {
     this.sqsClient = sqsClient;
     this.objectMapper = objectMapper;
@@ -69,20 +72,50 @@ public class GmcDoctorConnectionSyncService {
     log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
 
     if (gmcSyncStart != null && gmcSyncStart.equals("gmcSyncStart")) {
-      ListUtils.partition(doctorsForDBRepository.findAll(), BATCH_SIZE).stream()
-          .map(batch ->
-              batch.stream().map(this::convertToMessage).filter(Objects::nonNull).toList())
-          .filter(not(List::isEmpty))
-          .forEach(batch -> sqsClient.sendMessageBatch(sqsEndPoint, batch));
-      log.info("GMC doctors have been published to the SQS queue ");
-      final var syncEnd = IndexSyncMessage.builder()
-          .syncEnd(true)
-          .build();
-      try {
-        sqsClient.sendMessage(sqsEndPoint, objectMapper.writeValueAsString(syncEnd));
-      } catch (JsonProcessingException e) {
-        log.error("Unable to convert 'syncEnd' message.  Downstream services need notification.");
-      }
+      List<List<SendMessageBatchRequestEntry>> batches = ListUtils.partition(
+              doctorsForDBRepository.findAll(), BATCH_SIZE).stream()
+          .map(
+              batch -> batch.stream().map(this::convertToMessage).filter(Objects::nonNull).toList())
+          .filter(not(List::isEmpty)).toList();
+
+      List<CompletableFuture<SendMessageBatchResponse>> futures = batches.stream()
+          .map(batch -> sqsClient.sendMessageBatch(
+                  SendMessageBatchRequest.builder().queueUrl(sqsEndPoint).entries(batch).build())
+              .handle((resp, ex) -> { // let the resulting future always complete successfully
+                if (ex != null) {
+                  List<String> ids = batch.stream().map(SendMessageBatchRequestEntry::id).toList();
+                  log.error("Failed to send batch for doctors: {}", ids, ex);
+                } else {
+                  resp.failed()
+                      .forEach(r -> log.error("Failed to send message for doctor {}", r.id()));
+                }
+                return resp;
+              })
+          ).toList();
+
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .thenCompose(v -> {
+            log.info("GMC doctors have been published to the SQS queue ");
+            final var syncEnd = IndexSyncMessage.builder().syncEnd(true).build();
+            try {
+              String body = objectMapper.writeValueAsString(syncEnd);
+              return sqsClient.sendMessage(
+                      SendMessageRequest.builder()
+                          .queueUrl(sqsEndPoint)
+                          .messageBody(body)
+                          .build()
+                  ).thenAccept(resp -> log.info("Sent final syncEnd message"))
+                  .exceptionally(ex -> {
+                    log.error("Failed to send final syncEnd message to SQS for queue", ex);
+                    return null;
+                  });
+            } catch (JsonProcessingException e) {
+              log.error(
+                  "Unable to convert 'syncEnd' message. Downstream services need notification.", e);
+              return CompletableFuture.completedFuture(null);
+            }
+          })
+          .join();
     }
   }
 
@@ -99,8 +132,8 @@ public class GmcDoctorConnectionSyncService {
         .syncEnd(false)
         .build();
     try {
-      return new SendMessageBatchRequestEntry(doctor.getGmcReferenceNumber(),
-          objectMapper.writeValueAsString(message));
+      return SendMessageBatchRequestEntry.builder().id(doctor.getGmcReferenceNumber())
+          .messageBody(objectMapper.writeValueAsString(message)).build();
     } catch (JsonProcessingException e) {
       log.error("Unable to construct message for doctor '{}'", doctor.getGmcReferenceNumber(), e);
       return null;
