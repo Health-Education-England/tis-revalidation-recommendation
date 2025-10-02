@@ -24,6 +24,7 @@ package uk.nhs.hee.tis.revalidation.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.batchmanager.SqsAsyncBatchManager;
 
 @Configuration
 public class AwsSqsQueueConfig {
@@ -31,5 +32,10 @@ public class AwsSqsQueueConfig {
   @Bean
   public SqsAsyncClient amazonSQSAsync() {
     return SqsAsyncClient.create();
+  }
+
+  @Bean
+  public SqsAsyncBatchManager sqsAsyncBatchManager(SqsAsyncClient sqsAsyncClient) {
+    return sqsAsyncClient.batchManager();
   }
 }

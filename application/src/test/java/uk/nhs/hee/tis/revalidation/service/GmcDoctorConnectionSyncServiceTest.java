@@ -24,8 +24,10 @@ package uk.nhs.hee.tis.revalidation.service;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,11 +46,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import software.amazon.awssdk.services.sqs.SqsAsyncClient;
-import software.amazon.awssdk.services.sqs.model.BatchResultErrorEntry;
-import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
-import software.amazon.awssdk.services.sqs.model.SendMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.batchmanager.SqsAsyncBatchManager;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
@@ -61,21 +59,25 @@ import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 class GmcDoctorConnectionSyncServiceTest {
 
   public static final String GMC_SYNC_START = "gmcSyncStart";
+
   @Captor
-  private ArgumentCaptor<SendMessageBatchRequest> batchCaptor;
+  private ArgumentCaptor<SendMessageRequest> sendReqCaptor;
+
   @Captor
-  private ArgumentCaptor<SendMessageRequest> singleCaptor;
-  @Captor
-  private ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> objectCaptor;
+  private ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> syncMsgCaptor;
 
   @InjectMocks
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
+
   @Mock
-  private SqsAsyncClient sqsClient;
+  private SqsAsyncBatchManager batchManager;
+
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
+
   @Mock
   private RecommendationService recommendationService;
+
   @Mock
   private ObjectMapper objectMapper;
 
@@ -96,24 +98,22 @@ class GmcDoctorConnectionSyncServiceTest {
 
   @Test
   void shouldRetrieveAllDoctors() {
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
+    when(batchManager.sendMessage(any(SendMessageRequest.class)))
         .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
     verify(doctorsForDBRepository).findAll();
   }
 
   @Test
   void shouldNotRetrieveDoctorsIfNullMessageSupplied() {
     gmcDoctorConnectionSyncService.receiveMessage(null);
-
     verify(doctorsForDBRepository, never()).findAll();
   }
 
   @Test
   void shouldNotRetrieveDoctorsIfIncorrectMessageSupplied() {
     gmcDoctorConnectionSyncService.receiveMessage("anyString");
-
     verify(doctorsForDBRepository, never()).findAll();
   }
 
@@ -121,83 +121,44 @@ class GmcDoctorConnectionSyncServiceTest {
   void shouldSendRetrievedDoctorsToSqs() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
     when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-    when(objectMapper.writeValueAsString(objectCaptor.capture()))
+
+    when(objectMapper.writeValueAsString(syncMsgCaptor.capture()))
         .thenReturn("fooey")
         .thenReturn("end");
 
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageBatchResponse.builder().build()));
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
+    when(batchManager.sendMessage(any(SendMessageRequest.class)))
         .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    verify(sqsClient).sendMessageBatch(batchCaptor.capture());
-    verify(sqsClient).sendMessage(singleCaptor.capture());
+    List<IndexSyncMessage<RevalidationSummaryDto>> capturedMessages = syncMsgCaptor.getAllValues();
+    assertThat(capturedMessages.size(), is(2));
 
-    final List<IndexSyncMessage<RevalidationSummaryDto>> messageObjects = objectCaptor.getAllValues();
-    IndexSyncMessage<RevalidationSummaryDto> messageObject = messageObjects.get(0);
-    assertThat(messageObject.getSyncEnd(), is(false));
-    assertThat(messageObject.getPayload().getGmcOutcome(), is(gmcOutcome1));
-    assertThat(messageObject.getPayload().getDoctor().getGmcReferenceNumber(), is(gmcRef1));
-    assertThat(messageObject.getPayload().getDoctor().getAdmin(), is(admin1));
+    IndexSyncMessage<?> doctorMessage = capturedMessages.get(0);
+    assertThat(doctorMessage.getSyncEnd(), is(false));
+    assertThat(((RevalidationSummaryDto) doctorMessage.getPayload()).getGmcOutcome(),
+        is(gmcOutcome1));
+    assertThat(
+        ((RevalidationSummaryDto) doctorMessage.getPayload()).getDoctor().getGmcReferenceNumber(),
+        is(gmcRef1));
+    assertThat(((RevalidationSummaryDto) doctorMessage.getPayload()).getDoctor().getAdmin(),
+        is(admin1));
 
-    List<SendMessageBatchRequestEntry> entries = batchCaptor.getValue().entries();
-    assertThat(entries.size(), is(1));
-    assertThat(entries.get(0).messageBody(), is("fooey"));
-    assertThat(singleCaptor.getValue().messageBody(), is("end"));
+    IndexSyncMessage<?> syncEndMessage = capturedMessages.get(1);
+    assertThat(syncEndMessage.getSyncEnd(), is(true));
+
+    verify(batchManager, times(2)).sendMessage(sendReqCaptor.capture());
+    List<SendMessageRequest> sentRequests = sendReqCaptor.getAllValues();
+    assertThat(sentRequests.size(), is(2));
+    assertThat(sentRequests.get(0).messageBody(), is("fooey"));
+    assertThat(sentRequests.get(1).messageBody(), is("end"));
   }
 
   @Test
-  void shouldBatchMessages() throws Exception {
+  void shouldSkipOverUnmarshallableDoctor() throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(List.of(doctor1, doctor1));
     when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenReturn("fooey")
-        .thenReturn("fooey2")
-        .thenReturn("end");
 
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageBatchResponse.builder().build()));
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    verify(sqsClient).sendMessageBatch(batchCaptor.capture());
-    verify(sqsClient).sendMessage(singleCaptor.capture());
-
-    List<SendMessageBatchRequestEntry> entries = batchCaptor.getValue().entries();
-    assertThat(entries.size(), is(2));
-    assertThat(entries.get(0).messageBody(), is("fooey"));
-    assertThat(entries.get(1).messageBody(), is("fooey2"));
-    assertThat(singleCaptor.getValue().messageBody(), is("end"));
-  }
-
-  @Test
-  void shouldNotSendEmptyBatches() throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-    JsonProcessingException expected = new JsonProcessingException("Expected") {
-    };
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenThrow(expected)
-        .thenReturn("end");
-
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    verify(sqsClient, never()).sendMessageBatch(any(SendMessageBatchRequest.class));
-    verify(sqsClient).sendMessage(singleCaptor.capture());
-    assertThat(singleCaptor.getValue().messageBody(), is("end"));
-  }
-
-  @Test
-  void shouldSkipOverUnmarshalledDoctor() throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(List.of(doctor1, doctor1));
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
     JsonProcessingException expected = new JsonProcessingException("Expected") {
     };
     when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
@@ -205,114 +166,59 @@ class GmcDoctorConnectionSyncServiceTest {
         .thenReturn("fooey2")
         .thenReturn("end");
 
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageBatchResponse.builder().build()));
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
+    when(batchManager.sendMessage(any(SendMessageRequest.class)))
         .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    verify(sqsClient).sendMessageBatch(batchCaptor.capture());
-    verify(sqsClient).sendMessage(singleCaptor.capture());
+    verify(batchManager, times(2)).sendMessage(sendReqCaptor.capture());
+    List<SendMessageRequest> captured = sendReqCaptor.getAllValues();
 
-    List<SendMessageBatchRequestEntry> entries = batchCaptor.getValue().entries();
-    assertThat(entries.size(), is(1));
-    assertThat(entries.get(0).messageBody(), is("fooey2"));
-    assertThat(singleCaptor.getValue().messageBody(), is("end"));
+    SendMessageRequest doctorMsg = captured.get(0);
+    assertEquals("fooey2", doctorMsg.messageBody());
+
+    SendMessageRequest syncEndMsg = captured.get(1);
+    assertEquals("end", syncEndMsg.messageBody());
   }
 
   @Test
   void shouldCatchExceptionMarshallingSyncEndFlag(CapturedOutput output) throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
     when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
+
     JsonProcessingException expected = new JsonProcessingException("Expected") {
     };
     when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
         .thenReturn("fooey")
         .thenThrow(expected);
 
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageBatchResponse.builder().build()));
+    when(batchManager.sendMessage(any(SendMessageRequest.class)))
+        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    verify(sqsClient).sendMessageBatch(batchCaptor.capture());
-    verify(sqsClient, never()).sendMessage(any(SendMessageRequest.class));
-
-    List<SendMessageBatchRequestEntry> entries = batchCaptor.getValue().entries();
-    assertThat(entries.size(), is(1));
-    assertThat(entries.get(0).messageBody(), is("fooey"));
+    verify(batchManager).sendMessage(sendReqCaptor.capture());
+    SendMessageRequest sendMessageRequest = sendReqCaptor.getValue();
+    assertThat(sendMessageRequest.messageBody(), is("fooey"));
     assertThat(output.getOut(), containsString(
         "Unable to convert 'syncEnd' message. Downstream services need notification."));
   }
 
   @Test
-  void shouldLogErrorWhenBatchSendFails(CapturedOutput output) throws Exception {
+  void shouldLogErrorWhenSendFails(CapturedOutput output) throws Exception {
     when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
     when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
     when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
         .thenReturn("fooey")
         .thenReturn("end");
-
-    CompletableFuture<SendMessageBatchResponse> failedFuture =
-        new CompletableFuture<>();
-    failedFuture.completeExceptionally(new RuntimeException("Batch send failed"));
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(failedFuture);
-
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    assertThat(output.getOut(), containsString("Failed to send batch for doctors"));
-  }
-
-  @Test
-  void shouldLogErrorWhenSomeMessagesFail(CapturedOutput output) throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenReturn("fooey")
-        .thenReturn("end");
-
-    BatchResultErrorEntry errorEntry = BatchResultErrorEntry.builder().id(gmcRef1)
-        .message("failure").build();
-    SendMessageBatchResponse response = SendMessageBatchResponse.builder().failed(errorEntry)
-        .build();
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(response));
-
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    assertThat(output.getOut(), containsString("Failed to send message for doctor " + gmcRef1));
-  }
-
-  @Test
-  void shouldLogErrorWhenSendSyncEndFails(CapturedOutput output) throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenReturn("fooey")
-        .thenReturn("end");
-
-    when(sqsClient.sendMessageBatch(any(SendMessageBatchRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(
-            SendMessageBatchResponse.builder().build()));
 
     CompletableFuture<SendMessageResponse> failedFuture = new CompletableFuture<>();
-    failedFuture.completeExceptionally(new RuntimeException("syncEnd send failed"));
-    when(sqsClient.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(failedFuture);
+    failedFuture.completeExceptionally(new RuntimeException("send failed"));
+    when(batchManager.sendMessage(any(SendMessageRequest.class))).thenReturn(failedFuture);
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    assertThat(output.getOut(),
-        containsString("Failed to send final syncEnd message to SQS for queue"));
+    assertThat(output.getOut(), containsString("Failed to send doctor " + gmcRef1));
   }
 
   private void buildDoctorsList() {
