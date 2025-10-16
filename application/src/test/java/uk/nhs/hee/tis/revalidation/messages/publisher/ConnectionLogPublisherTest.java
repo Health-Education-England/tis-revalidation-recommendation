@@ -42,7 +42,7 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 class ConnectionLogPublisherTest {
 
   @InjectMocks
-  ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher;
+  ConnectionLogPublisher connectionLogPublisher;
 
   @Mock
   RabbitTemplate rabbitTemplate;

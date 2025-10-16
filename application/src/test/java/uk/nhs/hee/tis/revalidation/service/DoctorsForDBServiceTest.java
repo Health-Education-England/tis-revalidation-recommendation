@@ -99,7 +99,7 @@ class DoctorsForDBServiceTest {
   private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
   @Mock
-  private ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher;
+  private ConnectionLogPublisher connectionLogPublisher;
 
   @Captor
   ArgumentCaptor<DoctorsForDB> doctorCaptor;

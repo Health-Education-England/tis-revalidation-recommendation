@@ -26,21 +26,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class GmcSyncMessagePublisher<T> extends RabbitMqMessagePublisher<T> {
+public class GmcSyncMessagePublisher extends RabbitMqMessagePublisher<String> {
 
-  @Value("${app.rabbit.reval.exchange}")
-  private String revalExchange;
-
-  @Value("${app.rabbit.reval.routingKey.gmcsync.requested.gmcclient}")
-  private String gmcSyncRoutingKey;
-
-  public GmcSyncMessagePublisher(String revalExchange, String gmcSyncRoutingKey,
+  public GmcSyncMessagePublisher(@Value("${app.rabbit.reval.exchange}") String revalExchange,
+      @Value("${app.rabbit.reval.routingKey.gmcsync.requested.gmcclient}") String gmcSyncRoutingKey,
       RabbitTemplate rabbitTemplate) {
     super(revalExchange, gmcSyncRoutingKey, rabbitTemplate);
   }
 
   @Override
-  public void publishToBroker(T message) {
+  public void publishToBroker(String message) {
     super.publishToBroker(message);
   }
 }

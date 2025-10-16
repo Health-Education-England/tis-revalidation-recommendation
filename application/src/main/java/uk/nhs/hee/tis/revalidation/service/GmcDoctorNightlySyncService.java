@@ -11,10 +11,10 @@ import uk.nhs.hee.tis.revalidation.messages.publisher.GmcSyncMessagePublisher;
 public class GmcDoctorNightlySyncService {
   private static final String START_MESSAGE = "start";
 
-  private final GmcSyncMessagePublisher<String> gmcSyncMessagePublisher;
+  private final GmcSyncMessagePublisher gmcSyncMessagePublisher;
 
   public GmcDoctorNightlySyncService(
-      GmcSyncMessagePublisher<String> gmcSyncMessagePublisher
+      GmcSyncMessagePublisher gmcSyncMessagePublisher
   ) {
     this.gmcSyncMessagePublisher = gmcSyncMessagePublisher;
   }

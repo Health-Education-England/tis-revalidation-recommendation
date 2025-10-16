@@ -22,22 +22,20 @@ package uk.nhs.hee.tis.revalidation.messages.publisher;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 
-public class ConnectionLogPublisher<T> extends RabbitMqMessagePublisher<T> {
+@Component
+public class ConnectionLogPublisher extends RabbitMqMessagePublisher<ConnectionLogDto> {
 
-  @Value("${app.rabbit.reval.exchange}")
-  private String revalExchange;
-
-  @Value("${app.rabbit.reval.routingKey.routingKey.connection.log}")
-  private String connectionLogRoutingKey;
-
-  public ConnectionLogPublisher(String revalExchange, String connectionLogRoutingKey,
+  public ConnectionLogPublisher(@Value("${app.rabbit.reval.exchange}") String revalExchange,
+      @Value("${app.rabbit.reval.routingKey.connection.log}") String connectionLogRoutingKey,
       RabbitTemplate rabbitTemplate) {
     super(revalExchange, connectionLogRoutingKey, rabbitTemplate);
   }
 
   @Override
-  public void publishToBroker(T message) {
+  public void publishToBroker(ConnectionLogDto message) {
     super.publishToBroker(message);
   }
 }

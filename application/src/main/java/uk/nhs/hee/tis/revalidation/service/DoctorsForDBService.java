@@ -76,7 +76,7 @@ public class DoctorsForDBService {
 
   private final DoctorsForDbMapper doctorsForDbMapper;
 
-  private final ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher;
+  private final ConnectionLogPublisher connectionLogPublisher;
 
   private static final String UPDATED_BY_GMC = "Updated by GMC";
 
@@ -85,7 +85,7 @@ public class DoctorsForDBService {
       RecommendationElasticSearchRepository recommendationElasticSearchRepository,
       RecommendationElasticSearchService recommendationElasticSearchService,
       RecommendationViewMapper recommendationViewMapper, DoctorsForDbMapper doctorsForDbMapper,
-      ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher) {
+      ConnectionLogPublisher connectionLogPublisher) {
     this.doctorsRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
     this.recommendationElasticSearchRepository = recommendationElasticSearchRepository;

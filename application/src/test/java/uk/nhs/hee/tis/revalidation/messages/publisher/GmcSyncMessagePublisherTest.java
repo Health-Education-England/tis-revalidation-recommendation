@@ -42,7 +42,7 @@ class GmcSyncMessagePublisherTest {
   private final Faker faker = new Faker();
 
   @InjectMocks
-  GmcSyncMessagePublisher<String> gmcSyncMessagePublisher;
+  GmcSyncMessagePublisher gmcSyncMessagePublisher;
 
   @Mock
   RabbitTemplate rabbitTemplate;
