@@ -56,12 +56,7 @@ class GmcSyncMessagePublisherTest {
   @Captor
   ArgumentCaptor<String> routingKeyNameCaptor;
 
-  private String gmcNumber = faker.number().digits(7);
-  private String gmcRecommendationId = faker.number().digits(3);
-  private String recommendationId = faker.number().digits(3);
-  private String designatedBody = faker.lorem().characters(5);
-
-  private String recommendationStatusCheckDto = "start";
+  private static final String START_MESSAGE = "start";
 
   @Test
   void shouldPublishToRabbitMq() {
@@ -76,7 +71,7 @@ class GmcSyncMessagePublisherTest {
         gmcSyncMessagePublisher, "exchange", exchangeName
     );
 
-    gmcSyncMessagePublisher.publishToBroker(recommendationStatusCheckDto);
+    gmcSyncMessagePublisher.publishToBroker(START_MESSAGE);
 
     verify(rabbitTemplate).convertAndSend(
         exchangeNameCaptor.capture(),

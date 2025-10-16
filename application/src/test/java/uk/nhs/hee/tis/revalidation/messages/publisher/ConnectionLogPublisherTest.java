@@ -41,8 +41,6 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 @ExtendWith(MockitoExtension.class)
 class ConnectionLogPublisherTest {
 
-  private final Faker faker = new Faker();
-
   @InjectMocks
   ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher;
 
