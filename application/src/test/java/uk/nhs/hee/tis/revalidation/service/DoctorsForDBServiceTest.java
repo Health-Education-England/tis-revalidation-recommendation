@@ -40,6 +40,8 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,6 +60,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeAdminDto;
@@ -72,6 +75,7 @@ import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapperImpl;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapperImpl;
+import uk.nhs.hee.tis.revalidation.messages.publisher.ConnectionLogPublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
@@ -94,8 +98,14 @@ class DoctorsForDBServiceTest {
   @Mock
   private RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
+  @Mock
+  private ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher;
+
   @Captor
   ArgumentCaptor<DoctorsForDB> doctorCaptor;
+
+  @Captor
+  ArgumentCaptor<ConnectionLogDto> connectionLogDtoCaptor;
 
   @Mock
   private Page<RecommendationView> page;
@@ -114,12 +124,13 @@ class DoctorsForDBServiceTest {
   private String programmeName;
   private String outcome1;
   private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
+  private static final String UPDATED_BY_GMC = "Updated by GMC";
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     doctorsForDBService = new DoctorsForDBService(repository, recommendationService,
         recommendationElasticSearchRepository, recommendationElasticSearchService,
-        new RecommendationViewMapperImpl(), new DoctorsForDbMapperImpl());
+        new RecommendationViewMapperImpl(), new DoctorsForDbMapperImpl(), connectionLogPublisher);
     ReflectionTestUtils.setField(doctorsForDBService, "pageSize", 20);
     setupData();
   }
@@ -133,30 +144,21 @@ class DoctorsForDBServiceTest {
     orders.add(lastNameOrder);
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List
-        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
+        designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable))
-        .thenReturn(page);
-    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
-        .thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findAll("", formattedDbcs, List.of(), programmeName,
+        outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
 
     when(page.get()).thenReturn(Stream.of(rv1, rv2, rv3, rv4, rv5));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
     when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("desc")
-        .sortColumn("submissionDate")
-        .pageNumber(1)
-        .searchQuery("")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
+        .sortColumn("submissionDate").pageNumber(1).searchQuery("").dbcs(dbcs)
+        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
         .build();
 
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
@@ -194,27 +196,17 @@ class DoctorsForDBServiceTest {
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
     List<String> dbcs = List.of(designatedBody1);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable)).thenReturn(
-        page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findAll("", formattedDbcs, List.of(), programmeName,
+        outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
     when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("desc")
-        .sortColumn("submissionDate")
-        .pageNumber(1)
-        .searchQuery("")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
+        .sortColumn("submissionDate").pageNumber(1).searchQuery("").dbcs(dbcs)
+        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
         .build();
 
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
@@ -242,30 +234,20 @@ class DoctorsForDBServiceTest {
     Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
     orders.add(lastNameOrder);
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List
-        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
+        designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findByUnderNotice("", formattedDbcs, programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable)).thenReturn(page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findByUnderNotice("", formattedDbcs, programmeName,
+        outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv2));
     when(page.getTotalPages()).thenReturn(1);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
     when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("desc")
-        .sortColumn("submissionDate")
-        .underNotice(true)
-        .pageNumber(1)
-        .searchQuery("")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
+        .sortColumn("submissionDate").underNotice(true).pageNumber(1).searchQuery("").dbcs(dbcs)
+        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -299,28 +281,18 @@ class DoctorsForDBServiceTest {
     orders.add(lastNameOrder);
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List
-        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
+        designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findAll("", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable)).thenReturn(
-        page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findAll("", formattedDbcs, List.of(), programmeName,
+        outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of());
     when(repository.countByUnderNoticeIn(YES)).thenReturn(0L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("desc")
-        .sortColumn("submissionDate")
-        .pageNumber(1)
-        .searchQuery("")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
+        .sortColumn("submissionDate").pageNumber(1).searchQuery("").dbcs(dbcs)
+        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -339,31 +311,21 @@ class DoctorsForDBServiceTest {
     orders.add(lastNameOrder);
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List
-        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
+        designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable))
-        .thenReturn(page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findAll("query", formattedDbcs, List.of(),
+        programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2L);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
     when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("desc")
-        .sortColumn("submissionDate")
-        .pageNumber(1)
-        .searchQuery("query")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
+        .sortColumn("submissionDate").pageNumber(1).searchQuery("query").dbcs(dbcs)
+        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of());
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -398,30 +360,21 @@ class DoctorsForDBServiceTest {
     orders.add(lastNameOrder);
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List
-        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
+        designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable))
-        .thenReturn(page);
-    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(dbcs))
-        .thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findAll("query", formattedDbcs, List.of(),
+        programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2L);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
     when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("desc")
-        .sortColumn("submissionDate")
-        .pageNumber(1)
-        .searchQuery("query")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
+        .sortColumn("submissionDate").pageNumber(1).searchQuery("query").dbcs(dbcs)
+        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
         .build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
     final var doctorsForDB = allDoctors.getTraineeInfo();
@@ -454,32 +407,21 @@ class DoctorsForDBServiceTest {
     orders.add(customOrder);
 
     final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List
-        .of(designatedBody1, designatedBody2, designatedBody3, designatedBody4, designatedBody5);
+    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
+        designatedBody5);
     String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository
-        .findAll("query", formattedDbcs, List.of(), programmeName, outcome1, status1.name(), admin1,
-            pageableAndSortable))
-        .thenReturn(page);
-    when(recommendationElasticSearchService
-        .formatDesignatedBodyCodesForElasticsearchQuery(dbcs)
-    ).thenReturn(formattedDbcs);
+    when(recommendationElasticSearchRepository.findAll("query", formattedDbcs, List.of(),
+        programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
+    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
+        dbcs)).thenReturn(formattedDbcs);
     when(page.get()).thenReturn(Stream.of(rv1, rv4));
     when(page.getTotalPages()).thenReturn(1);
     when(page.getTotalElements()).thenReturn(2L);
     when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
     when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder()
-        .sortOrder("asc")
-        .sortColumn("doctorLastName")
-        .pageNumber(1)
-        .searchQuery("query")
-        .dbcs(dbcs)
-        .programmeName(programmeName)
-        .gmcStatus(outcome1)
-        .tisStatus(status1.name())
-        .admin(admin1)
-        .build();
+    final var requestDTO = TraineeRequestDto.builder().sortOrder("asc").sortColumn("doctorLastName")
+        .pageNumber(1).searchQuery("query").dbcs(dbcs).programmeName(programmeName)
+        .gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1).build();
     final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, null);
     final var doctorsForDB = allDoctors.getTraineeInfo();
     assertThat(allDoctors.getCountTotal(), is(5L));
@@ -529,12 +471,9 @@ class DoctorsForDBServiceTest {
   void shouldUpdateDoctorsForDbFieldsWhenUpdateConnection() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(doc1));
     LocalDate addedDate = doc1.getDateAdded();
-    final var message = ConnectionMessageDto.builder()
-        .gmcId(gmcRef1)
-        .designatedBodyCode(designatedBody2)
-        .submissionDate(subDate2)
-        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime)
-        .build();
+    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2).submissionDate(subDate2)
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime).build();
     doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
@@ -571,10 +510,8 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldSetExistsInGmcToTrueIfDesignatedBodyCodeReceivedForDisconnectedDoctor() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(docNullDbc));
-    final var message = ConnectionMessageDto.builder()
-        .gmcId(gmcRef1)
-        .designatedBodyCode(designatedBody1)
-        .build();
+    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody1).build();
     doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
@@ -585,12 +522,9 @@ class DoctorsForDBServiceTest {
   @Test
   void shouldCreatePartialDoctorRecordOnDesignatedBodyUpdateIfNoDoctorFound() {
     when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
-    final var message = ConnectionMessageDto.builder()
-        .gmcId(gmcRef1)
-        .designatedBodyCode(designatedBody2)
-        .submissionDate(subDate2)
-        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime)
-        .build();
+    final var message = ConnectionMessageDto.builder().gmcId(gmcRef1)
+        .designatedBodyCode(designatedBody2).submissionDate(subDate2)
+        .gmcLastUpdatedDateTime(gmcLastUpdatedDateTime).build();
     doctorsForDBService.updateDoctorConnection(message);
 
     verify(repository).save(doctorCaptor.capture());
@@ -717,6 +651,123 @@ class DoctorsForDBServiceTest {
     }
   }
 
+  @Test
+  void shouldPublishConnectionLogIfNewConnectionGmcSync() {
+    var dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1, subDate1.format(dateFormat),
+        LocalDate.now().minusDays(5).format(dateFormat), un1.value(), "sanction", designatedBody1,
+        LocalDateTime.now());
+
+    DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody1,
+        LocalDateTime.now(), List.of(newDoctorDto));
+
+    when(repository.findById(gmcRef1)).thenReturn(Optional.empty());
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
+
+    verify(connectionLogPublisher, times(1))
+        .publishToBroker(connectionLogDtoCaptor.capture());
+
+    ConnectionLogDto result = connectionLogDtoCaptor.getValue();
+
+    assertNull(result.getPreviousDesignatedBodyCode());
+    assertThat(result.getNewDesignatedBodyCode(), is(designatedBody1));
+    assertThat(result.getUpdatedBy(), is(UPDATED_BY_GMC));
+  }
+
+  @Test
+  void shouldPublishConnectionLogIfNewDisconnectionGmcSync() {
+    LocalDateTime cutoffDate = LocalDateTime.now();
+
+    DoctorsForDB staleDoctor = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1,
+        LocalDate.now().minusDays(5), un1, "sanction", status1, LocalDate.now(),
+        LocalDateTime.now().minusDays(1), designatedBody1, admin1, true);
+
+    DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody1,
+        cutoffDate, List.of());
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1, cutoffDate)).thenReturn(List.of(staleDoctor));
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(staleDoctor));
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
+
+    verify(connectionLogPublisher, times(1))
+        .publishToBroker(connectionLogDtoCaptor.capture());
+
+    ConnectionLogDto result = connectionLogDtoCaptor.getValue();
+
+    assertThat(result.getPreviousDesignatedBodyCode(), is(designatedBody1));
+    assertNull(result.getNewDesignatedBodyCode());
+    assertThat(result.getUpdatedBy(), is(UPDATED_BY_GMC));
+    assertThat(result.getEventDateTime(), is(cutoffDate));
+  }
+
+  @Test
+  void shouldPublishConnectionLogIfDesignatedBodyChangesGmcSync() {
+    var dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    LocalDateTime cutoffDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
+
+    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1, subDate1.format(dateFormat),
+        LocalDate.now().minusDays(5).format(dateFormat), un1.value(), "sanction", designatedBody2,
+        cutoffDate);
+
+    DoctorsForDB oldDoctor = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1,
+        LocalDate.now().minusDays(5), un1, "sanction", status1, LocalDate.now(),
+        cutoffDate, designatedBody1, admin1, true);
+
+    DoctorsForDB updatedDoctor = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1,
+        LocalDate.now().minusDays(5), un1, "sanction", status1, LocalDate.now(),
+        cutoffDate, designatedBody2, admin1, true);
+
+    DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody2,
+        cutoffDate, List.of(newDoctorDto));
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody2, cutoffDate)).thenReturn(List.of());
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(oldDoctor)).thenReturn(Optional.of(updatedDoctor));
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
+
+    verify(connectionLogPublisher, times(1))
+        .publishToBroker(connectionLogDtoCaptor.capture());
+
+    ConnectionLogDto result = connectionLogDtoCaptor.getValue();
+
+    assertThat(result.getNewDesignatedBodyCode(), is(designatedBody2));
+    assertThat(result.getPreviousDesignatedBodyCode(), is(designatedBody1));
+    assertThat(result.getUpdatedBy(), is(UPDATED_BY_GMC));
+    assertThat(result.getEventDateTime(), is(cutoffDate));
+  }
+
+  @Test
+  void shouldNotPublishConnectionLogIfDesignatedBodyDoesNotChangeGmcSync() {
+    var dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    LocalDateTime cutoffDate = LocalDateTime.now();
+
+    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1, subDate1.format(dateFormat),
+        LocalDate.now().minusDays(5).format(dateFormat), un1.value(), "sanction", designatedBody2,
+        cutoffDate);
+
+    DoctorsForDB oldDoctor = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1,
+        LocalDate.now().minusDays(5), un1, "sanction", status1, LocalDate.now(),
+        cutoffDate, designatedBody2, admin1, true);
+
+    DoctorsForDB updatedDoctor = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1,
+        LocalDate.now().minusDays(5), un1, "sanction", status1, LocalDate.now(),
+        cutoffDate, designatedBody2, admin1, true);
+
+    DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody2,
+        cutoffDate, List.of(newDoctorDto));
+
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody2, cutoffDate)).thenReturn(List.of(oldDoctor));
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(oldDoctor)).thenReturn(Optional.of(updatedDoctor));
+
+    doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
+
+    verify(connectionLogPublisher, never())
+        .publishToBroker(any());
+  }
+
   private static void assertSubsetOfConvertedFields(TraineeInfoDto actual, DoctorsForDB expected) {
     assertThat(actual.getGmcReferenceNumber(), is(expected.getGmcReferenceNumber()));
     assertThat(actual.getDoctorFirstName(), is(expected.getDoctorFirstName()));
@@ -798,68 +849,35 @@ class DoctorsForDBServiceTest {
     docNullDbc = new DoctorsForDB(gmcRef1, fname1, lname1, subDate1, addedDate1, un1, sanction1,
         status1, LocalDate.now(), null, null, admin1, true);
 
-    rv1 = RecommendationView.builder()
-        .gmcReferenceNumber(gmcRef1)
-        .doctorFirstName(fname1)
-        .doctorLastName(lname1)
-        .submissionDate(subDate1)
-        .underNotice(un1.name())
-        .tisStatus(status1.name())
-        .designatedBody(designatedBody1)
-        .admin(admin1)
-        .existsInGmc(true)
+    rv1 = RecommendationView.builder().gmcReferenceNumber(gmcRef1).doctorFirstName(fname1)
+        .doctorLastName(lname1).submissionDate(subDate1).underNotice(un1.name())
+        .tisStatus(status1.name()).designatedBody(designatedBody1).admin(admin1).existsInGmc(true)
         .build();
-    rv2 = RecommendationView.builder()
-        .gmcReferenceNumber(gmcRef2)
-        .doctorFirstName(fname2)
-        .doctorLastName(lname2)
-        .submissionDate(subDate2)
-        .underNotice(un2.name())
-        .tisStatus(status2.name())
-        .designatedBody(designatedBody2)
-        .admin(admin2)
-        .existsInGmc(true)
+    rv2 = RecommendationView.builder().gmcReferenceNumber(gmcRef2).doctorFirstName(fname2)
+        .doctorLastName(lname2).submissionDate(subDate2).underNotice(un2.name())
+        .tisStatus(status2.name()).designatedBody(designatedBody2).admin(admin2).existsInGmc(true)
         .build();
-    rv3 = RecommendationView.builder()
-        .gmcReferenceNumber(gmcRef3)
-        .doctorFirstName(fname3)
-        .doctorLastName(lname3)
-        .submissionDate(subDate3)
-        .underNotice(un3.name())
-        .tisStatus(status3.name())
-        .designatedBody(designatedBody3)
-        .admin(admin3)
-        .existsInGmc(true)
+    rv3 = RecommendationView.builder().gmcReferenceNumber(gmcRef3).doctorFirstName(fname3)
+        .doctorLastName(lname3).submissionDate(subDate3).underNotice(un3.name())
+        .tisStatus(status3.name()).designatedBody(designatedBody3).admin(admin3).existsInGmc(true)
         .build();
-    rv4 = RecommendationView.builder()
-        .gmcReferenceNumber(gmcRef4)
-        .doctorFirstName(fname4)
-        .doctorLastName(lname4)
-        .submissionDate(subDate4)
-        .underNotice(un4.name())
-        .tisStatus(status4.name())
-        .designatedBody(designatedBody4)
-        .admin(admin4)
-        .existsInGmc(true)
+    rv4 = RecommendationView.builder().gmcReferenceNumber(gmcRef4).doctorFirstName(fname4)
+        .doctorLastName(lname4).submissionDate(subDate4).underNotice(un4.name())
+        .tisStatus(status4.name()).designatedBody(designatedBody4).admin(admin4).existsInGmc(true)
         .build();
-    rv5 = RecommendationView.builder()
-        .gmcReferenceNumber(gmcRef5)
-        .doctorFirstName(fname5)
-        .doctorLastName(lname5)
-        .submissionDate(subDate5)
-        .underNotice(un5.name())
-        .tisStatus(status5.name())
-        .designatedBody(designatedBody5)
-        .admin(admin5)
-        .existsInGmc(true)
+    rv5 = RecommendationView.builder().gmcReferenceNumber(gmcRef5).doctorFirstName(fname5)
+        .doctorLastName(lname5).submissionDate(subDate5).underNotice(un5.name())
+        .tisStatus(status5.name()).designatedBody(designatedBody5).admin(admin5).existsInGmc(true)
         .build();
 
     docDto1 = new DoctorsForDbDto();
     docDto1.setGmcReferenceNumber(gmcRef1);
+    docDto1.setDesignatedBodyCode(designatedBody1);
     docDto1.setGmcLastUpdatedDateTime(gmcLastUpdatedDateTime);
     docDto1.setUnderNotice(YES.value());
 
     docDto2 = new DoctorsForDbDto();
+    docDto2.setDesignatedBodyCode(designatedBody2);
     docDto2.setGmcReferenceNumber(gmcRef1);
     docDto2.setUnderNotice(NO.value());
 

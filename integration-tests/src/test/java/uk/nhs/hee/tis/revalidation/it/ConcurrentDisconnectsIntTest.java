@@ -107,7 +107,7 @@ class ConcurrentDisconnectsIntTest {
   @BeforeEach
   void setData() {
     LocalDateTime setupDateTime = LocalDateTime.now();
-    testObj = new DoctorsForDBService(repository, null, null, null, null, null);
+    testObj = new DoctorsForDBService(repository, null, null, null, null, null, null);
     ArrayList<DoctorsForDbDto> db1Doctors = new ArrayList<>();
     ArrayList<DoctorsForDbDto> db2Doctors = new ArrayList<>();
     expectedNoDbDoctors = new ArrayList<>();

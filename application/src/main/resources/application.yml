@@ -70,6 +70,7 @@ app:
       routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
       queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
       queue.doctorsfordb.collected.recommendation: ${REVAL_RABBIT_DOCTORS_FOR_DB_COLLECTED_QUEUE:reval.queue.doctorsfordb.collected.recommendation}
+      routingKey.connection.log: ${CONNECTION_LOG_ROUTING_KEY:reval.connection.log}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}

@@ -21,14 +21,18 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.nhs.hee.tis.revalidation.messages.publisher.GmcDoctorsForDbSyncStartPublisher;
+import uk.nhs.hee.tis.revalidation.messages.publisher.GmcSyncMessagePublisher;
 
 @ExtendWith(MockitoExtension.class)
 class GmcDoctorNightlySyncServiceTest {
@@ -40,12 +44,17 @@ class GmcDoctorNightlySyncServiceTest {
   DoctorsForDBService doctorsForDBService;
 
   @Mock
-  GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
+  GmcSyncMessagePublisher gmcSyncMessagePublisher;
+
+  @Captor
+  ArgumentCaptor<String> captor;
 
   @Test
   void shouldPublishMessageToStartSync() {
     gmcDoctorNightlySyncService.startNightlyGmcDoctorSync();
-    verify(gmcDoctorsForDbSyncStartPublisher).publishNightlySyncStartMessage();
+    verify(gmcSyncMessagePublisher).publishToBroker(captor.capture());
+
+    assertThat(captor.getValue(), is("start"));
   }
 
 }

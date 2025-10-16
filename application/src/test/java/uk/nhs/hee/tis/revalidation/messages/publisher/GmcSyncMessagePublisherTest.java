@@ -37,12 +37,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class RabbitMqMessagePublisherTest {
+class GmcSyncMessagePublisherTest {
 
   private final Faker faker = new Faker();
 
   @InjectMocks
-  RabbitMqMessagePublisher<String> rabbitMqMessagePublisher;
+  GmcSyncMessagePublisher<String> gmcSyncMessagePublisher;
 
   @Mock
   RabbitTemplate rabbitTemplate;
@@ -70,13 +70,13 @@ class RabbitMqMessagePublisherTest {
     String exchangeName = "exchangeName";
 
     ReflectionTestUtils.setField(
-        rabbitMqMessagePublisher, "routingKey", routingKeyName
+        gmcSyncMessagePublisher, "routingKey", routingKeyName
     );
     ReflectionTestUtils.setField(
-        rabbitMqMessagePublisher, "exchange", exchangeName
+        gmcSyncMessagePublisher, "exchange", exchangeName
     );
 
-    rabbitMqMessagePublisher.publishToBroker(recommendationStatusCheckDto);
+    gmcSyncMessagePublisher.publishToBroker(recommendationStatusCheckDto);
 
     verify(rabbitTemplate).convertAndSend(
         exchangeNameCaptor.capture(),

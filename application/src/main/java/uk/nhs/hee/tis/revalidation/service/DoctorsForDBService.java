@@ -39,6 +39,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
 import uk.nhs.hee.tis.revalidation.dto.DesignatedBodyDto;
 import uk.nhs.hee.tis.revalidation.dto.DoctorsForDbDto;
@@ -51,6 +52,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
 import uk.nhs.hee.tis.revalidation.mapper.DoctorsForDbMapper;
 import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
+import uk.nhs.hee.tis.revalidation.messages.publisher.ConnectionLogPublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RecommendationElasticSearchRepository;
 
@@ -74,17 +76,23 @@ public class DoctorsForDBService {
 
   private final DoctorsForDbMapper doctorsForDbMapper;
 
+  private final ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher;
+
+  private static final String UPDATED_BY_GMC = "Updated by GMC";
+
   public DoctorsForDBService(DoctorsForDBRepository doctorsForDBRepository,
       RecommendationService recommendationService,
       RecommendationElasticSearchRepository recommendationElasticSearchRepository,
       RecommendationElasticSearchService recommendationElasticSearchService,
-      RecommendationViewMapper recommendationViewMapper, DoctorsForDbMapper doctorsForDbMapper) {
+      RecommendationViewMapper recommendationViewMapper, DoctorsForDbMapper doctorsForDbMapper,
+      ConnectionLogPublisher<ConnectionLogDto> connectionLogPublisher) {
     this.doctorsRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
     this.recommendationElasticSearchRepository = recommendationElasticSearchRepository;
     this.recommendationElasticSearchService = recommendationElasticSearchService;
     this.recommendationViewMapper = recommendationViewMapper;
     this.doctorsForDbMapper = doctorsForDbMapper;
+    this.connectionLogPublisher = connectionLogPublisher;
   }
 
   public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
@@ -108,6 +116,10 @@ public class DoctorsForDBService {
     final var doctorsForDB = doctorsForDbMapper.toEntity(gmcDoctor, true,
         RecommendationStatus.NOT_STARTED);
     final var doctor = doctorsRepository.findById(gmcDoctor.getGmcReferenceNumber());
+
+    String previousDesignatedBody = null;
+    String newDesignatedBody = doctorsForDB.getDesignatedBodyCode();
+
     if (doctor.isPresent()) {
       doctorsForDB.setAdmin(doctor.get().getAdmin());
       if (NO.value().equals(gmcDoctor.getUnderNotice())) {
@@ -116,10 +128,20 @@ public class DoctorsForDBService {
         doctorsForDB.setDoctorStatus(recommendationService.getRecommendationStatusForTrainee(
             gmcDoctor.getGmcReferenceNumber()));
       }
+      previousDesignatedBody = doctor.get().getDesignatedBodyCode();
     } else {
       doctorsForDB.setDoctorStatus(RecommendationStatus.NOT_STARTED);
     }
     doctorsRepository.save(doctorsForDB);
+
+    if (!newDesignatedBody.equals(previousDesignatedBody)) {
+      ConnectionLogDto connectionLogDto = ConnectionLogDto.builder().gmcId(
+              doctorsForDB.getGmcReferenceNumber())
+          .eventDateTime(gmcDoctor.getGmcLastUpdatedDateTime())
+          .updatedBy(UPDATED_BY_GMC).previousDesignatedBodyCode(previousDesignatedBody)
+          .newDesignatedBodyCode(newDesignatedBody).build();
+      publishConnectionLog(connectionLogDto);
+    }
   }
 
   public void updateTraineeAdmin(final List<TraineeAdminDto> traineeAdmins) {
@@ -188,6 +210,10 @@ public class DoctorsForDBService {
               savedDoctor.setDesignatedBodyCode(null);
               savedDoctor.setGmcLastUpdatedDateTime(requestDateTime);
               doctorsRepository.save(savedDoctor);
+              publishConnectionLog(
+                  ConnectionLogDto.builder().gmcId(savedDoctor.getGmcReferenceNumber())
+                      .previousDesignatedBodyCode(designatedBodyCode).newDesignatedBodyCode(null)
+                      .eventDateTime(requestDateTime).updatedBy(UPDATED_BY_GMC).build());
             } else {
               log.debug("Close one.  Doctor [{}] modified between updates and being disconnected.",
                   savedDoctor.getGmcReferenceNumber());
@@ -239,6 +265,10 @@ public class DoctorsForDBService {
     return recommendationElasticSearchRepository.findAll(requestDTO.getSearchQuery().toLowerCase(),
         designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, gmcStatus, tisStatus, admin,
         pageableAndSortable);
+  }
+
+  private void publishConnectionLog(ConnectionLogDto connectionLogDto) {
+    connectionLogPublisher.publishToBroker(connectionLogDto);
   }
 
   //TODO: explore to implement cache
