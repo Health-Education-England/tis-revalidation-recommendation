@@ -29,7 +29,7 @@ import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 public class ConnectionLogPublisher extends RabbitMqMessagePublisher<ConnectionLogDto> {
 
   public ConnectionLogPublisher(@Value("${app.rabbit.reval.exchange}") String revalExchange,
-      @Value("${app.rabbit.reval.routingKey.connection.log}") String connectionLogRoutingKey,
+      @Value("${app.rabbit.reval.routingKey.connection.connectionLog}") String connectionLogRoutingKey,
       RabbitTemplate rabbitTemplate) {
     super(revalExchange, connectionLogRoutingKey, rabbitTemplate);
   }
