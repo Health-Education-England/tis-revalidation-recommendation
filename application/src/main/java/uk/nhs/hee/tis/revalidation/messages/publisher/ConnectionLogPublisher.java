@@ -33,9 +33,4 @@ public class ConnectionLogPublisher extends RabbitMqMessagePublisher<ConnectionL
       RabbitTemplate rabbitTemplate) {
     super(revalExchange, connectionLogRoutingKey, rabbitTemplate);
   }
-
-  @Override
-  public void publishToBroker(ConnectionLogDto message) {
-    super.publishToBroker(message);
-  }
 }

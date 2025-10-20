@@ -33,9 +33,4 @@ public class GmcSyncMessagePublisher extends RabbitMqMessagePublisher<String> {
       RabbitTemplate rabbitTemplate) {
     super(revalExchange, gmcSyncRoutingKey, rabbitTemplate);
   }
-
-  @Override
-  public void publishToBroker(String message) {
-    super.publishToBroker(message);
-  }
 }
