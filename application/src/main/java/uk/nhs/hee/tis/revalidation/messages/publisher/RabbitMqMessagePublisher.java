@@ -29,7 +29,7 @@ public abstract class RabbitMqMessagePublisher<T> implements MessagePublisher<T>
   protected final String routingKey;
   protected final RabbitTemplate rabbitTemplate;
 
-  public RabbitMqMessagePublisher(String exchange, String routingKey, RabbitTemplate rabbitTemplate) {
+  protected RabbitMqMessagePublisher(String exchange, String routingKey, RabbitTemplate rabbitTemplate) {
     this.exchange = exchange;
     this.routingKey = routingKey;
     this.rabbitTemplate = rabbitTemplate;

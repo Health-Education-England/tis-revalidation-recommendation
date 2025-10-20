@@ -21,7 +21,6 @@
 
 package uk.nhs.hee.tis.revalidation.messages.publisher;
 
-import com.github.javafaker.Faker;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -38,8 +37,6 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class GmcSyncMessagePublisherTest {
-
-  private final Faker faker = new Faker();
 
   @InjectMocks
   GmcSyncMessagePublisher gmcSyncMessagePublisher;
