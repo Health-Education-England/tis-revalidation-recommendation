@@ -18,7 +18,7 @@ spring:
       uris: ${ES_URLS:http://localhost:9200}
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://${MONGODB_USERNAME:root}:${MONGODB_PASSWORD:password}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:revalidation}?${MONGODB_PARAMS:authSource=admin&authMechanism=SCRAM-SHA-1&replicaSet=rs0&readPreference=secondaryPreferred}}
+      uri: ${MONGODB_URI:mongodb://${MONGODB_USERNAME:root}:${MONGODB_PASSWORD:password}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:revalidation}?${MONGODB_PARAMS:authSource=admin&authMechanism=SCRAM-SHA-1}}
 
 server:
   servlet:
@@ -70,6 +70,7 @@ app:
       routingKey.gmcsync.requested.gmcclient: ${REVAL_RABBIT_GMCSYNC_REQUESTED_GMCCLIENT_ROUTING_KEY:reval.gmcsync.requested}
       queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
       queue.doctorsfordb.collected.recommendation: ${REVAL_RABBIT_DOCTORS_FOR_DB_COLLECTED_QUEUE:reval.queue.doctorsfordb.collected.recommendation}
+      routingKey.connection.connectionlog: ${CONNECTION_LOG_ROUTING_KEY:reval.connection.connectionlog}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}
@@ -77,8 +78,8 @@ app:
     gmcUsername: ${GMC_USER_NAME:guest}
     gmcPassword: ${GMC_PASSWORD:guest}
     designatedBodies: ${DESIGNATED_BODY_CODE:1-AIIDHJ,1-AIIDMQ,1-AIIDNQ,1-AIIDMY,1-AIIDQQ,1-AIIDWT,1-AIIDR8,1-AIIDSA,1-AIIDH1,1-AIIDWA,1-AIIDVS,1-AIIDWI,1-AIIDSI}
-    recommendationstatuscheck.cronExpression: ${REC_STATUS_CHECK_CRON:0 0 8,12,16 * * *}
-    nightlySyncStart.cronExpression: ${REC_NIGHTLY_SYNC_CRON:0 0 0 * * *}
+    recommendationstatuscheck.cronExpression: ${REC_STATUS_CHECK_CRON:-}
+    nightlySyncStart.cronExpression: ${REC_NIGHTLY_SYNC_CRON:-}
 
   scheduling:
     lock:

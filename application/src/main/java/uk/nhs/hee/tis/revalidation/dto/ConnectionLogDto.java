@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2021 Crown Copyright (Health Education England)
+ * Copyright 2025 Crown Copyright (NHS England)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -18,25 +18,26 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+package uk.nhs.hee.tis.revalidation.dto;
 
-package uk.nhs.hee.tis.revalidation.messages.publisher;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModel;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-
-public abstract class RabbitMqMessagePublisher<T> implements MessagePublisher<T> {
-
-  protected final String exchange;
-  protected final String routingKey;
-  protected final RabbitTemplate rabbitTemplate;
-
-  protected RabbitMqMessagePublisher(String exchange, String routingKey, RabbitTemplate rabbitTemplate) {
-    this.exchange = exchange;
-    this.routingKey = routingKey;
-    this.rabbitTemplate = rabbitTemplate;
-  }
-
-  @Override
-  public void publishToBroker(T message) {
-    rabbitTemplate.convertAndSend(exchange, routingKey, message);
-  }
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
+@ApiModel(description = "Connection change details")
+public class ConnectionLogDto {
+  private String gmcId;
+  private String newDesignatedBodyCode;
+  private String previousDesignatedBodyCode;
+  private String updatedBy;
+  private LocalDateTime eventDateTime;
 }

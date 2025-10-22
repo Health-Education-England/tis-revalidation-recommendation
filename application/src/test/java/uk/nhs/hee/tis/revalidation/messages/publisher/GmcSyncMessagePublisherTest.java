@@ -19,11 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package uk.nhs.hee.tis.revalidation.service;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.verify;
+package uk.nhs.hee.tis.revalidation.messages.publisher;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,29 +28,57 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.nhs.hee.tis.revalidation.messages.publisher.GmcSyncMessagePublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class GmcDoctorNightlySyncServiceTest {
+class GmcSyncMessagePublisherTest {
 
   @InjectMocks
-  GmcDoctorNightlySyncService gmcDoctorNightlySyncService;
-
-  @Mock
-  DoctorsForDBService doctorsForDBService;
-
-  @Mock
   GmcSyncMessagePublisher gmcSyncMessagePublisher;
 
+  @Mock
+  RabbitTemplate rabbitTemplate;
+
   @Captor
-  ArgumentCaptor<String> captor;
+  ArgumentCaptor<String> messageCaptor;
+
+  @Captor
+  ArgumentCaptor<String> exchangeNameCaptor;
+
+  @Captor
+  ArgumentCaptor<String> routingKeyNameCaptor;
+
+  private static final String START_MESSAGE = "start";
 
   @Test
-  void shouldPublishMessageToStartSync() {
-    gmcDoctorNightlySyncService.startNightlyGmcDoctorSync();
-    verify(gmcSyncMessagePublisher).publishToBroker(captor.capture());
+  void shouldPublishToRabbitMq() {
 
-    assertThat(captor.getValue(), is("start"));
+    String routingKeyName = "routingKeyName";
+    String exchangeName = "exchangeName";
+
+    ReflectionTestUtils.setField(
+        gmcSyncMessagePublisher, "routingKey", routingKeyName
+    );
+    ReflectionTestUtils.setField(
+        gmcSyncMessagePublisher, "exchange", exchangeName
+    );
+
+    gmcSyncMessagePublisher.publishToBroker(START_MESSAGE);
+
+    verify(rabbitTemplate).convertAndSend(
+        exchangeNameCaptor.capture(),
+        routingKeyNameCaptor.capture(),
+        messageCaptor.capture()
+    );
+
+    assertThat(messageCaptor.getValue(), is("start"));
+    assertThat(routingKeyNameCaptor.getValue(), is(routingKeyName));
+    assertThat(exchangeNameCaptor.getValue(), is(exchangeName));
   }
-
 }
+

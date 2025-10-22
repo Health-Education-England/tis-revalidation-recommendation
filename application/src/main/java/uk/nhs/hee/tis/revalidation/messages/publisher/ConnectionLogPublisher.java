@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2021 Crown Copyright (Health Education England)
+ * Copyright 2025 Crown Copyright (NHS England)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -18,25 +18,19 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
 package uk.nhs.hee.tis.revalidation.messages.publisher;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 
-public abstract class RabbitMqMessagePublisher<T> implements MessagePublisher<T> {
+@Component
+public class ConnectionLogPublisher extends RabbitMqMessagePublisher<ConnectionLogDto> {
 
-  protected final String exchange;
-  protected final String routingKey;
-  protected final RabbitTemplate rabbitTemplate;
-
-  protected RabbitMqMessagePublisher(String exchange, String routingKey, RabbitTemplate rabbitTemplate) {
-    this.exchange = exchange;
-    this.routingKey = routingKey;
-    this.rabbitTemplate = rabbitTemplate;
-  }
-
-  @Override
-  public void publishToBroker(T message) {
-    rabbitTemplate.convertAndSend(exchange, routingKey, message);
+  public ConnectionLogPublisher(@Value("${app.rabbit.reval.exchange}") String revalExchange,
+      @Value("${app.rabbit.reval.routingKey.connection.connectionlog}") String connectionLogRoutingKey,
+      RabbitTemplate rabbitTemplate) {
+    super(revalExchange, connectionLogRoutingKey, rabbitTemplate);
   }
 }

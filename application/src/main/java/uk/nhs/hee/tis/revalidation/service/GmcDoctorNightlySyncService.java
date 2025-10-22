@@ -4,24 +4,25 @@ import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import uk.nhs.hee.tis.revalidation.messages.publisher.GmcDoctorsForDbSyncStartPublisher;
+import uk.nhs.hee.tis.revalidation.messages.publisher.GmcSyncMessagePublisher;
 
 @Slf4j
 @Service
 public class GmcDoctorNightlySyncService {
+  private static final String START_MESSAGE = "start";
 
-  private final GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher;
+  private final GmcSyncMessagePublisher gmcSyncMessagePublisher;
 
   public GmcDoctorNightlySyncService(
-      GmcDoctorsForDbSyncStartPublisher gmcDoctorsForDbSyncStartPublisher
+      GmcSyncMessagePublisher gmcSyncMessagePublisher
   ) {
-    this.gmcDoctorsForDbSyncStartPublisher = gmcDoctorsForDbSyncStartPublisher;
+    this.gmcSyncMessagePublisher = gmcSyncMessagePublisher;
   }
 
   @Scheduled(cron = "${app.gmc.nightlySyncStart.cronExpression}")
   @SchedulerLock(name = "GmcNightlySyncJob")
   public void startNightlyGmcDoctorSync() {
-    gmcDoctorsForDbSyncStartPublisher.publishNightlySyncStartMessage();
+    gmcSyncMessagePublisher.publishToBroker(START_MESSAGE);
     log.info("Start message has been sent to start gmc sync");
   }
 

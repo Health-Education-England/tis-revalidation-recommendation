@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2021 Crown Copyright (Health Education England)
+ * Copyright 2025 Crown Copyright (NHS England)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -21,7 +21,11 @@
 
 package uk.nhs.hee.tis.revalidation.messages.publisher;
 
-import com.github.javafaker.Faker;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.verify;
+
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,24 +35,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Mockito.verify;
+import uk.nhs.hee.tis.revalidation.dto.ConnectionLogDto;
 
 @ExtendWith(MockitoExtension.class)
-class RabbitMqMessagePublisherTest {
-
-  private final Faker faker = new Faker();
+class ConnectionLogPublisherTest {
 
   @InjectMocks
-  RabbitMqMessagePublisher<String> rabbitMqMessagePublisher;
+  ConnectionLogPublisher connectionLogPublisher;
 
   @Mock
   RabbitTemplate rabbitTemplate;
 
   @Captor
-  ArgumentCaptor<String> messageCaptor;
+  ArgumentCaptor<ConnectionLogDto> messageCaptor;
 
   @Captor
   ArgumentCaptor<String> exchangeNameCaptor;
@@ -56,12 +55,11 @@ class RabbitMqMessagePublisherTest {
   @Captor
   ArgumentCaptor<String> routingKeyNameCaptor;
 
-  private String gmcNumber = faker.number().digits(7);
-  private String gmcRecommendationId = faker.number().digits(3);
-  private String recommendationId = faker.number().digits(3);
-  private String designatedBody = faker.lorem().characters(5);
 
-  private String recommendationStatusCheckDto = "start";
+  private final ConnectionLogDto connectionLogDto = ConnectionLogDto.builder().gmcId("1111111")
+      .newDesignatedBodyCode("BBBBBBB").previousDesignatedBodyCode("AAAAAAA").updatedBy("admin")
+      .eventDateTime(
+          LocalDateTime.now()).build();
 
   @Test
   void shouldPublishToRabbitMq() {
@@ -70,13 +68,13 @@ class RabbitMqMessagePublisherTest {
     String exchangeName = "exchangeName";
 
     ReflectionTestUtils.setField(
-        rabbitMqMessagePublisher, "routingKey", routingKeyName
+        connectionLogPublisher, "routingKey", routingKeyName
     );
     ReflectionTestUtils.setField(
-        rabbitMqMessagePublisher, "exchange", exchangeName
+        connectionLogPublisher, "exchange", exchangeName
     );
 
-    rabbitMqMessagePublisher.publishToBroker(recommendationStatusCheckDto);
+    connectionLogPublisher.publishToBroker(connectionLogDto);
 
     verify(rabbitTemplate).convertAndSend(
         exchangeNameCaptor.capture(),
@@ -84,7 +82,7 @@ class RabbitMqMessagePublisherTest {
         messageCaptor.capture()
     );
 
-    assertThat(messageCaptor.getValue(), is("start"));
+    assertThat(messageCaptor.getValue(), is(connectionLogDto));
     assertThat(routingKeyNameCaptor.getValue(), is(routingKeyName));
     assertThat(exchangeNameCaptor.getValue(), is(exchangeName));
   }
