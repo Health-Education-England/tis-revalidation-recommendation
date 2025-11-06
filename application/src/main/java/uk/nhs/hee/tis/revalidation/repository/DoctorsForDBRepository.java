@@ -26,10 +26,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 import uk.nhs.hee.tis.revalidation.entity.UnderNotice;
 
 @Repository
@@ -54,7 +56,37 @@ public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, St
 
   List<DoctorsForDB> findByExistsInGmcIsFalse();
 
-  List<DoctorsForDB> findByDesignatedBodyCode(final String dbc);
+  @Aggregation(pipeline = {"""
+      {$lookup: {
+        from: 'recommendation',
+        localField: '_id',
+        foreignField: 'gmcNumber',
+        pipeline: [
+             { "$sort": { "gmcSubmissionDate": -1 } },
+             { "$limit": 1 }
+           ],
+        as: 'latestRecommendation'
+      }}""", """
+        {$unwind: {
+        path: "$latestRecommendation",
+      }}"""})
+  List<RevalidationSummary> findByDesignatedBodyCode(final String dbc);
+
+  @Aggregation(pipeline = {"""
+      {$lookup: {
+        from: 'recommendation',
+        localField: '_id',
+        foreignField: 'gmcNumber',
+        pipeline: [
+             { "$sort": { "gmcSubmissionDate": -1 } },
+             { "$limit": 1 }
+           ],
+        as: 'latestRecommendation'
+      }}""", """
+        {$unwind: {
+        path: "$latestRecommendation",
+      }}"""})
+  List<RevalidationSummary> findByDesignatedBodyCodeIsNull();
 
   List<DoctorsForDB> findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
       String designatedBodyCode, LocalDateTime requestDateTime);

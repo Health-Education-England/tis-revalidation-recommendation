@@ -71,6 +71,7 @@ app:
       queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
       queue.doctorsfordb.collected.recommendation: ${REVAL_RABBIT_DOCTORS_FOR_DB_COLLECTED_QUEUE:reval.queue.doctorsfordb.collected.recommendation}
       routingKey.connection.connectionlog: ${CONNECTION_LOG_ROUTING_KEY:reval.connection.connectionlog}
+      routingKey.doctorsfordb.essync: ${ESSYNC_DATA_ROUTING_KEY:reval.routingkey.doctorsfordb.essync}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}
@@ -89,11 +90,6 @@ app:
 sentry:
   dsn: ${SENTRY_DSN:}
   environment: ${SENTRY_ENVIRONMENT:}
-
-cloud:
-  aws:
-    end-point:
-      uri: ${SQS_SYNC_GMC_QUEUE:}
 
 mongock:
   change-logs-scan-package: uk.nhs.hee.tis.revalidation.changelog

@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright 2021 Crown Copyright (Health Education England)
+ * Copyright 2025 Crown Copyright (NHS England)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -19,28 +19,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package uk.nhs.hee.tis.revalidation.config;
+package uk.nhs.hee.tis.revalidation.messages.publisher;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+@Component
+public class ElasticsearchSyncMessagePublisher extends
+    RabbitMqMessagePublisher<IndexSyncMessage> {
 
-@ExtendWith(MockitoExtension.class)
-class AwsSqsQueueConfigTest {
-
-  private AwsSqsQueueConfig awsSqsQueueConfig;
-
-  @BeforeEach
-  void setUp() {
-    awsSqsQueueConfig = new AwsSqsQueueConfig();
-  }
-
-  @Test
-  void testAmazonSqsAsync() {
-    assertThat(awsSqsQueueConfig.amazonSQSAsync(), notNullValue());
+  public ElasticsearchSyncMessagePublisher(
+      @Value("${app.rabbit.reval.exchange}") String revalExchange,
+      @Value("${app.rabbit.reval.routingKey.doctorsfordb.essync}") String gmcSyncRoutingKey,
+      RabbitTemplate rabbitTemplate) {
+    super(revalExchange, gmcSyncRoutingKey, rabbitTemplate);
   }
 }
