@@ -8,35 +8,45 @@ import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 
 public interface RevalidationSummaryRepository extends MongoRepository<DoctorsForDB, String> {
 
-  @Aggregation(pipeline = {"""
-      {$lookup: {
-        from: 'recommendation',
-        localField: '_id',
-        foreignField: 'gmcNumber',
-        pipeline: [
-             { "$sort": { "gmcSubmissionDate": -1 } },
-             { "$limit": 1 }
-           ],
-        as: 'latestRecommendation'
-      }}""", """
+  @Aggregation(pipeline = {
+      """
+          {$match: {'designatedBodyCode': ?0}}
+          """,
+      """
+          {$lookup: {
+            from: 'recommendation',
+            localField: '_id',
+            foreignField: 'gmcNumber',
+            pipeline: [
+                 { "$sort": { "gmcSubmissionDate": -1 } },
+                 { "$limit": 1 }
+               ],
+            as: 'latestRecommendation'
+          }}""", """
         {$unwind: {
         path: "$latestRecommendation",
+        preserveNullAndEmptyArrays: true
       }}"""})
   List<RevalidationSummary> findByDesignatedBodyCode(final String designatedBodyCode);
 
-  @Aggregation(pipeline = {"""
-      {$lookup: {
-        from: 'recommendation',
-        localField: '_id',
-        foreignField: 'gmcNumber',
-        pipeline: [
-             { "$sort": { "gmcSubmissionDate": -1 } },
-             { "$limit": 1 }
-           ],
-        as: 'latestRecommendation'
-      }}""", """
+  @Aggregation(pipeline = {
+      """
+          {$match: {'designatedBodyCode': {$exists: false}}}
+          """,
+      """
+          {$lookup: {
+            from: 'recommendation',
+            localField: '_id',
+            foreignField: 'gmcNumber',
+            pipeline: [
+                 { "$sort": { "gmcSubmissionDate": -1 } },
+                 { "$limit": 1 }
+               ],
+            as: 'latestRecommendation'
+          }}""", """
         {$unwind: {
         path: "$latestRecommendation",
+        preserveNullAndEmptyArrays: true
       }}"""})
   List<RevalidationSummary> findByDesignatedBodyCodeIsNull();
 }

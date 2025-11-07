@@ -65,14 +65,18 @@ public class GmcDoctorConnectionSyncService {
       log.info(db);
       IndexSyncMessage connectedPayload = IndexSyncMessage.builder()
           .payload(getRevalidationSummaryDtoListForDesignatedBody(db)).syncEnd(false).build();
-      log.info(connectedPayload.toString());
-      elasticsearchSyncMessagePublisher.publishToBroker(connectedPayload);
+      if (!connectedPayload.getPayload().isEmpty()) {
+        log.info(connectedPayload.toString());
+        elasticsearchSyncMessagePublisher.publishToBroker(connectedPayload);
+      }
     });
     //find disconnected doctors
     IndexSyncMessage disconnectedPayload = IndexSyncMessage.builder()
         .payload(getRevalidationSummaryDtoListForDesignatedBody("")).syncEnd(false).build();
-    log.info(disconnectedPayload.toString());
-    elasticsearchSyncMessagePublisher.publishToBroker(disconnectedPayload);
+    if (!disconnectedPayload.getPayload().isEmpty()) {
+      log.info(disconnectedPayload.toString());
+      elasticsearchSyncMessagePublisher.publishToBroker(disconnectedPayload);
+    }
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
         .build();
