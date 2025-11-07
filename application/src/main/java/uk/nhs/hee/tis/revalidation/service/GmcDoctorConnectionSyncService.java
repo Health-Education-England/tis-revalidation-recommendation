@@ -56,26 +56,27 @@ public class GmcDoctorConnectionSyncService {
   @RabbitListener(queues = "${app.rabbit.reval.queue.recommendation.syncstart}", ackMode = "NONE")
   @SchedulerLock(name = "IndexRebuildGetGmcJob")
   public void receiveMessage(final String gmcSyncStart) {
-    log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
+    log.info("Message from integration service to start gmc data sync {}", gmcSyncStart);
 
     if (gmcSyncStart == null || !gmcSyncStart.equals("gmcSyncStart")) {
       return;
     }
     designatedBodies.forEach(db -> {
-      log.info(db);
       IndexSyncMessage connectedPayload = IndexSyncMessage.builder()
           .payload(getRevalidationSummaryDtoListForDesignatedBody(db)).syncEnd(false).build();
       if (!connectedPayload.getPayload().isEmpty()) {
-        log.info(connectedPayload.toString());
         elasticsearchSyncMessagePublisher.publishToBroker(connectedPayload);
+        log.info("Elasticsearch Sync: Sent {} doctors for Designated Body {}",
+            connectedPayload.getPayload().size(), db);
       }
     });
     //find disconnected doctors
     IndexSyncMessage disconnectedPayload = IndexSyncMessage.builder()
         .payload(getRevalidationSummaryDtoListForDesignatedBody("")).syncEnd(false).build();
     if (!disconnectedPayload.getPayload().isEmpty()) {
-      log.info(disconnectedPayload.toString());
       elasticsearchSyncMessagePublisher.publishToBroker(disconnectedPayload);
+    log.info("Elasticsearch Sync: Sent {} disconnected doctors",
+        disconnectedPayload.getPayload().size());
     }
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
@@ -84,7 +85,6 @@ public class GmcDoctorConnectionSyncService {
   }
 
   private List<RevalidationSummary> getRevalidationSummaryDtoListForDesignatedBody(String db) {
-    log.info(db);
     return db.isBlank() ?
         revalidationSummaryRepository.findByDesignatedBodyCodeIsNull()
         : revalidationSummaryRepository.findByDesignatedBodyCode(db);
