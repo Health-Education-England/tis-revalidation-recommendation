@@ -27,25 +27,24 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
 import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
-import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RevalidationSummaryRepository;
 
 @Slf4j
 @Service
 public class GmcDoctorConnectionSyncService {
 
-  private final DoctorsForDBRepository doctorsForDBRepository;
+  private final RevalidationSummaryRepository revalidationSummaryRepository;
   private final ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
   @Value("${app.gmc.designatedBodies}")
   private List<String> designatedBodies;
 
   public GmcDoctorConnectionSyncService(
-      DoctorsForDBRepository doctorsForDBRepository,
+      RevalidationSummaryRepository revalidationSummaryRepository,
       ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher) {
-    this.doctorsForDBRepository = doctorsForDBRepository;
+    this.revalidationSummaryRepository = revalidationSummaryRepository;
     this.elasticsearchSyncMessagePublisher = elasticsearchSyncMessagePublisher;
   }
 
@@ -63,13 +62,16 @@ public class GmcDoctorConnectionSyncService {
       return;
     }
     designatedBodies.forEach(db -> {
+      log.info(db);
       IndexSyncMessage connectedPayload = IndexSyncMessage.builder()
           .payload(getRevalidationSummaryDtoListForDesignatedBody(db)).syncEnd(false).build();
+      log.info(connectedPayload.toString());
       elasticsearchSyncMessagePublisher.publishToBroker(connectedPayload);
     });
     //find disconnected doctors
     IndexSyncMessage disconnectedPayload = IndexSyncMessage.builder()
         .payload(getRevalidationSummaryDtoListForDesignatedBody("")).syncEnd(false).build();
+    log.info(disconnectedPayload.toString());
     elasticsearchSyncMessagePublisher.publishToBroker(disconnectedPayload);
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
@@ -78,9 +80,10 @@ public class GmcDoctorConnectionSyncService {
   }
 
   private List<RevalidationSummary> getRevalidationSummaryDtoListForDesignatedBody(String db) {
+    log.info(db);
     return db.isBlank() ?
-        doctorsForDBRepository.findByDesignatedBodyCodeIsNull()
-        : doctorsForDBRepository.findByDesignatedBodyCode(db);
+        revalidationSummaryRepository.findByDesignatedBodyCodeIsNull()
+        : revalidationSummaryRepository.findByDesignatedBodyCode(db);
   }
 
 }

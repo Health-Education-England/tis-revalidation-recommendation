@@ -56,38 +56,8 @@ public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, St
 
   List<DoctorsForDB> findByExistsInGmcIsFalse();
 
-  @Aggregation(pipeline = {"""
-      {$lookup: {
-        from: 'recommendation',
-        localField: '_id',
-        foreignField: 'gmcNumber',
-        pipeline: [
-             { "$sort": { "gmcSubmissionDate": -1 } },
-             { "$limit": 1 }
-           ],
-        as: 'latestRecommendation'
-      }}""", """
-        {$unwind: {
-        path: "$latestRecommendation",
-      }}"""})
-  List<RevalidationSummary> findByDesignatedBodyCode(final String dbc);
-
-  @Aggregation(pipeline = {"""
-      {$lookup: {
-        from: 'recommendation',
-        localField: '_id',
-        foreignField: 'gmcNumber',
-        pipeline: [
-             { "$sort": { "gmcSubmissionDate": -1 } },
-             { "$limit": 1 }
-           ],
-        as: 'latestRecommendation'
-      }}""", """
-        {$unwind: {
-        path: "$latestRecommendation",
-      }}"""})
-  List<RevalidationSummary> findByDesignatedBodyCodeIsNull();
-
   List<DoctorsForDB> findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(
       String designatedBodyCode, LocalDateTime requestDateTime);
+
+  List<DoctorsForDB> findByDesignatedBodyCode(final String designatedBodyCode);
 }

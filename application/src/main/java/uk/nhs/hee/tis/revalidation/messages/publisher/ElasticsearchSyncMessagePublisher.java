@@ -32,7 +32,7 @@ public class ElasticsearchSyncMessagePublisher extends
 
   public ElasticsearchSyncMessagePublisher(
       @Value("${app.rabbit.reval.exchange}") String revalExchange,
-      @Value("${app.rabbit.reval.routingKey.doctorsfordb.essync}") String gmcSyncRoutingKey,
+      @Value("${app.rabbit.reval.routingKey.revalidationsummary.essync}") String gmcSyncRoutingKey,
       RabbitTemplate rabbitTemplate) {
     super(revalExchange, gmcSyncRoutingKey, rabbitTemplate);
   }

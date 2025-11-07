@@ -46,7 +46,7 @@ import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
-import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RevalidationSummaryRepository;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class GmcDoctorConnectionSyncServiceTest {
@@ -57,7 +57,7 @@ class GmcDoctorConnectionSyncServiceTest {
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
 
   @Mock
-  private DoctorsForDBRepository doctorsForDBRepository;
+  private RevalidationSummaryRepository revalidationSummaryRepository;
 
   @Mock
   private ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
@@ -94,15 +94,15 @@ class GmcDoctorConnectionSyncServiceTest {
 
   @Test
   void shouldRetrieveAllDoctors() {
-    when(doctorsForDBRepository.findByDesignatedBodyCode(designatedBodyA)).thenReturn(summaryA);
-    when(doctorsForDBRepository.findByDesignatedBodyCode(designatedBodyB)).thenReturn(summaryB);
-    when(doctorsForDBRepository.findByDesignatedBodyCodeIsNull()).thenReturn(summaryDisconnected);
+    when(revalidationSummaryRepository.findByDesignatedBodyCode(designatedBodyA)).thenReturn(summaryA);
+    when(revalidationSummaryRepository.findByDesignatedBodyCode(designatedBodyB)).thenReturn(summaryB);
+    when(revalidationSummaryRepository.findByDesignatedBodyCodeIsNull()).thenReturn(summaryDisconnected);
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
-    verify(doctorsForDBRepository, times(1)).findByDesignatedBodyCode(designatedBodyA);
-    verify(doctorsForDBRepository, times(1)).findByDesignatedBodyCode(designatedBodyB);
-    verify(doctorsForDBRepository, times(1)).findByDesignatedBodyCodeIsNull();
+    verify(revalidationSummaryRepository, times(1)).findByDesignatedBodyCode(designatedBodyA);
+    verify(revalidationSummaryRepository, times(1)).findByDesignatedBodyCode(designatedBodyB);
+    verify(revalidationSummaryRepository, times(1)).findByDesignatedBodyCodeIsNull();
 
     verify(elasticsearchSyncMessagePublisher, times(4)).publishToBroker(
         indexSyncMessageArgumentCaptor.capture());
@@ -118,8 +118,8 @@ class GmcDoctorConnectionSyncServiceTest {
   void shouldNotRetrieveDoctorsIfNullMessageSupplied() {
     gmcDoctorConnectionSyncService.receiveMessage(null);
 
-    verify(doctorsForDBRepository, never()).findByDesignatedBodyCode(any());
-    verify(doctorsForDBRepository, never()).findByDesignatedBodyCodeIsNull();
+    verify(revalidationSummaryRepository, never()).findByDesignatedBodyCode(any());
+    verify(revalidationSummaryRepository, never()).findByDesignatedBodyCodeIsNull();
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
@@ -127,8 +127,8 @@ class GmcDoctorConnectionSyncServiceTest {
   void shouldNotRetrieveDoctorsIfIncorrectMessageSupplied() {
     gmcDoctorConnectionSyncService.receiveMessage("anyString");
 
-    verify(doctorsForDBRepository, never()).findByDesignatedBodyCode(any());
-    verify(doctorsForDBRepository, never()).findByDesignatedBodyCodeIsNull();
+    verify(revalidationSummaryRepository, never()).findByDesignatedBodyCode(any());
+    verify(revalidationSummaryRepository, never()).findByDesignatedBodyCodeIsNull();
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
