@@ -75,8 +75,8 @@ public class GmcDoctorConnectionSyncService {
         .payload(getRevalidationSummaryDtoListForDesignatedBody("")).syncEnd(false).build();
     if (!disconnectedPayload.getPayload().isEmpty()) {
       elasticsearchSyncMessagePublisher.publishToBroker(disconnectedPayload);
-    log.info("Elasticsearch Sync: Sent {} disconnected doctors",
-        disconnectedPayload.getPayload().size());
+      log.info("Elasticsearch Sync: Sent {} disconnected doctors",
+          disconnectedPayload.getPayload().size());
     }
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
