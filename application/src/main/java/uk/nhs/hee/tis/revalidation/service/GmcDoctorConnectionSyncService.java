@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
+import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 import uk.nhs.hee.tis.revalidation.repository.RevalidationSummaryRepository;
 
 @Slf4j
@@ -38,14 +39,17 @@ public class GmcDoctorConnectionSyncService {
 
   private final RevalidationSummaryRepository revalidationSummaryRepository;
   private final ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
-  @Value("${app.gmc.designatedBodies}")
-  private List<String> designatedBodies;
+  private final DoctorsForDBRepository doctorsForDBRepository;
+  @Value("${app.reval.essync.batchsize}")
+  private int BATCH_SIZE;
 
   public GmcDoctorConnectionSyncService(
       RevalidationSummaryRepository revalidationSummaryRepository,
-      ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher) {
+      ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher,
+      DoctorsForDBRepository doctorsForDBRepository) {
     this.revalidationSummaryRepository = revalidationSummaryRepository;
     this.elasticsearchSyncMessagePublisher = elasticsearchSyncMessagePublisher;
+    this.doctorsForDBRepository = doctorsForDBRepository;
   }
 
   /**
@@ -59,35 +63,32 @@ public class GmcDoctorConnectionSyncService {
     log.info("Message from integration service to start gmc data sync {}", gmcSyncStart);
 
     if (gmcSyncStart == null || !gmcSyncStart.equals("gmcSyncStart")) {
+      log.warn("Unrecognized command received, aborting sync");
       return;
     }
-    designatedBodies.forEach(db -> {
-      IndexSyncMessage connectedPayload = IndexSyncMessage.builder()
-          .payload(getRevalidationSummaryDtoListForDesignatedBody(db)).syncEnd(false).build();
-      if (!connectedPayload.getPayload().isEmpty()) {
-        elasticsearchSyncMessagePublisher.publishToBroker(connectedPayload);
-        log.info("Elasticsearch Sync: Sent {} doctors for Designated Body {}",
-            connectedPayload.getPayload().size(), db);
-      }
-    });
-    //find disconnected doctors
-    IndexSyncMessage disconnectedPayload = IndexSyncMessage.builder()
-        .payload(getRevalidationSummaryDtoListForDesignatedBody("")).syncEnd(false).build();
-    if (!disconnectedPayload.getPayload().isEmpty()) {
-      elasticsearchSyncMessagePublisher.publishToBroker(disconnectedPayload);
-      log.info("Elasticsearch Sync: Sent {} disconnected doctors",
-          disconnectedPayload.getPayload().size());
+
+    long total = doctorsForDBRepository.count();
+    log.debug(String.valueOf(total));
+    long skip = 0;
+    long limit = BATCH_SIZE;
+    while (limit < total) {
+      publishRevalidationSummaryList(revalidationSummaryRepository.findAllBatch(limit, skip));
+      log.debug("sent doctors from:" + String.valueOf(skip) + " to " + String.valueOf(limit));
+      skip += BATCH_SIZE;
+      limit += BATCH_SIZE;
     }
+    long remainder = total - skip;
+    publishRevalidationSummaryList(revalidationSummaryRepository.findAllBatch(remainder, skip));
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
         .build();
     elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
   }
 
-  private List<RevalidationSummary> getRevalidationSummaryDtoListForDesignatedBody(String db) {
-    return db.isBlank() ?
-        revalidationSummaryRepository.findByDesignatedBodyCodeIsNull()
-        : revalidationSummaryRepository.findByDesignatedBodyCode(db);
+  private void publishRevalidationSummaryList(List<RevalidationSummary> summaryList) {
+    log.info("summary list size: {}", summaryList.size());
+    IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(summaryList).syncEnd(false)
+        .build();
+    elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
   }
-
 }

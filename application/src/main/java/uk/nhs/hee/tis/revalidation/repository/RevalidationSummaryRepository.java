@@ -10,9 +10,6 @@ public interface RevalidationSummaryRepository extends MongoRepository<DoctorsFo
 
   @Aggregation(pipeline = {
       """
-          {$match: {'designatedBodyCode': ?0}}
-          """,
-      """
           {$lookup: {
             from: 'recommendation',
             localField: '_id',
@@ -26,27 +23,13 @@ public interface RevalidationSummaryRepository extends MongoRepository<DoctorsFo
         {$unwind: {
         path: "$latestRecommendation",
         preserveNullAndEmptyArrays: true
-      }}"""})
-  List<RevalidationSummary> findByDesignatedBodyCode(final String designatedBodyCode);
-
-  @Aggregation(pipeline = {
+      }}""",
       """
-          {$match: {'designatedBodyCode': {$exists: false}}}
-          """,
+        {$limit: ?0}
+      """,
       """
-          {$lookup: {
-            from: 'recommendation',
-            localField: '_id',
-            foreignField: 'gmcNumber',
-            pipeline: [
-                 { "$sort": { "gmcSubmissionDate": -1 } },
-                 { "$limit": 1 }
-               ],
-            as: 'latestRecommendation'
-          }}""", """
-        {$unwind: {
-        path: "$latestRecommendation",
-        preserveNullAndEmptyArrays: true
-      }}"""})
-  List<RevalidationSummary> findByDesignatedBodyCodeIsNull();
+        {$skip: ?1}
+      """,
+  })
+  List<RevalidationSummary> findAllBatch(long limit, long skip);
 }

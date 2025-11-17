@@ -55,6 +55,7 @@ app:
     event.store.collection: ${EVENT_STORE_COLLECTION:events_log}
     pagination.pageSize: ${PAGINATION_PAGE_SIZE:20}
     tcs.url: ${TCS_URL:http:localhost:8080/tcsmock/api/revalidation}
+    essync.batchsize: ${ESSYNC_BATCH_SIZE:1000}
 
   validation:
     sort.fields: ${SORT_FIELD:submissionDate,doctorFirstName,doctorLastName,gmcReferenceNumber}
@@ -78,7 +79,7 @@ app:
     soapActionBase: ${GMC_SOAP_ACTION_BASE:https://webcache.gmc-uk.org/GMCWebServices/}
     gmcUsername: ${GMC_USER_NAME:guest}
     gmcPassword: ${GMC_PASSWORD:guest}
-    designatedBodies: ${DESIGNATED_BODY_CODE:1-AIIDHJ,1-AIIDMQ,1-AIIDNQ,1-AIIDMY,1-AIIDQQ,1-AIIDWT,1-AIIDR8,1-AIIDSA,1-AIIDH1,1-AIIDWA,1-AIIDVS,1-AIIDWI,1-AIIDSI}
+    designatedBodies: ${DESIGNATED_BODY_CODE:0000000,1111111,2222222,3333333,4444444,5555555,6666666,7777777,8888888,9999999}
     recommendationstatuscheck.cronExpression: ${REC_STATUS_CHECK_CRON:-}
     nightlySyncStart.cronExpression: ${REC_NIGHTLY_SYNC_CRON:-}
 
