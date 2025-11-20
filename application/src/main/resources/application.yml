@@ -55,6 +55,7 @@ app:
     event.store.collection: ${EVENT_STORE_COLLECTION:events_log}
     pagination.pageSize: ${PAGINATION_PAGE_SIZE:20}
     tcs.url: ${TCS_URL:http:localhost:8080/tcsmock/api/revalidation}
+    essync.batchsize: ${ESSYNC_BATCH_SIZE:20000}
 
   validation:
     sort.fields: ${SORT_FIELD:submissionDate,doctorFirstName,doctorLastName,gmcReferenceNumber}
@@ -71,6 +72,7 @@ app:
       queue.masterdoctorview.updated.recommendation: ${REVAL_RABBIT_UPDATE_RECOMMENDATION_INDEX_VIEW:reval.queue.masterdoctorview.updated.recommendation}
       queue.doctorsfordb.collected.recommendation: ${REVAL_RABBIT_DOCTORS_FOR_DB_COLLECTED_QUEUE:reval.queue.doctorsfordb.collected.recommendation}
       routingKey.connection.connectionlog: ${CONNECTION_LOG_ROUTING_KEY:reval.connection.connectionlog}
+      routingKey.revalidationsummary.essync: ${ESSYNC_DATA_ROUTING_KEY:reval.routingkey.revalidationsummary.essync}
 
   gmc:
     url: ${GMC_CONNECT_URL:http://localhost:8090/GMCConnectMock2020/GMCWebServices}
@@ -89,11 +91,6 @@ app:
 sentry:
   dsn: ${SENTRY_DSN:}
   environment: ${SENTRY_ENVIRONMENT:}
-
-cloud:
-  aws:
-    end-point:
-      uri: ${SQS_SYNC_GMC_QUEUE:}
 
 mongock:
   change-logs-scan-package: uk.nhs.hee.tis.revalidation.changelog

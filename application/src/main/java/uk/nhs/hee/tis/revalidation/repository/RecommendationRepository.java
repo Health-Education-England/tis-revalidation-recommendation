@@ -40,6 +40,9 @@ public interface RecommendationRepository extends MongoRepository<Recommendation
   Optional<Recommendation> findFirstByGmcNumberOrderByActualSubmissionDateDesc(
       final String gmcNumber);
 
+  Optional<Recommendation> findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+      final String gmcNumber);
+
   //get recommendation which can be update, APPROVED and REJECTED recommendation cannot be update and will be fetch from snapshot
   default List<Recommendation> findByGmcNumber(final String gmcNumber) {
     return findAllByGmcNumberAndOutcomeNotIn(gmcNumber, APPROVED, REJECTED);
@@ -48,5 +51,6 @@ public interface RecommendationRepository extends MongoRepository<Recommendation
   List<Recommendation> findAllByGmcNumberAndOutcomeNotIn(final String gmcNumber,
       final RecommendationGmcOutcome... outcome);
 
-  List<Recommendation> findAllByRecommendationStatus(final RecommendationStatus recommendationStatus);
+  List<Recommendation> findAllByRecommendationStatus(
+      final RecommendationStatus recommendationStatus);
 }
