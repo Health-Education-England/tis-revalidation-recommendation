@@ -31,7 +31,6 @@ import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
 
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,13 +46,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
-import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
-import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class GmcDoctorConnectionSyncServiceTest {
@@ -70,7 +68,7 @@ class GmcDoctorConnectionSyncServiceTest {
   private DoctorsForDBRepository doctorsForDBRepository;
 
   @Mock
-  private RecommendationRepository recommendationRepository;
+  private RecommendationService recommendationService;
 
   @Captor
   ArgumentCaptor<IndexSyncMessage> indexSyncMessageArgumentCaptor;
@@ -78,7 +76,7 @@ class GmcDoctorConnectionSyncServiceTest {
   private RevalidationSummaryDto summary;
   private DoctorsForDB doctor;
   private Page<DoctorsForDB> doctorPage;
-  private Recommendation recommendation;
+  private TraineeRecommendationRecordDto recommendation;
   private IndexSyncMessage message1, endMessage;
 
   private final RecommendationGmcOutcome gmcOutcome1 = APPROVED;
@@ -99,9 +97,8 @@ class GmcDoctorConnectionSyncServiceTest {
 
     when(doctorsForDBRepository.findAll(pageRequest))
         .thenReturn(doctorPage);
-    when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(
-        gmcRef1)).thenReturn(
-        Optional.of(recommendation));
+    when(recommendationService.getLatestRecommendation(
+        gmcRef1)).thenReturn(recommendation);
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
@@ -118,7 +115,7 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage(null);
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
-    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByActualSubmissionDateDesc(
+    verify(recommendationService, never()).getLatestRecommendation(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
@@ -128,15 +125,15 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage("wrongMessage");
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
-    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByActualSubmissionDateDesc(
+    verify(recommendationService, never()).getLatestRecommendation(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
   private void setupData() {
-    recommendation = Recommendation.builder()
+    recommendation = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcRef1)
-        .outcome(gmcOutcome1)
+        .gmcOutcome(String.valueOf(gmcOutcome1))
         .build();
 
     doctor = DoctorsForDB.builder()

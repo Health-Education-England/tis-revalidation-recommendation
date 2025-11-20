@@ -23,7 +23,6 @@ package uk.nhs.hee.tis.revalidation.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -32,12 +31,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
+import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
-import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
-import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @Slf4j
 @Service
@@ -45,18 +43,18 @@ public class GmcDoctorConnectionSyncService {
 
   private final ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
   private final DoctorsForDBRepository doctorsForDBRepository;
-  private final RecommendationRepository recommendationRepository;
+  private final RecommendationService recommendationService;
   @Value("${app.reval.essync.batchsize}")
   private int batchSize;
 
   public GmcDoctorConnectionSyncService(
       ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher,
       DoctorsForDBRepository doctorsForDBRepository,
-      RecommendationRepository recommendationRepository) {
+      RecommendationService recommendationService) {
 
     this.elasticsearchSyncMessagePublisher = elasticsearchSyncMessagePublisher;
     this.doctorsForDBRepository = doctorsForDBRepository;
-    this.recommendationRepository = recommendationRepository;
+    this.recommendationService = recommendationService;
   }
 
   /**
@@ -79,14 +77,12 @@ public class GmcDoctorConnectionSyncService {
       doctors = doctorsForDBRepository.findAll(pageRequest);
       List<RevalidationSummaryDto> payload = new ArrayList<>();
       doctors.forEach(doc -> {
-        Optional<Recommendation> reccomendation = recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(
+        TraineeRecommendationRecordDto reccomendation = recommendationService.getLatestRecommendation(
             doc.getGmcReferenceNumber());
         RevalidationSummaryDto summary = RevalidationSummaryDto.builder()
             .doctor(doc)
+            .gmcOutcome(reccomendation.getGmcOutcome())
             .build();
-        if (reccomendation.isPresent() && reccomendation.get().getOutcome() != null) {
-          summary.setGmcOutcome(String.valueOf(reccomendation.get().getOutcome()));
-        }
         payload.add(summary);
       });
       IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(payload).syncEnd(false)
