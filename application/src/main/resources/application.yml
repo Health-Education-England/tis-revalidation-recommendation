@@ -55,6 +55,10 @@ app:
     event.store.collection: ${EVENT_STORE_COLLECTION:events_log}
     pagination.pageSize: ${PAGINATION_PAGE_SIZE:20}
     tcs.url: ${TCS_URL:http:localhost:8080/tcsmock/api/revalidation}
+<<<<<<< Updated upstream
+=======
+    essync.batchsize: ${ESSYNC_BATCH_SIZE:20000}
+>>>>>>> Stashed changes
 
   validation:
     sort.fields: ${SORT_FIELD:submissionDate,doctorFirstName,doctorLastName,gmcReferenceNumber}

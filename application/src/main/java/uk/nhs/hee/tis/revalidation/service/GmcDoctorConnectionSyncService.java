@@ -21,23 +21,34 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
+import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
+import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
+<<<<<<< Updated upstream
 import uk.nhs.hee.tis.revalidation.repository.RevalidationSummaryRepository;
+=======
+import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
+>>>>>>> Stashed changes
 
 @Slf4j
 @Service
 public class GmcDoctorConnectionSyncService {
 
-  private final RevalidationSummaryRepository revalidationSummaryRepository;
   private final ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
+<<<<<<< Updated upstream
   @Value("${app.gmc.designatedBodies}")
   private List<String> designatedBodies;
 
@@ -46,6 +57,21 @@ public class GmcDoctorConnectionSyncService {
       ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher) {
     this.revalidationSummaryRepository = revalidationSummaryRepository;
     this.elasticsearchSyncMessagePublisher = elasticsearchSyncMessagePublisher;
+=======
+  private final DoctorsForDBRepository doctorsForDBRepository;
+  private final RecommendationRepository recommendationRepository;
+  @Value("${app.reval.essync.batchsize}")
+  private int BATCH_SIZE;
+
+  public GmcDoctorConnectionSyncService(
+      ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher,
+      DoctorsForDBRepository doctorsForDBRepository,
+      RecommendationRepository recommendationRepository) {
+
+    this.elasticsearchSyncMessagePublisher = elasticsearchSyncMessagePublisher;
+    this.doctorsForDBRepository = doctorsForDBRepository;
+    this.recommendationRepository = recommendationRepository;
+>>>>>>> Stashed changes
   }
 
   /**
@@ -61,6 +87,7 @@ public class GmcDoctorConnectionSyncService {
     if (gmcSyncStart == null || !gmcSyncStart.equals("gmcSyncStart")) {
       return;
     }
+<<<<<<< Updated upstream
     designatedBodies.forEach(db -> {
       IndexSyncMessage connectedPayload = IndexSyncMessage.builder()
           .payload(getRevalidationSummaryDtoListForDesignatedBody(db)).syncEnd(false).build();
@@ -78,11 +105,40 @@ public class GmcDoctorConnectionSyncService {
       log.info("Elasticsearch Sync: Sent {} disconnected doctors",
           disconnectedPayload.getPayload().size());
     }
+=======
+
+    long total = doctorsForDBRepository.count();
+    log.debug(String.valueOf(total));
+
+    PageRequest pageRequest = PageRequest.of(0, BATCH_SIZE);
+    Page<DoctorsForDB> doctors;
+
+    do {
+      doctors = doctorsForDBRepository.findAll(pageRequest);
+      List<RevalidationSummaryDto> payload = new ArrayList<>();
+      doctors.forEach(doc -> {
+        Optional<Recommendation> reccomendation = recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+            doc.getGmcReferenceNumber());
+        RevalidationSummaryDto summary = RevalidationSummaryDto.builder()
+            .doctor(doc)
+            .build();
+        if (reccomendation.isPresent() && reccomendation.get().getOutcome() != null) {
+          summary.setGmcOutcome(String.valueOf(reccomendation.get().getOutcome()));
+        }
+        payload.add(summary);
+      });
+      IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(payload).syncEnd(false)
+          .build();
+      elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
+      pageRequest = pageRequest.next();
+    } while (doctors.hasNext());
+>>>>>>> Stashed changes
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
         .build();
     elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
   }
+<<<<<<< Updated upstream
 
   private List<RevalidationSummary> getRevalidationSummaryDtoListForDesignatedBody(String db) {
     return db.isBlank() ?
@@ -90,4 +146,6 @@ public class GmcDoctorConnectionSyncService {
         : revalidationSummaryRepository.findByDesignatedBodyCode(db);
   }
 
+=======
+>>>>>>> Stashed changes
 }

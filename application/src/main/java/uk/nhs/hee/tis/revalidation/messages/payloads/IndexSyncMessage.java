@@ -27,7 +27,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
+import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
 
 @Data
 @AllArgsConstructor
@@ -36,6 +36,6 @@ import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 @ApiModel(description = "Message wrapper for index sync messages")
 public class IndexSyncMessage {
 
-  private List<RevalidationSummary> payload;
+  private List<RevalidationSummaryDto> payload;
   private Boolean syncEnd;
 }

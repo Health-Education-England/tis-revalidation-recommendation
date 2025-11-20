@@ -31,6 +31,10 @@ import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
 
 import java.util.List;
+<<<<<<< Updated upstream
+=======
+import java.util.Optional;
+>>>>>>> Stashed changes
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +44,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+<<<<<<< Updated upstream
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
@@ -47,6 +52,21 @@ import uk.nhs.hee.tis.revalidation.entity.RevalidationSummary;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
 import uk.nhs.hee.tis.revalidation.repository.RevalidationSummaryRepository;
+=======
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
+import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
+import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.Recommendation;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
+import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
+import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
+import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
+>>>>>>> Stashed changes
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class GmcDoctorConnectionSyncServiceTest {
@@ -57,14 +77,25 @@ class GmcDoctorConnectionSyncServiceTest {
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
 
   @Mock
+<<<<<<< Updated upstream
   private RevalidationSummaryRepository revalidationSummaryRepository;
 
   @Mock
   private ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
+=======
+  private ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
+
+  @Mock
+  private DoctorsForDBRepository doctorsForDBRepository;
+
+  @Mock
+  private RecommendationRepository recommendationRepository;
+>>>>>>> Stashed changes
 
   @Captor
   ArgumentCaptor<IndexSyncMessage> indexSyncMessageArgumentCaptor;
 
+<<<<<<< Updated upstream
   private List<RevalidationSummary> summaryA, summaryB, summaryDisconnected;
   private Recommendation recommendation1, recommendation2, recommendation3;
   private IndexSyncMessage message1, message2, message3, endMessage;
@@ -85,15 +116,34 @@ class GmcDoctorConnectionSyncServiceTest {
   private final String designatedBodyB = "BBBBBBB";
 
   private final List<String> dbs = List.of(designatedBodyA, designatedBodyB);
+=======
+
+  private RevalidationSummaryDto summary;
+  private DoctorsForDB doctor;
+  private Page<DoctorsForDB> doctorPage;
+  private Recommendation recommendation;
+  private IndexSyncMessage message1, endMessage;
+
+  private final RecommendationGmcOutcome gmcOutcome1 = APPROVED;
+
+  private final String gmcRef1 = "1111111";
+
+  private final String designatedBody = "AAAAAAA";
+>>>>>>> Stashed changes
 
   @BeforeEach
   void setup() {
     setupData();
+<<<<<<< Updated upstream
     ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "designatedBodies", dbs);
+=======
+    ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "BATCH_SIZE", 1);
+>>>>>>> Stashed changes
   }
 
   @Test
   void shouldRetrieveAllDoctors() {
+<<<<<<< Updated upstream
     when(revalidationSummaryRepository.findByDesignatedBodyCode(designatedBodyA)).thenReturn(summaryA);
     when(revalidationSummaryRepository.findByDesignatedBodyCode(designatedBodyB)).thenReturn(summaryB);
     when(revalidationSummaryRepository.findByDesignatedBodyCodeIsNull()).thenReturn(summaryDisconnected);
@@ -105,39 +155,75 @@ class GmcDoctorConnectionSyncServiceTest {
     verify(revalidationSummaryRepository, times(1)).findByDesignatedBodyCodeIsNull();
 
     verify(elasticsearchSyncMessagePublisher, times(4)).publishToBroker(
+=======
+    PageRequest pageRequest = PageRequest.of(0, 1);
+
+    when(doctorsForDBRepository.findAll(pageRequest))
+        .thenReturn(doctorPage);
+    when(recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        gmcRef1)).thenReturn(
+        Optional.of(recommendation));
+
+    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
+
+    verify(elasticsearchSyncMessagePublisher, times(2)).publishToBroker(
+>>>>>>> Stashed changes
         indexSyncMessageArgumentCaptor.capture());
 
     var results = indexSyncMessageArgumentCaptor.getAllValues();
     assertThat(results.get(0), is(message1));
+<<<<<<< Updated upstream
     assertThat(results.get(1), is(message2));
     assertThat(results.get(2), is(message3));
     assertThat(results.get(3), is(endMessage));
+=======
+    assertThat(results.get(1), is(endMessage));
+>>>>>>> Stashed changes
   }
 
   @Test
   void shouldNotRetrieveDoctorsIfNullMessageSupplied() {
     gmcDoctorConnectionSyncService.receiveMessage(null);
 
+<<<<<<< Updated upstream
     verify(revalidationSummaryRepository, never()).findByDesignatedBodyCode(any());
     verify(revalidationSummaryRepository, never()).findByDesignatedBodyCodeIsNull();
+=======
+    verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
+    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        any());
+>>>>>>> Stashed changes
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
   @Test
   void shouldNotRetrieveDoctorsIfIncorrectMessageSupplied() {
+<<<<<<< Updated upstream
     gmcDoctorConnectionSyncService.receiveMessage("anyString");
 
     verify(revalidationSummaryRepository, never()).findByDesignatedBodyCode(any());
     verify(revalidationSummaryRepository, never()).findByDesignatedBodyCodeIsNull();
+=======
+    gmcDoctorConnectionSyncService.receiveMessage("wrongMessage");
+
+    verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
+    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        any());
+>>>>>>> Stashed changes
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
   private void setupData() {
+<<<<<<< Updated upstream
     recommendation1 = Recommendation.builder()
+=======
+    recommendation = Recommendation.builder()
+>>>>>>> Stashed changes
         .gmcNumber(gmcRef1)
         .outcome(gmcOutcome1)
         .build();
 
+<<<<<<< Updated upstream
     recommendation2 = Recommendation.builder()
         .gmcNumber(gmcRef2)
         .outcome(gmcOutcome2)
@@ -171,6 +257,21 @@ class GmcDoctorConnectionSyncServiceTest {
     message1 = IndexSyncMessage.builder().payload(summaryA).syncEnd(false).build();
     message2 = IndexSyncMessage.builder().payload(summaryB).syncEnd(false).build();
     message3 = IndexSyncMessage.builder().payload(summaryDisconnected).syncEnd(false).build();
+=======
+    doctor = DoctorsForDB.builder()
+        .gmcReferenceNumber(gmcRef1)
+        .designatedBodyCode(designatedBody)
+        .build();
+
+    doctorPage = new PageImpl<>(List.of(doctor));
+
+    summary = RevalidationSummaryDto.builder()
+        .doctor(doctor)
+        .gmcOutcome(String.valueOf(APPROVED))
+        .build();
+
+    message1 = IndexSyncMessage.builder().payload(List.of(summary)).syncEnd(false).build();
+>>>>>>> Stashed changes
     endMessage = IndexSyncMessage.builder().payload(List.of()).syncEnd(true).build();
   }
 }
