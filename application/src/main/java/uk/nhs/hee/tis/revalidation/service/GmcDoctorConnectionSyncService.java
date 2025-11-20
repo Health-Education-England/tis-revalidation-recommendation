@@ -79,7 +79,7 @@ public class GmcDoctorConnectionSyncService {
       doctors = doctorsForDBRepository.findAll(pageRequest);
       List<RevalidationSummaryDto> payload = new ArrayList<>();
       doctors.forEach(doc -> {
-        Optional<Recommendation> reccomendation = recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        Optional<Recommendation> reccomendation = recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(
             doc.getGmcReferenceNumber());
         RevalidationSummaryDto summary = RevalidationSummaryDto.builder()
             .doctor(doc)

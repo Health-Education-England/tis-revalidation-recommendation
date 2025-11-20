@@ -99,7 +99,7 @@ class GmcDoctorConnectionSyncServiceTest {
 
     when(doctorsForDBRepository.findAll(pageRequest))
         .thenReturn(doctorPage);
-    when(recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+    when(recommendationRepository.findFirstByGmcNumberOrderByActualSubmissionDateDesc(
         gmcRef1)).thenReturn(
         Optional.of(recommendation));
 
@@ -118,7 +118,7 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage(null);
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
-    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByActualSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
@@ -128,7 +128,7 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage("wrongMessage");
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
-    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+    verify(recommendationRepository, never()).findFirstByGmcNumberOrderByActualSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
