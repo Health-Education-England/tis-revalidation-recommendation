@@ -47,7 +47,7 @@ public class GmcDoctorConnectionSyncService {
   private final DoctorsForDBRepository doctorsForDBRepository;
   private final RecommendationRepository recommendationRepository;
   @Value("${app.reval.essync.batchsize}")
-  private int BATCH_SIZE;
+  private int batchSize;
 
   public GmcDoctorConnectionSyncService(
       ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher,
@@ -72,7 +72,7 @@ public class GmcDoctorConnectionSyncService {
     if (gmcSyncStart == null || !gmcSyncStart.equals("gmcSyncStart")) {
       return;
     }
-    PageRequest pageRequest = PageRequest.of(0, BATCH_SIZE);
+    PageRequest pageRequest = PageRequest.of(0, batchSize);
     Page<DoctorsForDB> doctors;
 
     do {

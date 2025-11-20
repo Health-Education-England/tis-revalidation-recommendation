@@ -90,7 +90,7 @@ class GmcDoctorConnectionSyncServiceTest {
   @BeforeEach
   void setup() {
     setupData();
-    ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "BATCH_SIZE", 1);
+    ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "batchSize", 1);
   }
 
   @Test
