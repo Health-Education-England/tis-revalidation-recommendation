@@ -77,9 +77,9 @@ public class GmcDoctorConnectionSyncService {
       doctors = doctorsForDBRepository.findAll(pageRequest);
       List<RevalidationSummaryDto> payload = new ArrayList<>();
 
-      doctors.forEach(doc -> {
-        payload.add(buildSummaryDto(doc));
-      });
+      doctors.forEach(doc ->
+          payload.add(buildSummaryDto(doc))
+      );
 
       IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(payload).syncEnd(false)
           .build();
