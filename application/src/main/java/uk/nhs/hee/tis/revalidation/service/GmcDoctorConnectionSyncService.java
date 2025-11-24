@@ -58,7 +58,7 @@ public class GmcDoctorConnectionSyncService {
   }
 
   /**
-   * Receive message to begin syncing revalidation data to elasticsearch grouped by DB.
+   * Receive message to begin syncing revalidation data to elasticsearch in batches.
    *
    * @param gmcSyncStart - Message to initiate sync process
    */
@@ -76,15 +76,11 @@ public class GmcDoctorConnectionSyncService {
     do {
       doctors = doctorsForDBRepository.findAll(pageRequest);
       List<RevalidationSummaryDto> payload = new ArrayList<>();
+
       doctors.forEach(doc -> {
-        TraineeRecommendationRecordDto reccomendation = recommendationService.getLatestRecommendation(
-            doc.getGmcReferenceNumber());
-        RevalidationSummaryDto summary = RevalidationSummaryDto.builder()
-            .doctor(doc)
-            .gmcOutcome(reccomendation.getGmcOutcome())
-            .build();
-        payload.add(summary);
+        payload.add(buildSummaryDto(doc));
       });
+
       IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(payload).syncEnd(false)
           .build();
       elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
@@ -94,5 +90,14 @@ public class GmcDoctorConnectionSyncService {
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
         .build();
     elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
+  }
+
+  private RevalidationSummaryDto buildSummaryDto(DoctorsForDB doctor) {
+    TraineeRecommendationRecordDto recommendation = recommendationService.getLatestRecommendation(
+        doctor.getGmcReferenceNumber());
+    return RevalidationSummaryDto.builder()
+        .doctor(doctor)
+        .gmcOutcome(recommendation.getGmcOutcome())
+        .build();
   }
 }
