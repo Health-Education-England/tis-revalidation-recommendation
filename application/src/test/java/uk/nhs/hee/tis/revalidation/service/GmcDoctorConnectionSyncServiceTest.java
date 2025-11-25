@@ -21,20 +21,16 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,16 +39,18 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
-import software.amazon.awssdk.services.sqs.batchmanager.SqsAsyncBatchManager;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
+import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
@@ -60,17 +58,11 @@ class GmcDoctorConnectionSyncServiceTest {
 
   public static final String GMC_SYNC_START = "gmcSyncStart";
 
-  @Captor
-  private ArgumentCaptor<SendMessageRequest> sendReqCaptor;
-
-  @Captor
-  private ArgumentCaptor<IndexSyncMessage<RevalidationSummaryDto>> syncMsgCaptor;
-
   @InjectMocks
   private GmcDoctorConnectionSyncService gmcDoctorConnectionSyncService;
 
   @Mock
-  private SqsAsyncBatchManager batchManager;
+  private ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
 
   @Mock
   private DoctorsForDBRepository doctorsForDBRepository;
@@ -78,161 +70,85 @@ class GmcDoctorConnectionSyncServiceTest {
   @Mock
   private RecommendationService recommendationService;
 
-  @Mock
-  private ObjectMapper objectMapper;
+  @Captor
+  ArgumentCaptor<IndexSyncMessage> indexSyncMessageArgumentCaptor;
 
-  private List<DoctorsForDB> doctorsForDBList;
-  private DoctorsForDB doctor1;
-  private TraineeRecommendationRecordDto recommendation1;
-  private final String gmcOutcome1 = "APPROVED";
+  private RevalidationSummaryDto summary;
+  private DoctorsForDB doctor;
+  private Page<DoctorsForDB> doctorPage;
+  private TraineeRecommendationRecordDto recommendation;
+  private IndexSyncMessage message1, endMessage;
+
+  private final RecommendationGmcOutcome gmcOutcome1 = APPROVED;
+
   private final String gmcRef1 = "1111111";
-  private final String admin1 = "admin";
-  private final String sqsEndpoint = "/endpoint";
+
+  private final String designatedBody = "AAAAAAA";
 
   @BeforeEach
   void setup() {
-    buildDoctorsList();
-    buildRecommendations();
-    ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "sqsEndPoint", sqsEndpoint);
+    setupData();
+    ReflectionTestUtils.setField(gmcDoctorConnectionSyncService, "batchSize", 1);
   }
 
   @Test
   void shouldRetrieveAllDoctors() {
-    when(batchManager.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
+    PageRequest pageRequest = PageRequest.of(0, 1);
+
+    when(doctorsForDBRepository.findAll(pageRequest))
+        .thenReturn(doctorPage);
+    when(recommendationService.getLatestRecommendation(
+        gmcRef1)).thenReturn(recommendation);
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-    verify(doctorsForDBRepository).findAll();
+
+    verify(elasticsearchSyncMessagePublisher, times(2)).publishToBroker(
+        indexSyncMessageArgumentCaptor.capture());
+
+    var results = indexSyncMessageArgumentCaptor.getAllValues();
+    assertThat(results.get(0), is(message1));
+    assertThat(results.get(1), is(endMessage));
   }
 
   @Test
   void shouldNotRetrieveDoctorsIfNullMessageSupplied() {
     gmcDoctorConnectionSyncService.receiveMessage(null);
-    verify(doctorsForDBRepository, never()).findAll();
+
+    verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
+    verify(recommendationService, never()).getLatestRecommendation(
+        any());
+    verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
   @Test
   void shouldNotRetrieveDoctorsIfIncorrectMessageSupplied() {
-    gmcDoctorConnectionSyncService.receiveMessage("anyString");
-    verify(doctorsForDBRepository, never()).findAll();
+    gmcDoctorConnectionSyncService.receiveMessage("wrongMessage");
+
+    verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
+    verify(recommendationService, never()).getLatestRecommendation(
+        any());
+    verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
-  @Test
-  void shouldSendRetrievedDoctorsToSqs() throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-
-    when(objectMapper.writeValueAsString(syncMsgCaptor.capture()))
-        .thenReturn("fooey")
-        .thenReturn("end");
-
-    when(batchManager.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    List<IndexSyncMessage<RevalidationSummaryDto>> capturedMessages = syncMsgCaptor.getAllValues();
-    assertThat(capturedMessages.size(), is(2));
-
-    IndexSyncMessage<?> doctorMessage = capturedMessages.get(0);
-    assertThat(doctorMessage.getSyncEnd(), is(false));
-    assertThat(((RevalidationSummaryDto) doctorMessage.getPayload()).getGmcOutcome(),
-        is(gmcOutcome1));
-    assertThat(
-        ((RevalidationSummaryDto) doctorMessage.getPayload()).getDoctor().getGmcReferenceNumber(),
-        is(gmcRef1));
-    assertThat(((RevalidationSummaryDto) doctorMessage.getPayload()).getDoctor().getAdmin(),
-        is(admin1));
-
-    IndexSyncMessage<?> syncEndMessage = capturedMessages.get(1);
-    assertThat(syncEndMessage.getSyncEnd(), is(true));
-
-    verify(batchManager, times(2)).sendMessage(sendReqCaptor.capture());
-    List<SendMessageRequest> sentRequests = sendReqCaptor.getAllValues();
-    assertThat(sentRequests.size(), is(2));
-    assertThat(sentRequests.get(0).messageBody(), is("fooey"));
-    assertThat(sentRequests.get(1).messageBody(), is("end"));
-  }
-
-  @Test
-  void shouldSkipOverUnmarshallableDoctor() throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(List.of(doctor1, doctor1));
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-
-    JsonProcessingException expected = new JsonProcessingException("Expected") {
-    };
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenThrow(expected)
-        .thenReturn("fooey2")
-        .thenReturn("end");
-
-    when(batchManager.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    verify(batchManager, times(2)).sendMessage(sendReqCaptor.capture());
-    List<SendMessageRequest> captured = sendReqCaptor.getAllValues();
-
-    SendMessageRequest doctorMsg = captured.get(0);
-    assertEquals("fooey2", doctorMsg.messageBody());
-
-    SendMessageRequest syncEndMsg = captured.get(1);
-    assertEquals("end", syncEndMsg.messageBody());
-  }
-
-  @Test
-  void shouldCatchExceptionMarshallingSyncEndFlag(CapturedOutput output) throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-
-    JsonProcessingException expected = new JsonProcessingException("Expected") {
-    };
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenReturn("fooey")
-        .thenThrow(expected);
-
-    when(batchManager.sendMessage(any(SendMessageRequest.class)))
-        .thenReturn(CompletableFuture.completedFuture(SendMessageResponse.builder().build()));
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    verify(batchManager).sendMessage(sendReqCaptor.capture());
-    SendMessageRequest sendMessageRequest = sendReqCaptor.getValue();
-    assertThat(sendMessageRequest.messageBody(), is("fooey"));
-    assertThat(output.getOut(), containsString(
-        "Unable to convert 'syncEnd' message. Downstream services need notification."));
-  }
-
-  @Test
-  void shouldLogErrorWhenSendFails(CapturedOutput output) throws Exception {
-    when(doctorsForDBRepository.findAll()).thenReturn(doctorsForDBList);
-    when(recommendationService.getLatestRecommendation(gmcRef1)).thenReturn(recommendation1);
-    when(objectMapper.writeValueAsString(any(IndexSyncMessage.class)))
-        .thenReturn("fooey")
-        .thenReturn("end");
-
-    CompletableFuture<SendMessageResponse> failedFuture = new CompletableFuture<>();
-    failedFuture.completeExceptionally(new RuntimeException("send failed"));
-    when(batchManager.sendMessage(any(SendMessageRequest.class))).thenReturn(failedFuture);
-
-    gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
-
-    assertThat(output.getOut(), containsString("Failed to send doctor " + gmcRef1));
-  }
-
-  private void buildDoctorsList() {
-    doctor1 = DoctorsForDB.builder()
-        .gmcReferenceNumber(gmcRef1)
-        .admin(admin1)
-        .build();
-    doctorsForDBList = List.of(doctor1);
-  }
-
-  private void buildRecommendations() {
-    recommendation1 = TraineeRecommendationRecordDto.builder()
+  private void setupData() {
+    recommendation = TraineeRecommendationRecordDto.builder()
         .gmcNumber(gmcRef1)
-        .gmcOutcome(gmcOutcome1)
+        .gmcOutcome(String.valueOf(gmcOutcome1))
         .build();
+
+    doctor = DoctorsForDB.builder()
+        .gmcReferenceNumber(gmcRef1)
+        .designatedBodyCode(designatedBody)
+        .build();
+
+    doctorPage = new PageImpl<>(List.of(doctor));
+
+    summary = RevalidationSummaryDto.builder()
+        .doctor(doctor)
+        .gmcOutcome(String.valueOf(APPROVED))
+        .build();
+
+    message1 = IndexSyncMessage.builder().payload(List.of(summary)).syncEnd(false).build();
+    endMessage = IndexSyncMessage.builder().payload(List.of()).syncEnd(true).build();
   }
 }

@@ -48,5 +48,6 @@ public interface RecommendationRepository extends MongoRepository<Recommendation
   List<Recommendation> findAllByGmcNumberAndOutcomeNotIn(final String gmcNumber,
       final RecommendationGmcOutcome... outcome);
 
-  List<Recommendation> findAllByRecommendationStatus(final RecommendationStatus recommendationStatus);
+  List<Recommendation> findAllByRecommendationStatus(
+      final RecommendationStatus recommendationStatus);
 }

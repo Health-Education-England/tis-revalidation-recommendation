@@ -21,117 +21,83 @@
 
 package uk.nhs.hee.tis.revalidation.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.apache.commons.collections4.ListUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.sqs.batchmanager.SqsAsyncBatchManager;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
+import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
 
 @Slf4j
 @Service
 public class GmcDoctorConnectionSyncService {
 
-  private static final int BATCH_SIZE = 100;
-
-  private final SqsAsyncBatchManager batchManager;
+  private final ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher;
   private final DoctorsForDBRepository doctorsForDBRepository;
   private final RecommendationService recommendationService;
-  private final ObjectMapper objectMapper;
-  @Value("${cloud.aws.end-point.uri}")
-  private String sqsEndPoint;
+  @Value("${app.reval.essync.batchsize}")
+  private int batchSize;
 
-  public GmcDoctorConnectionSyncService(SqsAsyncBatchManager batchManager,
-      ObjectMapper objectMapper,
-      DoctorsForDBRepository doctorsForDBRepository, RecommendationService recommendationService) {
-    this.batchManager = batchManager;
-    this.objectMapper = objectMapper;
+  public GmcDoctorConnectionSyncService(
+      ElasticsearchSyncMessagePublisher elasticsearchSyncMessagePublisher,
+      DoctorsForDBRepository doctorsForDBRepository,
+      RecommendationService recommendationService) {
+
+    this.elasticsearchSyncMessagePublisher = elasticsearchSyncMessagePublisher;
     this.doctorsForDBRepository = doctorsForDBRepository;
     this.recommendationService = recommendationService;
   }
 
+  /**
+   * Receive message to begin syncing revalidation data to elasticsearch in batches.
+   *
+   * @param gmcSyncStart - Message to initiate sync process
+   */
   @RabbitListener(queues = "${app.rabbit.reval.queue.recommendation.syncstart}", ackMode = "NONE")
   @SchedulerLock(name = "IndexRebuildGetGmcJob")
   public void receiveMessage(final String gmcSyncStart) {
-    log.info("Message from integration service to start gmc sync {}", gmcSyncStart);
+    log.info("Message from integration service to start gmc data sync {}", gmcSyncStart);
 
     if (gmcSyncStart == null || !gmcSyncStart.equals("gmcSyncStart")) {
       return;
     }
+    PageRequest pageRequest = PageRequest.of(0, batchSize);
+    Page<DoctorsForDB> doctors;
 
-    ListUtils.partition(doctorsForDBRepository.findAll(), BATCH_SIZE).forEach(batch -> {
-      List<CompletableFuture<?>> futures = batch.stream()
-          .filter(Objects::nonNull)
-          .map(doctor -> {
-            SendMessageRequest req = convertToMessage(doctor);
-            if (req == null) {
-              return CompletableFuture.completedFuture(null);
-            }
+    do {
+      doctors = doctorsForDBRepository.findAll(pageRequest);
+      List<RevalidationSummaryDto> payload = new ArrayList<>();
 
-            return batchManager.sendMessage(req)
-                .handle((resp, ex) -> {
-                  if (ex != null) {
-                    log.error("Failed to send doctor {}", doctor.getGmcReferenceNumber(), ex);
-                  }
-                  return resp;
-                });
-          }).toList();
-      // Wait for the batch of messages to be sent
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-      log.info("Batch of {} doctors sent", batch.size());
-    });
+      doctors.forEach(doc ->
+          payload.add(buildSummaryDto(doc))
+      );
 
-    log.info("GMC doctors have been published to the SQS queue.");
-      final var syncEnd = IndexSyncMessage.builder().syncEnd(true).build();
-      try {
-        String body = objectMapper.writeValueAsString(syncEnd);
-        batchManager.sendMessage(
-            SendMessageRequest.builder().queueUrl(sqsEndPoint).messageBody(body).build()
-        ).handle((resp, ex) -> {
-          if (ex != null) {
-            log.error("Failed to send syncEnd message", ex);
-          } else {
-            log.info("Sent syncEnd message");
-          }
-          return null;
-        });
-      } catch (JsonProcessingException e) {
-        log.error(
-            "Unable to convert 'syncEnd' message. Downstream services need notification.", e);
-      }
+      IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(payload).syncEnd(false)
+          .build();
+      elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
+      pageRequest = pageRequest.next();
+    } while (doctors.hasNext());
+
+    IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
+        .build();
+    elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
   }
 
-  private SendMessageRequest convertToMessage(DoctorsForDB doctor) {
-    TraineeRecommendationRecordDto recommendation =
-        recommendationService.getLatestRecommendation(doctor.getGmcReferenceNumber());
-
-    final var summary = RevalidationSummaryDto.builder()
+  private RevalidationSummaryDto buildSummaryDto(DoctorsForDB doctor) {
+    TraineeRecommendationRecordDto recommendation = recommendationService.getLatestRecommendation(
+        doctor.getGmcReferenceNumber());
+    return RevalidationSummaryDto.builder()
         .doctor(doctor)
         .gmcOutcome(recommendation.getGmcOutcome())
         .build();
-    final var message = IndexSyncMessage.builder()
-        .payload(summary)
-        .syncEnd(false)
-        .build();
-    try {
-      return SendMessageRequest.builder().queueUrl(sqsEndPoint)
-          .messageBody(objectMapper.writeValueAsString(message)).build();
-    } catch (JsonProcessingException e) {
-      log.error("Unable to construct message for doctor '{}'", doctor.getGmcReferenceNumber(), e);
-      return null;
-    }
   }
-
 }
