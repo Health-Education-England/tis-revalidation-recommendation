@@ -73,6 +73,9 @@ class GmcDoctorConnectionSyncServiceTest {
   @Mock
   private RecommendationRepository recommendationRepository;
 
+  @Mock
+  private RecommendationService recommendationService;
+
   @Captor
   ArgumentCaptor<IndexSyncMessage> indexSyncMessageArgumentCaptor;
 
@@ -108,10 +111,11 @@ class GmcDoctorConnectionSyncServiceTest {
 
     when(doctorsForDBRepository.findAll(pageRequest))
         .thenReturn(doctorPage);
-    when(recommendationRepository.findAllByGmcNumberOrderByGmcSubmissionDateDesc(
+    when(recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
         GMC_NUMBER_1)).thenReturn(
-        Optional.of(recommendation1));    when(recommendationRepository.findAllByGmcNumberOrderByGmcSubmissionDateDesc(
-        GMC_NUMBER_1)).thenReturn(
+        Optional.of(recommendation1));    when(recommendationRepository
+        .findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        GMC_NUMBER_2)).thenReturn(
         Optional.of(recommendation2));
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
@@ -130,7 +134,7 @@ class GmcDoctorConnectionSyncServiceTest {
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
     verify(recommendationRepository,
-        never()).findAllByGmcNumberOrderByGmcSubmissionDateDesc(
+        never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
@@ -141,7 +145,7 @@ class GmcDoctorConnectionSyncServiceTest {
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
     verify(recommendationRepository,
-        never()).findAllByGmcNumberOrderByGmcSubmissionDateDesc(
+        never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
@@ -191,7 +195,7 @@ class GmcDoctorConnectionSyncServiceTest {
         .doctor(doctor3)
         .build();
 
-    message1 = IndexSyncMessage.builder().payload(List.of(summary2, summary3, summary1))
+    message1 = IndexSyncMessage.builder().payload(List.of(summary1, summary2, summary3))
         .syncEnd(false).build();
     endMessage = IndexSyncMessage.builder().payload(List.of()).syncEnd(true).build();
   }

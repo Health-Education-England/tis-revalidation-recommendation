@@ -78,7 +78,6 @@ public class GmcDoctorConnectionSyncService {
     PageRequest pageRequest = PageRequest.of(0, batchSize);
     Page<DoctorsForDB> doctors;
 
-    int end = 0;
     do {
       doctors = doctorsForDBRepository.findAll(pageRequest);
       List<RevalidationSummaryDto> summaryDtos = new ArrayList<>();
@@ -88,11 +87,9 @@ public class GmcDoctorConnectionSyncService {
       IndexSyncMessage syncMessage = IndexSyncMessage.builder()
           .payload(summaryDtos).syncEnd(false)
           .build();
-      log.info("Publishing payload: {}", syncMessage);
       elasticsearchSyncMessagePublisher.publishToBroker(syncMessage);
       pageRequest = pageRequest.next();
-      end++;
-    } while (end < 2);
+    } while (doctors.hasNext());
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
         .build();
