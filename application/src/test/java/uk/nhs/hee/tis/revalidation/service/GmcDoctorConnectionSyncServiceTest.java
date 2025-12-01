@@ -183,12 +183,12 @@ class GmcDoctorConnectionSyncServiceTest {
 
     summary1 = RevalidationSummaryDto.builder()
         .doctor(doctor1)
-        .gmcOutcome(String.valueOf(APPROVED))
+        .gmcOutcome(APPROVED.getOutcome())
         .build();
 
     summary2 = RevalidationSummaryDto.builder()
         .doctor(doctor2)
-        .gmcOutcome(String.valueOf(APPROVED))
+        .gmcOutcome(APPROVED.getOutcome())
         .build();
 
     summary3 = RevalidationSummaryDto.builder()

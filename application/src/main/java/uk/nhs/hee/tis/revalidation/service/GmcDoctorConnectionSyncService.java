@@ -110,7 +110,7 @@ public class GmcDoctorConnectionSyncService {
           doctor);
       boolean draft = rec.getActualSubmissionDate() == null;
       if (!completed && !draft) {
-        summary.setGmcOutcome(String.valueOf(rec.getOutcome()));
+        summary.setGmcOutcome(rec.getOutcome().getOutcome());
       }
     });
 
