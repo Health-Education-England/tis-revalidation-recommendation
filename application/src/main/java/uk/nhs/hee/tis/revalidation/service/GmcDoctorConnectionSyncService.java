@@ -109,7 +109,7 @@ public class GmcDoctorConnectionSyncService {
       boolean completed = recommendationService.checkIfPastCompletedRecommendation(rec,
           doctor);
       boolean draft = rec.getActualSubmissionDate() == null;
-      if (!completed && !draft) {
+      if (!completed && !draft && rec.getOutcome() != null) {
         summary.setGmcOutcome(rec.getOutcome().getOutcome());
       }
     });
