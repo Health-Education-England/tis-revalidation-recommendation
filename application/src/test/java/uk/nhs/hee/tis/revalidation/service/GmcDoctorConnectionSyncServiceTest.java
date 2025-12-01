@@ -108,9 +108,11 @@ class GmcDoctorConnectionSyncServiceTest {
 
     when(doctorsForDBRepository.findAll(pageRequest))
         .thenReturn(doctorPage);
-    when(recommendationRepository.findAllFirstByGmcNumberInOrderByGmcSubmissionDateDesc(
-        List.of(GMC_NUMBER_2, GMC_NUMBER_3, GMC_NUMBER_1))).thenReturn(
-        List.of(Optional.of(recommendation1), Optional.of(recommendation2)));
+    when(recommendationRepository.findAllByGmcNumberOrderByGmcSubmissionDateDesc(
+        GMC_NUMBER_1)).thenReturn(
+        Optional.of(recommendation1));    when(recommendationRepository.findAllByGmcNumberOrderByGmcSubmissionDateDesc(
+        GMC_NUMBER_1)).thenReturn(
+        Optional.of(recommendation2));
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
@@ -128,7 +130,7 @@ class GmcDoctorConnectionSyncServiceTest {
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
     verify(recommendationRepository,
-        never()).findAllFirstByGmcNumberInOrderByGmcSubmissionDateDesc(
+        never()).findAllByGmcNumberOrderByGmcSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
@@ -139,7 +141,7 @@ class GmcDoctorConnectionSyncServiceTest {
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
     verify(recommendationRepository,
-        never()).findAllFirstByGmcNumberInOrderByGmcSubmissionDateDesc(
+        never()).findAllByGmcNumberOrderByGmcSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
