@@ -78,6 +78,7 @@ public class GmcDoctorConnectionSyncService {
     PageRequest pageRequest = PageRequest.of(0, batchSize);
     Page<DoctorsForDB> doctors;
 
+    int end = 0;
     do {
       doctors = doctorsForDBRepository.findAll(pageRequest);
       List<RevalidationSummaryDto> summaryDtos = new ArrayList<>();
@@ -87,12 +88,15 @@ public class GmcDoctorConnectionSyncService {
       IndexSyncMessage syncMessage = IndexSyncMessage.builder()
           .payload(summaryDtos).syncEnd(false)
           .build();
+      log.info("Publishing payload: {}", syncMessage);
       elasticsearchSyncMessagePublisher.publishToBroker(syncMessage);
       pageRequest = pageRequest.next();
-    } while (doctors.hasNext());
+      end++;
+    } while (end < 2);
 
     IndexSyncMessage syncEndPayload = IndexSyncMessage.builder().payload(List.of()).syncEnd(true)
         .build();
+
     elasticsearchSyncMessagePublisher.publishToBroker(syncEndPayload);
   }
 
@@ -101,7 +105,7 @@ public class GmcDoctorConnectionSyncService {
         .doctor(doctor)
         .build());
 
-    Optional<Recommendation> recommendation = recommendationRepository.findAllByGmcNumberOrderByGmcSubmissionDateDesc(
+    Optional<Recommendation> recommendation = recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
         doctor.getGmcReferenceNumber());
 
     recommendation.ifPresent(rec -> {
