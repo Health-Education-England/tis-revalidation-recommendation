@@ -373,6 +373,25 @@ public class RecommendationServiceImpl implements RecommendationService {
   }
 
   /**
+   * Check if a given recommendation has been completed within the last month
+   *
+   * @param recommendation The recommendation to check the completion of
+   * @param doctor The doctor associated with the recommendation
+   * @return A Boolean of whether this recommendation is considered "completed"
+   */
+  public boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
+      DoctorsForDB doctor) {
+    final boolean approved = APPROVED.equals(recommendation.getOutcome());
+    final boolean underNotice = YES.equals(doctor.getUnderNotice());
+    //TODO find more empirical timeframe
+    final boolean notRecent = recommendation.getActualSubmissionDate() != null
+        && recommendation.getActualSubmissionDate()
+        .isBefore(LocalDate.now().minusMonths(1));
+
+    return approved && underNotice && notRecent;
+  }
+
+  /**
    * Get all Recommendations for a Doctor
    *
    * @param doctorsForDB The Doctor to search for
@@ -480,17 +499,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         .build();
   }
 
-  private boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
-      DoctorsForDB doctor) {
-    final boolean approved = APPROVED.equals(recommendation.getOutcome());
-    final boolean underNotice = YES.equals(doctor.getUnderNotice());
-    //TODO find more empirical timeframe
-    final boolean notRecent = recommendation.getActualSubmissionDate() != null
-        && recommendation.getActualSubmissionDate()
-        .isBefore(LocalDate.now().minusMonths(1));
 
-    return approved && underNotice && notRecent;
-  }
 
   /**
    * This predicate evaluates whether a recommendation is "In Progress".  This includes those with a

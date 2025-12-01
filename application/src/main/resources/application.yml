@@ -55,7 +55,7 @@ app:
     event.store.collection: ${EVENT_STORE_COLLECTION:events_log}
     pagination.pageSize: ${PAGINATION_PAGE_SIZE:20}
     tcs.url: ${TCS_URL:http:localhost:8080/tcsmock/api/revalidation}
-    essync.batchsize: ${ESSYNC_BATCH_SIZE:20000}
+    essync.batchsize: ${ESSYNC_BATCH_SIZE:9000}
 
   validation:
     sort.fields: ${SORT_FIELD:submissionDate,doctorFirstName,doctorLastName,gmcReferenceNumber}

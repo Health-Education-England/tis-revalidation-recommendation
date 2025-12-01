@@ -25,6 +25,7 @@ import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.dto.RoUserProfileDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationDto;
 import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
+import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
 import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationStatus;
 
@@ -56,4 +57,7 @@ public interface RecommendationService {
 
     // get a list of recommendation status Dto
     List<RecommendationStatusCheckDto> getRecommendationStatusCheckDtos();
+
+    boolean checkIfPastCompletedRecommendation(Recommendation recommendation,
+        DoctorsForDB doctor);
 }

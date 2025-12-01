@@ -30,7 +30,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.APPROVED;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,12 +48,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 import uk.nhs.hee.tis.revalidation.dto.RevalidationSummaryDto;
-import uk.nhs.hee.tis.revalidation.dto.TraineeRecommendationRecordDto;
 import uk.nhs.hee.tis.revalidation.entity.DoctorsForDB;
+import uk.nhs.hee.tis.revalidation.entity.Recommendation;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
 import uk.nhs.hee.tis.revalidation.messages.payloads.IndexSyncMessage;
 import uk.nhs.hee.tis.revalidation.messages.publisher.ElasticsearchSyncMessagePublisher;
 import uk.nhs.hee.tis.revalidation.repository.DoctorsForDBRepository;
+import uk.nhs.hee.tis.revalidation.repository.RecommendationRepository;
 
 @ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class GmcDoctorConnectionSyncServiceTest {
@@ -68,22 +71,33 @@ class GmcDoctorConnectionSyncServiceTest {
   private DoctorsForDBRepository doctorsForDBRepository;
 
   @Mock
+  private RecommendationRepository recommendationRepository;
+
+  @Mock
   private RecommendationService recommendationService;
 
   @Captor
   ArgumentCaptor<IndexSyncMessage> indexSyncMessageArgumentCaptor;
 
-  private RevalidationSummaryDto summary;
-  private DoctorsForDB doctor;
+  private RevalidationSummaryDto summary1, summary2, summary3;
+  private DoctorsForDB doctor1, doctor2, doctor3;
   private Page<DoctorsForDB> doctorPage;
-  private TraineeRecommendationRecordDto recommendation;
+  private Recommendation recommendation1, recommendation2;
   private IndexSyncMessage message1, endMessage;
 
-  private final RecommendationGmcOutcome gmcOutcome1 = APPROVED;
+  private static final RecommendationGmcOutcome GMC_OUTCOME = APPROVED;
 
-  private final String gmcRef1 = "1111111";
+  private static final String GMC_NUMBER_1 = "1111111";
+  private static final String GMC_NUMBER_2 = "2222222";
+  private static final String GMC_NUMBER_3 = "3333333";
 
-  private final String designatedBody = "AAAAAAA";
+  private static final String DB_1 = "AAAAAAA";
+  private static final String DB_2 = "BBBBBBB";
+
+  private static final LocalDate SUBMISSION_DATE_1 = LocalDate.now().plusDays(2);
+  private static final LocalDate SUBMISSION_DATE_2 = LocalDate.now().minusDays(2);
+  private static final LocalDate ACTUAL_DATE_1 = LocalDate.now().plusDays(1);
+  private static final LocalDate ACTUAL_DATE_2 = LocalDate.now().minusDays(1);
 
   @BeforeEach
   void setup() {
@@ -97,8 +111,12 @@ class GmcDoctorConnectionSyncServiceTest {
 
     when(doctorsForDBRepository.findAll(pageRequest))
         .thenReturn(doctorPage);
-    when(recommendationService.getLatestRecommendation(
-        gmcRef1)).thenReturn(recommendation);
+    when(recommendationRepository.findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        GMC_NUMBER_1)).thenReturn(
+        Optional.of(recommendation1));    when(recommendationRepository
+        .findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
+        GMC_NUMBER_2)).thenReturn(
+        Optional.of(recommendation2));
 
     gmcDoctorConnectionSyncService.receiveMessage(GMC_SYNC_START);
 
@@ -115,7 +133,8 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage(null);
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
-    verify(recommendationService, never()).getLatestRecommendation(
+    verify(recommendationRepository,
+        never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
@@ -125,30 +144,59 @@ class GmcDoctorConnectionSyncServiceTest {
     gmcDoctorConnectionSyncService.receiveMessage("wrongMessage");
 
     verify(doctorsForDBRepository, never()).findAll(any(Pageable.class));
-    verify(recommendationService, never()).getLatestRecommendation(
+    verify(recommendationRepository,
+        never()).findFirstByGmcNumberOrderByGmcSubmissionDateDesc(
         any());
     verify(elasticsearchSyncMessagePublisher, never()).publishToBroker(any());
   }
 
   private void setupData() {
-    recommendation = TraineeRecommendationRecordDto.builder()
-        .gmcNumber(gmcRef1)
-        .gmcOutcome(String.valueOf(gmcOutcome1))
+    recommendation1 = Recommendation.builder()
+        .gmcNumber(GMC_NUMBER_1)
+        .outcome(GMC_OUTCOME)
+        .gmcSubmissionDate(SUBMISSION_DATE_1)
+        .actualSubmissionDate(ACTUAL_DATE_1)
         .build();
 
-    doctor = DoctorsForDB.builder()
-        .gmcReferenceNumber(gmcRef1)
-        .designatedBodyCode(designatedBody)
+    recommendation2 = Recommendation.builder()
+        .gmcNumber(GMC_NUMBER_2)
+        .outcome(GMC_OUTCOME)
+        .gmcSubmissionDate(SUBMISSION_DATE_2)
+        .actualSubmissionDate(ACTUAL_DATE_2)
         .build();
 
-    doctorPage = new PageImpl<>(List.of(doctor));
+    doctor1 = DoctorsForDB.builder()
+        .gmcReferenceNumber(GMC_NUMBER_1)
+        .designatedBodyCode(DB_1)
+        .build();
 
-    summary = RevalidationSummaryDto.builder()
-        .doctor(doctor)
+    doctor2 = DoctorsForDB.builder()
+        .gmcReferenceNumber(GMC_NUMBER_2)
+        .designatedBodyCode(DB_2)
+        .build();
+
+    doctor3 = DoctorsForDB.builder()
+        .gmcReferenceNumber(GMC_NUMBER_3)
+        .build();
+
+    doctorPage = new PageImpl<>(List.of(doctor1, doctor2, doctor3));
+
+    summary1 = RevalidationSummaryDto.builder()
+        .doctor(doctor1)
         .gmcOutcome(String.valueOf(APPROVED))
         .build();
 
-    message1 = IndexSyncMessage.builder().payload(List.of(summary)).syncEnd(false).build();
+    summary2 = RevalidationSummaryDto.builder()
+        .doctor(doctor2)
+        .gmcOutcome(String.valueOf(APPROVED))
+        .build();
+
+    summary3 = RevalidationSummaryDto.builder()
+        .doctor(doctor3)
+        .build();
+
+    message1 = IndexSyncMessage.builder().payload(List.of(summary1, summary2, summary3))
+        .syncEnd(false).build();
     endMessage = IndexSyncMessage.builder().payload(List.of()).syncEnd(true).build();
   }
 }

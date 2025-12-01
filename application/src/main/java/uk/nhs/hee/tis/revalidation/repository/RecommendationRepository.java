@@ -50,4 +50,6 @@ public interface RecommendationRepository extends MongoRepository<Recommendation
 
   List<Recommendation> findAllByRecommendationStatus(
       final RecommendationStatus recommendationStatus);
+
+  Optional<Recommendation> findFirstByGmcNumberOrderByGmcSubmissionDateDesc(String gmcNumber);
 }
