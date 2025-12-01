@@ -26,6 +26,7 @@ import static uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome.REJECT
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import uk.nhs.hee.tis.revalidation.entity.Recommendation;
@@ -50,4 +51,6 @@ public interface RecommendationRepository extends MongoRepository<Recommendation
 
   List<Recommendation> findAllByRecommendationStatus(
       final RecommendationStatus recommendationStatus);
+
+  Optional<Recommendation> findAllByGmcNumberOrderByGmcSubmissionDateDesc(String gmcNumber);
 }
