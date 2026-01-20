@@ -41,7 +41,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @AllArgsConstructor
 @Builder
 @Data
-@Document(indexName = "recommendationindex")
+@Document(indexName = "recommendations")
 public class RecommendationView {
 
   @Id
