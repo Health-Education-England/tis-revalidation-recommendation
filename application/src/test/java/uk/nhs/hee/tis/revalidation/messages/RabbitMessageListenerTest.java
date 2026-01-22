@@ -23,13 +23,11 @@ package uk.nhs.hee.tis.revalidation.messages;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.github.javafaker.Faker;
 import java.time.LocalDate;
@@ -94,15 +92,6 @@ class RabbitMessageListenerTest {
           .designatedBodyId(designatedBody)
           .outcome(RecommendationGmcOutcome.APPROVED)
           .build();
-
-  private MasterDoctorViewDto getMasterDoctorViewDto() {
-    return MasterDoctorViewDto.builder()
-        .id(id)
-        .gmcReferenceNumber(gmcNumber)
-        .designatedBody(designatedBody)
-        .underNotice("Yes")
-        .build();
-  }
 
   @Test
   void shouldHandleRecommendationStatusCheckMessages() {
@@ -169,53 +158,5 @@ class RabbitMessageListenerTest {
 
     assertThrows(AmqpRejectAndDontRequeueException.class,
         () -> rabbitMessageListener.receiveMessageForRecommendationStatusUpdate(null));
-  }
-
-  @Test
-  void shouldDiscardUpdateMessagesFromMasterDoctorViewIfGmcReferenceNumberNull() {
-    MasterDoctorViewDto testDto =
-        MasterDoctorViewDto.builder()
-            .gmcReferenceNumber(null)
-            .tcsPersonId(1L)
-            .designatedBody(designatedBody)
-            .underNotice("Yes")
-            .build();
-
-    assertThrows(AmqpRejectAndDontRequeueException.class,
-        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(testDto));
-  }
-
-  @Test
-  void shouldNotUpdateMessageFromMasterDoctorViewOnException() {
-    assertThrows(AmqpRejectAndDontRequeueException.class,
-        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(null));
-  }
-
-  @Test
-  void shouldThrowExceptionWhenIdNullInReceivedMsgFromMasterDoctorView() {
-    MasterDoctorViewDto masterDoctorViewDto = getMasterDoctorViewDto();
-    masterDoctorViewDto.setId(null);
-    assertThrows(AmqpRejectAndDontRequeueException.class,
-        () -> rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto));
-  }
-
-  @Test
-  void shouldReceiveUpdateMessageFromMasterDoctorView() {
-    MasterDoctorViewDto masterDoctorViewDto = getMasterDoctorViewDto();
-    RecommendationView recommendationView = RecommendationView.builder()
-        .id(id)
-        .gmcReferenceNumber(gmcNumber)
-        .designatedBody(designatedBody)
-        .underNotice("Yes")
-        .build();
-    when(recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto))
-        .thenReturn(recommendationView);
-    rabbitMessageListener.receiveUpdateMessageFromMasterDoctorView(masterDoctorViewDto);
-
-    verify(recommendationElasticSearchService)
-        .saveRecommendationView(recommendationViewArgCaptor.capture());
-
-    RecommendationView savedRecommendationView = recommendationViewArgCaptor.getValue();
-    assertEquals(savedRecommendationView, recommendationView);
   }
 }

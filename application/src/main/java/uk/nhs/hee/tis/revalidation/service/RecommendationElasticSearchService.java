@@ -37,22 +37,6 @@ public class RecommendationElasticSearchService {
   @Autowired
   RecommendationElasticSearchRepository recommendationElasticSearchRepository;
 
-  /**
-   * add or update Recommendation data to elasticsearch Recommendation index.
-   *
-   * @param dataToSave Recommendation data to go in elasticsearch
-   */
-  public void saveRecommendationView(RecommendationView dataToSave) {
-    try {
-      recommendationElasticSearchRepository.save(dataToSave);
-    } catch (Exception ex) {
-      throw new DoctorIndexUpdateException(
-          String.format("Failed to save a recommendation view for doctor (GMC: %s, Person ID: %d)",
-              dataToSave.getGmcReferenceNumber(), dataToSave.getTcsPersonId()),
-          ex);
-    }
-  }
-
   public String formatDesignatedBodyCodesForElasticsearchQuery(List<String> designatedBodyCodes) {
     List<String> escapedCodes = new ArrayList<>();
     designatedBodyCodes.forEach(code -> {
