@@ -16,7 +16,7 @@
 
     <groupId>uk.nhs.hee.tis</groupId>
     <artifactId>revalidation</artifactId>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
     <name>tis-revalidation-recommendation</name>
     <description>TIS Revalidation Recommendation project</description>
 

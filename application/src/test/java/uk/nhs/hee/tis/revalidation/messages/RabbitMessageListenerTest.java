@@ -41,14 +41,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import uk.nhs.hee.tis.revalidation.dto.ConnectionMessageDto;
-import uk.nhs.hee.tis.revalidation.dto.MasterDoctorViewDto;
 import uk.nhs.hee.tis.revalidation.dto.RecommendationStatusCheckDto;
 import uk.nhs.hee.tis.revalidation.entity.RecommendationGmcOutcome;
-import uk.nhs.hee.tis.revalidation.entity.RecommendationView;
 import uk.nhs.hee.tis.revalidation.event.DoctorsForDbCollectedEvent;
-import uk.nhs.hee.tis.revalidation.mapper.RecommendationViewMapper;
 import uk.nhs.hee.tis.revalidation.service.DoctorsForDBService;
-import uk.nhs.hee.tis.revalidation.service.RecommendationElasticSearchService;
 
 @ExtendWith(MockitoExtension.class)
 class RabbitMessageListenerTest {
@@ -68,14 +64,7 @@ class RabbitMessageListenerTest {
   ArgumentCaptor<RecommendationStatusCheckDto> recommendationStatusCheckDtoCaptor;
   @Captor
   ArgumentCaptor<ConnectionMessageDto> connectionMessageDtoArgumentCaptor;
-  @Mock
-  RecommendationElasticSearchService recommendationElasticSearchService;
-  @Mock
-  private RecommendationViewMapper recommendationViewMapper;
-  @Captor
-  ArgumentCaptor<RecommendationView> recommendationViewArgCaptor;
 
-  private final String id = faker.number().digits(1);
   private final String gmcNumber = faker.number().digits(7);
   private final String gmcRecommendationId = faker.number().digits(3);
   private final String recommendationId = faker.number().digits(3);
