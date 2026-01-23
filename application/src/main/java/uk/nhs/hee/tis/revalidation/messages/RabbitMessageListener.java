@@ -77,25 +77,6 @@ public class RabbitMessageListener {
   }
 
   /**
-   * get updated doctors from Master index then update recommendation indexes.
-   */
-  @RabbitListener(queues = "${app.rabbit.reval.queue.masterdoctorview.updated.recommendation}")
-  public void receiveUpdateMessageFromMasterDoctorView(
-      final MasterDoctorViewDto masterDoctorViewDto) {
-
-    if (masterDoctorViewDto == null) {
-      throw new AmqpRejectAndDontRequeueException(
-          "Received update message MasterDoctorView is null.");
-    }
-    if (masterDoctorViewDto.getId() == null) {
-      throw new AmqpRejectAndDontRequeueException(
-          "Received update message MasterDoctorView with null id.");
-    }
-    recommendationElasticSearchService.saveRecommendationView(
-        recommendationViewMapper.mapMasterDoctorViewDtoToRecommendationView(masterDoctorViewDto));
-  }
-
-  /**
    * handle Doctors from a Designated Body (DB) collected message.
    */
   @RabbitListener(queues = "${app.rabbit.reval.queue.doctorsfordb.collected.recommendation}")
