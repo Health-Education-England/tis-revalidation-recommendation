@@ -29,6 +29,7 @@ import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.NO;
 import static uk.nhs.hee.tis.revalidation.entity.UnderNotice.YES;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -79,6 +80,7 @@ public class DoctorsForDBService {
   private final ConnectionLogPublisher connectionLogPublisher;
 
   private static final String UPDATED_BY_GMC = "Updated by GMC";
+  private static final String CONNECTION_LOG_DATETIME_FORMAT = "uuuu-MM-dd'T'HH:mm:ss.SSS";
 
   public DoctorsForDBService(DoctorsForDBRepository doctorsForDBRepository,
       RecommendationService recommendationService,
@@ -137,7 +139,8 @@ public class DoctorsForDBService {
     if (!newDesignatedBody.equals(previousDesignatedBody)) {
       ConnectionLogDto connectionLogDto = ConnectionLogDto.builder().gmcId(
               doctorsForDB.getGmcReferenceNumber())
-          .eventDateTime(gmcDoctor.getGmcLastUpdatedDateTime())
+          .eventDateTime(
+              formatLocalDateTimeForConnectionLogsOrNull(gmcDoctor.getGmcLastUpdatedDateTime()))
           .updatedBy(UPDATED_BY_GMC).previousDesignatedBodyCode(previousDesignatedBody)
           .newDesignatedBodyCode(newDesignatedBody).build();
       publishConnectionLog(connectionLogDto);
@@ -212,8 +215,11 @@ public class DoctorsForDBService {
               doctorsRepository.save(savedDoctor);
               publishConnectionLog(
                   ConnectionLogDto.builder().gmcId(savedDoctor.getGmcReferenceNumber())
-                      .previousDesignatedBodyCode(designatedBodyCode).newDesignatedBodyCode(null)
-                      .eventDateTime(requestDateTime).updatedBy(UPDATED_BY_GMC).build());
+                      .previousDesignatedBodyCode(designatedBodyCode)
+                      .newDesignatedBodyCode(null)
+                      .eventDateTime(formatLocalDateTimeForConnectionLogsOrNull(
+                          requestDateTime
+                      )).updatedBy(UPDATED_BY_GMC).build());
             } else {
               log.debug("Close one.  Doctor [{}] modified between updates and being disconnected.",
                   savedDoctor.getGmcReferenceNumber());
@@ -269,6 +275,14 @@ public class DoctorsForDBService {
 
   private void publishConnectionLog(ConnectionLogDto connectionLogDto) {
     connectionLogPublisher.publishToBroker(connectionLogDto);
+  }
+
+  private LocalDateTime formatLocalDateTimeForConnectionLogsOrNull(LocalDateTime logDateTime) {
+    if (logDateTime != null) {
+      return LocalDateTime.parse(
+          logDateTime.format(DateTimeFormatter.ofPattern(CONNECTION_LOG_DATETIME_FORMAT)));
+    }
+    return null;
   }
 
   //TODO: explore to implement cache

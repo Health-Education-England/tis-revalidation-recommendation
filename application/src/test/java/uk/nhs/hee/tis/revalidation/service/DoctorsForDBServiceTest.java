@@ -125,6 +125,7 @@ class DoctorsForDBServiceTest {
   private String outcome1;
   private final LocalDateTime gmcLastUpdatedDateTime = LocalDateTime.now();
   private static final String UPDATED_BY_GMC = "Updated by GMC";
+  private static final String CONNECTION_LOG_DATETIME_FORMAT = "uuuu-MM-dd'T'HH:mm:ss.SSS";
 
   @BeforeEach
   void setup() {
@@ -655,7 +656,8 @@ class DoctorsForDBServiceTest {
   void shouldPublishConnectionLogIfNewConnectionGmcSync() {
     var dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1, subDate1.format(dateFormat),
+    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1,
+        subDate1.format(dateFormat),
         LocalDate.now().minusDays(5).format(dateFormat), un1.value(), "sanction", designatedBody1,
         LocalDateTime.now());
 
@@ -687,7 +689,8 @@ class DoctorsForDBServiceTest {
     DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody1,
         cutoffDate, List.of());
 
-    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1, cutoffDate)).thenReturn(List.of(staleDoctor));
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody1,
+        cutoffDate)).thenReturn(List.of(staleDoctor));
     when(repository.findById(gmcRef1)).thenReturn(Optional.of(staleDoctor));
 
     doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
@@ -700,7 +703,8 @@ class DoctorsForDBServiceTest {
     assertThat(result.getPreviousDesignatedBodyCode(), is(designatedBody1));
     assertNull(result.getNewDesignatedBodyCode());
     assertThat(result.getUpdatedBy(), is(UPDATED_BY_GMC));
-    assertThat(result.getEventDateTime(), is(cutoffDate));
+    assertThat(result.getEventDateTime(), is(LocalDateTime.parse(
+        cutoffDate.format(DateTimeFormatter.ofPattern(CONNECTION_LOG_DATETIME_FORMAT)))));
   }
 
   @Test
@@ -708,7 +712,8 @@ class DoctorsForDBServiceTest {
     var dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     LocalDateTime cutoffDate = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
 
-    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1, subDate1.format(dateFormat),
+    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1,
+        subDate1.format(dateFormat),
         LocalDate.now().minusDays(5).format(dateFormat), un1.value(), "sanction", designatedBody2,
         cutoffDate);
 
@@ -723,8 +728,10 @@ class DoctorsForDBServiceTest {
     DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody2,
         cutoffDate, List.of(newDoctorDto));
 
-    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody2, cutoffDate)).thenReturn(List.of());
-    when(repository.findById(gmcRef1)).thenReturn(Optional.of(oldDoctor)).thenReturn(Optional.of(updatedDoctor));
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody2,
+        cutoffDate)).thenReturn(List.of());
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(oldDoctor))
+        .thenReturn(Optional.of(updatedDoctor));
 
     doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
 
@@ -736,7 +743,8 @@ class DoctorsForDBServiceTest {
     assertThat(result.getNewDesignatedBodyCode(), is(designatedBody2));
     assertThat(result.getPreviousDesignatedBodyCode(), is(designatedBody1));
     assertThat(result.getUpdatedBy(), is(UPDATED_BY_GMC));
-    assertThat(result.getEventDateTime(), is(cutoffDate));
+    assertThat(result.getEventDateTime(), is(LocalDateTime.parse(
+        cutoffDate.format(DateTimeFormatter.ofPattern(CONNECTION_LOG_DATETIME_FORMAT)))));
   }
 
   @Test
@@ -744,7 +752,8 @@ class DoctorsForDBServiceTest {
     var dateFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     LocalDateTime cutoffDate = LocalDateTime.now();
 
-    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1, subDate1.format(dateFormat),
+    DoctorsForDbDto newDoctorDto = new DoctorsForDbDto(gmcRef1, fname1, lname1,
+        subDate1.format(dateFormat),
         LocalDate.now().minusDays(5).format(dateFormat), un1.value(), "sanction", designatedBody2,
         cutoffDate);
 
@@ -759,8 +768,10 @@ class DoctorsForDBServiceTest {
     DoctorsForDbCollectedEvent newConnectionEvent = new DoctorsForDbCollectedEvent(designatedBody2,
         cutoffDate, List.of(newDoctorDto));
 
-    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody2, cutoffDate)).thenReturn(List.of(oldDoctor));
-    when(repository.findById(gmcRef1)).thenReturn(Optional.of(oldDoctor)).thenReturn(Optional.of(updatedDoctor));
+    when(repository.findByDesignatedBodyCodeAndGmcLastUpdatedDateTimeBefore(designatedBody2,
+        cutoffDate)).thenReturn(List.of(oldDoctor));
+    when(repository.findById(gmcRef1)).thenReturn(Optional.of(oldDoctor))
+        .thenReturn(Optional.of(updatedDoctor));
 
     doctorsForDBService.handleDoctorsForDbCollectedEvent(newConnectionEvent);
 
