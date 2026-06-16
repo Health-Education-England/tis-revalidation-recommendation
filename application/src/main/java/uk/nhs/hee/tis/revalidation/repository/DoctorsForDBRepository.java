@@ -38,17 +38,18 @@ public interface DoctorsForDBRepository extends MongoRepository<DoctorsForDB, St
   //Get count for trainee doctors who are underNotice
   long countByUnderNoticeIn(final UnderNotice... underNotice);
 
-  @Query(value = "{ '$and' : [{ '$or' : [{'doctorFirstName' : { '$regex' : ?0, '$options' : 'i'}}, "
-      + "{ 'doctorLastName' : { '$regex' : ?0, '$options' : 'i'}}, { '_id' : { '$regex' : ?0, '$options' : 'i'}}]}, "
-      + "{ 'designatedBodyCode' : { '$in' : ?1 }}, { 'underNotice' : { '$in' : ?2 }}, "
-      + "{ 'existsInGmc' : true }]}")
-  Page<DoctorsForDB> findByUnderNotice(final Pageable pageable, final String searchQuery,
-      final List<String> dbcs, final UnderNotice... underNotice);
-
-  @Query(value = "{ '$and' : [{ '$or' : [{'doctorFirstName' : { '$regex' : ?0, '$options' : 'i'}}, "
-      + "{ 'doctorLastName' : { '$regex' : ?0, '$options' : 'i'}}, { '_id' : { '$regex' : ?0, '$options' : 'i'}}]}, "
-      + "{ 'designatedBodyCode' : { '$in' : ?1 }}, { '_id' : { '$nin' : ?2 }}, "
-      + "{ 'existsInGmc' : true }]}")
+  @Query("""
+      { '$and' : [
+        { '$or' : [
+          { 'doctorFirstName' : { '$regex' : ?0, '$options' : 'i'}},
+          { 'doctorLastName' : { '$regex' : ?0, '$options' : 'i'}},
+          { '_id' : { '$regex' : ?0, '$options' : 'i'}}
+        ]},
+        { 'designatedBodyCode' : { '$in' : ?1 }},
+        { '_id' : { '$nin' : ?2 }},
+        { 'existsInGmc' : true }
+      ]}
+      """)
   Page<DoctorsForDB> findAll(final Pageable pageable, final String searchQuery,
       final List<String> dbcs, final List<String> hiddenGmcIds);
 
