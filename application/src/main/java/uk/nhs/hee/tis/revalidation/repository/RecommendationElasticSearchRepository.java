@@ -81,8 +81,4 @@ public interface RecommendationElasticSearchRepository extends
       """)
   List<RecommendationView> findByFieldNameParameter(final String fieldName, final String input,
       final String dbcs);
-
-  List<RecommendationView> findByGmcReferenceNumber(String gmcReferenceNumber);
-
-  List<RecommendationView> findByTcsPersonId(Long tcsPersonId);
 }
