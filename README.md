@@ -1,10 +1,13 @@
 # tis-revalidation-recommendation
 
-Revalidation V2
+Revalidation Recommendation Service.
+
+The service is responsible for managing recomendations sent to the GMC.
+It currently also serves as the authoritative source of doctor information.
 
 # Prerequisite
 
-- Java 11
+- Java 17
 - Maven
 - Docker
 
