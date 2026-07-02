@@ -115,29 +115,6 @@ public class DoctorsForDBController {
     return ResponseEntity.ok().body(allTraineeDoctorDetails);
   }
 
-  @ApiOperation(value = "All trainee doctors information which is not in the gmcId list", notes = "It will return all the information about trainee doctors who are not in the gmcId list ", response = TraineeSummaryDto.class)
-  @ApiResponses(value = {
-      @ApiResponse(code = 200, message = "Trainee gmc doctors data", response = TraineeSummaryDto.class)})
-  @GetMapping(value = {"/unhidden/{gmcIds}", "/unhidden/"})
-  public ResponseEntity<TraineeSummaryDto> getTraineeDoctorsInformationHideGmcIds(
-      @PathVariable(required = false) final List<String> gmcIds,
-      @RequestParam(name = SORT_COLUMN, defaultValue = SUBMISSION_DATE, required = false) final String sortColumn,
-      @RequestParam(name = SORT_ORDER, defaultValue = DESC, required = false) final String sortOrder,
-      @RequestParam(name = UNDER_NOTICE, defaultValue = UNDER_NOTICE_VALUE, required = false) final boolean underNotice,
-      @RequestParam(name = PAGE_NUMBER, defaultValue = PAGE_NUMBER_VALUE, required = false) final int pageNumber,
-      @RequestParam(name = DESIGNATED_BODY_CODES, required = false) final List<String> dbcs,
-      @RequestParam(name = SEARCH_QUERY, defaultValue = EMPTY_STRING, required = false) final String searchQuery) {
-    final var traineeRequestDTO = TraineeRequestDto.builder().sortColumn(sortColumn)
-        .sortOrder(sortOrder).underNotice(underNotice).pageNumber(pageNumber).dbcs(dbcs)
-        .searchQuery(searchQuery).build();
-
-    validate(traineeRequestDTO);
-
-    final var allTraineeDoctorDetails = doctorsForDBService.getAllTraineeDoctorDetails(
-        traineeRequestDTO, gmcIds);
-    return ResponseEntity.ok().body(allTraineeDoctorDetails);
-  }
-
   @ApiOperation(value = "Update admin for trainee", notes = "It will update admin to recommend trainee", response = ResponseEntity.class)
   @ApiResponses(value = {
       @ApiResponse(code = 200, message = "Trainee's admin has been updated", response = ResponseEntity.class)})
