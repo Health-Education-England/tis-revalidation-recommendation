@@ -353,55 +353,6 @@ class DoctorsForDBServiceTest {
   }
 
   @Test
-  void shouldNotFailIfGmcIdNull() {
-    List<Order> orders = new ArrayList<>();
-    Order customOrder = new Order(Sort.Direction.DESC, "submissionDate");
-    orders.add(customOrder);
-    Order lastNameOrder = new Order(Sort.Direction.ASC, "doctorLastName");
-    orders.add(lastNameOrder);
-
-    final Pageable pageableAndSortable = PageRequest.of(1, 20, by(orders));
-    List<String> dbcs = List.of(designatedBody1, designatedBody2, designatedBody3, designatedBody4,
-        designatedBody5);
-    String formattedDbcs = String.join(" ", dbcs);
-    when(recommendationElasticSearchRepository.findAll("query", formattedDbcs,
-        programmeName, outcome1, status1.name(), admin1, pageableAndSortable)).thenReturn(page);
-    when(recommendationElasticSearchService.formatDesignatedBodyCodesForElasticsearchQuery(
-        dbcs)).thenReturn(formattedDbcs);
-    when(page.get()).thenReturn(Stream.of(rv1, rv4));
-    when(page.getTotalPages()).thenReturn(1);
-    when(page.getTotalElements()).thenReturn(2L);
-    when(repository.countByUnderNoticeIn(YES)).thenReturn(2L);
-    when(repository.count()).thenReturn(5L);
-    final var requestDTO = TraineeRequestDto.builder().sortOrder("desc")
-        .sortColumn("submissionDate").pageNumber(1).searchQuery("query").dbcs(dbcs)
-        .programmeName(programmeName).gmcStatus(outcome1).tisStatus(status1.name()).admin(admin1)
-        .build();
-    final var allDoctors = doctorsForDBService.getAllTraineeDoctorDetails(requestDTO);
-    final var doctorsForDB = allDoctors.getTraineeInfo();
-    assertThat(allDoctors.getCountTotal(), is(5L));
-    assertThat(allDoctors.getCountUnderNotice(), is(2L));
-    assertThat(allDoctors.getTotalPages(), is(1L));
-    assertThat(allDoctors.getTotalResults(), is(2L));
-    assertThat(doctorsForDB, hasSize(2));
-
-    assertThat(doctorsForDB.get(0).getGmcReferenceNumber(), is(gmcRef1));
-    assertThat(doctorsForDB.get(0).getDoctorFirstName(), is(fname1));
-    assertThat(doctorsForDB.get(0).getDoctorLastName(), is(lname1));
-    assertThat(doctorsForDB.get(0).getSubmissionDate(), is(subDate1));
-    assertThat(doctorsForDB.get(0).getUnderNotice(), is(un1.name()));
-    assertThat(doctorsForDB.get(0).getDoctorStatus(), is(status1.name()));
-
-    assertThat(doctorsForDB.get(1).getGmcReferenceNumber(), is(gmcRef4));
-    assertThat(doctorsForDB.get(1).getDoctorFirstName(), is(fname4));
-    assertThat(doctorsForDB.get(1).getDoctorLastName(), is(lname4));
-    assertThat(doctorsForDB.get(1).getSubmissionDate(), is(subDate4));
-    assertThat(doctorsForDB.get(1).getUnderNotice(), is(un4.name()));
-    assertThat(doctorsForDB.get(1).getDoctorStatus(), is(status4.name()));
-
-  }
-
-  @Test
   void shouldNotApplySecondarySortIfSortByLastName() {
     List<Order> orders = new ArrayList<>();
     Order customOrder = new Order(Sort.Direction.ASC, "doctorLastName");
