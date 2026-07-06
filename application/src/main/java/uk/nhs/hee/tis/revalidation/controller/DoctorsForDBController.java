@@ -111,7 +111,7 @@ public class DoctorsForDBController {
     validate(traineeRequestDTO);
 
     final var allTraineeDoctorDetails = doctorsForDBService.getAllTraineeDoctorDetails(
-        traineeRequestDTO, List.of());
+        traineeRequestDTO);
     return ResponseEntity.ok().body(allTraineeDoctorDetails);
   }
 

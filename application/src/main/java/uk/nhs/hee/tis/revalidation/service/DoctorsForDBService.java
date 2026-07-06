@@ -97,9 +97,8 @@ public class DoctorsForDBService {
     this.connectionLogPublisher = connectionLogPublisher;
   }
 
-  public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO,
-      final List<String> hiddenGmcIds) {
-    final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO, hiddenGmcIds);
+  public TraineeSummaryDto getAllTraineeDoctorDetails(final TraineeRequestDto requestDTO) {
+    final var paginatedDoctors = getSortedAndFilteredDoctorsByPageNumber(requestDTO);
     final var doctorsList = paginatedDoctors.get()
         .map(recommendationViewMapper::toTraineeInfoDto).toList();
 
@@ -241,9 +240,7 @@ public class DoctorsForDBService {
   }
 
   private Page<RecommendationView> getSortedAndFilteredDoctorsByPageNumber(
-      final TraineeRequestDto requestDTO, final List<String> hiddenGmcIds) {
-    final var hiddenGmcIdsNotNull = (hiddenGmcIds == null) ? new ArrayList<String>() : hiddenGmcIds;
-
+      final TraineeRequestDto requestDTO) {
     List<Order> orders = new ArrayList<>();
     final var customSortColumn = requestDTO.getSortColumn();
     Order customOrder = new Order("asc".equalsIgnoreCase(requestDTO.getSortOrder()) ? ASC : DESC,
@@ -269,7 +266,7 @@ public class DoctorsForDBService {
     }
 
     return recommendationElasticSearchRepository.findAll(requestDTO.getSearchQuery().toLowerCase(),
-        designatedBodyCodes, hiddenGmcIdsNotNull, programmeName, gmcStatus, tisStatus, admin,
+        designatedBodyCodes, programmeName, gmcStatus, tisStatus, admin,
         pageableAndSortable);
   }
 

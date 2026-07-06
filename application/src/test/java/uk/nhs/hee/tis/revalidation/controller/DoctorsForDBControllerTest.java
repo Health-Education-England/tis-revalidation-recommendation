@@ -151,7 +151,7 @@ class DoctorsForDBControllerTest {
         .dbcs(List.of(designatedBody1, designatedBody2)).programmeName(programmeName)
         .gmcStatus(outcome1.getOutcome()).tisStatus(doctorStatus1.name())
         .admin(admin).build();
-    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO))
         .thenReturn(gmcDoctorDTO);
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
     this.mockMvc.perform(get("/api/v1/doctors")
@@ -178,8 +178,7 @@ class DoctorsForDBControllerTest {
         .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING)
         .admin(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
-    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO,
-          List.of()))
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO))
         .thenReturn(gmcDoctorDTO);
     this.mockMvc.perform(get("/api/v1/doctors")
             .param(SORT_ORDER, "")
@@ -198,7 +197,7 @@ class DoctorsForDBControllerTest {
         .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING)
         .admin(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
-    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO))
         .thenReturn(gmcDoctorDTO);
     mockMvc.perform(get(DOCTORS_API_URL)
             .param(SORT_ORDER, "aa")
@@ -217,7 +216,7 @@ class DoctorsForDBControllerTest {
         .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING)
         .admin(EMPTY_STRING).build();
     final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
-    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO))
         .thenReturn(gmcDoctorDTO);
     mockMvc.perform(get(DOCTORS_API_URL)
             .param(SORT_ORDER, ASC)
@@ -234,7 +233,7 @@ class DoctorsForDBControllerTest {
     final var requestDTO = TraineeRequestDto.builder()
         .sortOrder(ASC).sortColumn(SUBMISSION_DATE).underNotice(true).searchQuery(EMPTY_STRING)
         .admin(EMPTY_STRING).build();
-    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO, List.of()))
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO))
         .thenReturn(gmcDoctorDTO);
     mockMvc.perform(get(DOCTORS_API_URL)
             .param(SORT_ORDER, ASC)

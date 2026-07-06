@@ -91,7 +91,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
 
     final var traineeInfo = doctorDTO.getTraineeInfo();
@@ -165,7 +165,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(3L));
 
     final var traineeInfo = doctorDTO.getTraineeInfo();
@@ -218,7 +218,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(3L));
 
     final var traineeInfo = doctorDTO.getTraineeInfo();
@@ -274,7 +274,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getCountUnderNotice(), is(3L));
   }
@@ -316,7 +316,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getCountUnderNotice(), is(4L));
 
@@ -399,7 +399,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getCountUnderNotice(), is(4L));
     assertThat(doctorDTO.getTotalResults(), is(2L));
@@ -452,7 +452,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .build();
     ReflectionTestUtils.setField(service, "pageSize", 2);
     //fetch record for first page
-    var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getTraineeInfo(), hasSize(2));
     assertThat(doctorDTO.getTotalPages(), is(3L));
@@ -487,7 +487,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
     //fetch record for second page
-    doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getTraineeInfo(), hasSize(2));
 
@@ -522,7 +522,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .build();
 
     //fetch record for third page
-    doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getTraineeInfo(), hasSize(1));
 
@@ -563,7 +563,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .dbcs(List.of("1-AIIDR8", "1-AIIDVS"))
         .build();
     ReflectionTestUtils.setField(service, "pageSize", 2);
-    var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getTraineeInfo(), hasSize(0));
     assertThat(doctorDTO.getTotalPages(), is(3L));
@@ -651,7 +651,7 @@ class DoctorsForDBServiceIT extends BaseIT {
         .searchQuery("")
         .dbcs(List.of("1-AIIDR8"))
         .build();
-    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO, List.of());
+    final var doctorDTO = service.getAllTraineeDoctorDetails(requestDTO);
     assertThat(doctorDTO.getCountTotal(), is(5L));
     assertThat(doctorDTO.getTotalResults(), is(3L));
 
