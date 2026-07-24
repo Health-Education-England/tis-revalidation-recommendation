@@ -1,6 +1,6 @@
 app:
   validation:
-    sort.fields: ${SORT_FIELD:submissionDate,doctorFirstName,doctorLastName,gmcReferenceNumber}
+    sort.fields: ${SORT_FIELD:submissionDate,doctorFirstName,doctorLastName,gmcReferenceNumber,curriculumEndDate}
     sort.order: ${SORT_ORDER:asc,desc}
 
 mongock:

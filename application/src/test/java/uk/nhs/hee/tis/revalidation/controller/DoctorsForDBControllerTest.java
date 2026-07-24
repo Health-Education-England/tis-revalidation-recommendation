@@ -242,6 +242,25 @@ class DoctorsForDBControllerTest {
         .andExpect(status().isOk());
   }
 
+  @Test
+  void shouldAcceptCurriculumEndDateAsSortColumn() throws Exception {
+    final var gmcDoctorDTO = prepareGmcDoctor();
+    final var requestDTO = TraineeRequestDto.builder()
+        .sortOrder(ASC).sortColumn("curriculumEndDate").searchQuery(EMPTY_STRING)
+        .dbcs(List.of(designatedBody1, designatedBody2))
+        .programmeName(EMPTY_STRING).gmcStatus(EMPTY_STRING).tisStatus(EMPTY_STRING)
+        .admin(EMPTY_STRING).build();
+    final var dbcString = String.format("%s,%s", designatedBody1, designatedBody2);
+    when(doctorsForDBService.getAllTraineeDoctorDetails(requestDTO))
+        .thenReturn(gmcDoctorDTO);
+    mockMvc.perform(get(DOCTORS_API_URL)
+            .param(SORT_ORDER, ASC)
+            .param(SORT_COLUMN, "curriculumEndDate")
+            .param(DESIGNATED_BODY_CODES, dbcString))
+        .andExpect(status().isOk())
+        .andExpect(content().json(mapper.writeValueAsString(gmcDoctorDTO)));
+  }
+
 
   @Test
   void shouldUpdateAdminForTrainee() throws Exception {
