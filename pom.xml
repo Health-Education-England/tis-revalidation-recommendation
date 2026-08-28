@@ -196,7 +196,7 @@
     <build>
         <plugins>
             <plugin>
-                <version>3.9.0.2155</version>
+                <version>3.9.1.2184</version>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
             </plugin>
